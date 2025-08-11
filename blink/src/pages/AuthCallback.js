@@ -1,5 +1,5 @@
 // src/pages/AuthCallback.js
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import '../styles/Login.css';
@@ -10,11 +10,7 @@ function AuthCallback() {
   const [status, setStatus] = useState('processing'); // processing, success, error
   const [message, setMessage] = useState('Verifying your login...');
 
-  useEffect(() => {
-    handleMagicLinkCallback();
-  }, []);
-
-  const handleMagicLinkCallback = async () => {
+  const handleMagicLinkCallback = useCallback(async () => {
     try {
       // Check if we have token in URL hash
       const hash = window.location.hash;
@@ -84,7 +80,11 @@ function AuthCallback() {
         navigate('/auth', { replace: true });
       }, 3000);
     }
-  };
+  }, [navigate, setUser]);
+
+  useEffect(() => {
+    handleMagicLinkCallback();
+  }, [handleMagicLinkCallback]);
 
   return (
     <div className="login-container">

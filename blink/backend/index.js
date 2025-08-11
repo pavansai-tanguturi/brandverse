@@ -2,6 +2,10 @@
 import express from 'express';
 import cors from 'cors';
 import { createClient } from '@supabase/supabase-js';
+import dotenv from 'dotenv';
+
+// Load environment variables
+dotenv.config();
 
 // Log unhandled promise rejections
 process.on('unhandledRejection', (reason, promise) => {
@@ -22,8 +26,14 @@ app.use(cors({
 app.use(express.json());
 
 // Supabase client initialization
-const supabaseUrl = 'https://ucwqxjnjgjomdstdinag.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVjd3F4am5qZ2pvbWRzdGRpbmFnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ5MTM1MzQsImV4cCI6MjA3MDQ4OTUzNH0.TwvYS088sAGMIW-_iFcVhm1GRwcOupG1FQIee0V_y00';
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_ANON_KEY;
+
+if (!supabaseUrl || !supabaseKey) {
+  console.error('Missing Supabase configuration. Please check your .env file.');
+  process.exit(1);
+}
+
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 app.get('/', (req, res) => {
@@ -236,7 +246,7 @@ app.post('/send-magic-link', async (req, res) => {
   
   try {
     // First, check if user exists in auth.users
-    const { data: authData, error: authError } = await supabase.auth.signInWithOtp({ 
+    const { error: authError } = await supabase.auth.signInWithOtp({ 
       email,
       options: {
         shouldCreateUser: false // Don't create new users, only login existing ones
@@ -245,7 +255,7 @@ app.post('/send-magic-link', async (req, res) => {
     
     if (authError) {
       // If user doesn't exist, create them first
-      const { data: signupData, error: signupError } = await supabase.auth.signUp({
+      const { error: signupError } = await supabase.auth.signUp({
         email,
         password: 'temp-password',
       });
