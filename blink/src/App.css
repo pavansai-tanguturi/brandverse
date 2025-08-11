@@ -1,0 +1,244 @@
+.App {
+  text-align: left;
+}
+
+.App-header {
+  
+  min-height: 20vh;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+  color: rgb(0, 0, 0);
+}
+
+/* Logo: top-left */
+.App-logo {
+  height: 20vmin;
+  pointer-events: none;
+  position: absolute;
+  top: 20;
+  left: 20px;
+}
+
+/* Location section */
+.location-container {
+  position: absolute;
+  top: 40px;
+  left: 300px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  color: #313638;
+}
+
+.location-icon {
+  width: 24px;
+  height: 24px;
+  margin-right: 6px;
+}
+
+.location-text {
+  font-size: 16px;
+  font-weight: 500;
+}
+
+/* Search bar - center */
+.search-container {
+  position: absolute;
+  top: 40px;
+  left: 500px;
+  height: 40px;
+  width: 700px;
+}
+
+.search-input {
+  width: 100%;
+  max-width: 400px;
+  padding: 10px;
+  border-radius: 20px;
+  border: 1px solid #ccc;
+  font-size: 16px;
+}
+
+/* Login button */
+.login-button {
+  position: absolute;
+  top: 40px;
+  right: 200px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 20px;
+  background-color: #313638;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.login-button:hover {
+  background-color: #479c5a;
+}
+
+/* Cart icon */
+.cart-icon {
+  position: absolute;
+  top: 40px;
+  right: 50px;
+  height: 40px;
+  cursor: pointer;
+}
+
+/* Optional logo animation */
+@media (prefers-reduced-motion: no-preference) {
+  .App-logo {
+    animation: App-logo-spin infinite 0s linear;
+  }
+}
+
+@keyframes App-logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.header-divider {
+  border: none;
+  height: 1px;
+  background-color: #111111; /* light gray line */
+  margin: 0;
+  width: 100%;
+}
+
+.header-divider {
+  border: none;
+  height: 2px;
+  background-color: #ccc;
+  margin: 0;
+}
+
+/* Category Section */
+.category-section {
+  padding: 20px;
+}
+
+.category-title {
+  text-align: center;
+  font-size: 24px;
+  margin-bottom: 20px;
+  font-weight: bold;
+}
+
+.category-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: center;
+}
+
+.category-card {
+  width: 100px;
+  height: 120px;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  padding: 5px;
+  cursor: pointer;
+  background-color: #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.category-image {
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.category-name {
+  margin-top: 10px;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+/* Add this to App.css */
+body {
+  margin: 0;
+  padding: 0;
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  font-family: Arial, sans-serif;
+}
+
+.banner-section {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  margin: 20px auto;
+  max-width: 1200px;
+}
+
+.banner-card {
+  position: relative;
+  height: 200px;
+  width: 385px;
+  border-radius: 12px;
+  overflow: hidden;
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  align-items: center;
+}
+
+/* Two banners: half width each */
+.banner-card.half {
+  flex: 1 1 calc(50% - 20px);
+}
+
+/* Single banner: full width */
+.banner-card.full {
+  position: relative;
+  height: 300px;
+  width: 1200px;
+  border-radius: 22px;
+  overflow: hidden;
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  align-items: center;
+}
+
+.banner-content {
+  
+  color: rgb(255, 255, 255);
+  padding: 20px;
+  max-width: 100%;
+  border-radius: 8px;
+}
+
+.banner-content h2 {
+  margin: 0 0 10px;
+  font-size: 1.8rem;
+}
+
+.banner-content p {
+  margin: 0 0 15px;
+  font-size: 1rem;
+}
+
+.banner-content button {
+  background-color: #00a859;
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.banner-content button:hover {
+  background-color: #008f4c;
+}
