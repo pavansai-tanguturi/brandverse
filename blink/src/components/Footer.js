@@ -1,5 +1,5 @@
 import React from 'react';
-import './Footer.css'; // CSS code provided below
+import '../styles/Footer.css'; // CSS code provided below
 
 function Footer() {
   const usefulLinks = [

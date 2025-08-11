@@ -1,13 +1,15 @@
 // src/pages/Home.js
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import logo from '../logos.png';
-import cart from '../cart.png';
-import locationIcon from '../location.png';
-import '../App.css';
+import { useAuth } from '../context/AuthContext';
+import logo from '../assets/logos.png';
+import cart from '../assets/cart.png';
+import locationIcon from '../assets/location.png';
+import '../styles/App.css';
 
 function Home() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [locationName, setLocationName] = useState('Fetching location...');
 
   const banners = [
@@ -113,8 +115,11 @@ function Home() {
           <input type="text" placeholder="Search..." className="search-input" />
         </div>
 
-        <button className="login-button" onClick={() => navigate('/login')}>
-          Login
+        <button 
+          className="login-button" 
+          onClick={() => user ? navigate('/logout') : navigate('/auth')}
+        >
+          {user ? 'Logout' : 'Login'}
         </button>
 
         <img
