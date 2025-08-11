@@ -17,66 +17,7 @@ export const AuthProvider = ({ children }) => {
   // Check if user is logged in on app start
   useEffect(() => {
     checkUserSession();
-    
-    // Listen for magic link authentication
-    const handleHashChange = () => {
-      if (window.location.hash.includes('access_token')) {
-        // Extract token from URL and authenticate
-        const params = new URLSearchParams(window.location.hash.substring(1));
-        const accessToken = params.get('access_token');
-        
-        if (accessToken) {
-          authenticateWithToken(accessToken);
-        }
-      }
-    };
-    
-    // Check on initial load
-    handleHashChange();
-    
-    // Listen for hash changes (magic link redirects)
-    window.addEventListener('hashchange', handleHashChange);
-    
-    return () => {
-      window.removeEventListener('hashchange', handleHashChange);
-    };
   }, []);
-
-  const authenticateWithToken = async (token) => {
-    try {
-      // Extract refresh token if available
-      const params = new URLSearchParams(window.location.hash.substring(1));
-      const refreshToken = params.get('refresh_token');
-      
-      const response = await fetch('http://localhost:3001/auth/callback', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          access_token: token,
-          refresh_token: refreshToken
-        }),
-      });
-      
-      if (response.ok) {
-        const result = await response.json();
-        if (result.user) {
-          setUser(result.user);
-          localStorage.setItem('access_token', result.access_token);
-          localStorage.setItem('user', JSON.stringify(result.user));
-          
-          // Clear the hash from URL
-          window.location.hash = '';
-          
-          // Redirect to home page
-          window.location.href = '/';
-        }
-      }
-    } catch (error) {
-      console.error('Error authenticating with token:', error);
-    }
-  };
 
   const checkUserSession = async () => {
     try {
@@ -84,11 +25,17 @@ export const AuthProvider = ({ children }) => {
       const savedToken = localStorage.getItem('access_token');
       const savedUser = localStorage.getItem('user');
       
+      console.log('Checking session - Token exists:', !!savedToken, 'User exists:', !!savedUser);
+      
       if (savedToken && savedUser) {
         try {
           const parsedUser = JSON.parse(savedUser);
+          console.log('Parsed user from localStorage:', parsedUser);
           
-          // Verify token is still valid
+          // Set user immediately from localStorage, then verify with server
+          setUser(parsedUser);
+          
+          // Verify token is still valid with server
           const response = await fetch('http://localhost:3001/check-session', {
             method: 'GET',
             headers: {
@@ -98,20 +45,30 @@ export const AuthProvider = ({ children }) => {
           
           if (response.ok) {
             const result = await response.json();
+            console.log('Server session check result:', result);
             if (result.user) {
+              // Update user data from server response
               setUser(result.user);
+              // Make sure the updated data is saved
+              localStorage.setItem('user', JSON.stringify(result.user));
               setLoading(false);
               return;
             }
+          } else {
+            console.log('Server session check failed, status:', response.status);
           }
         } catch (parseError) {
           console.error('Error parsing saved user:', parseError);
         }
+      } else {
+        console.log('No saved session found');
       }
       
-      // Clear invalid session data
+      // Clear invalid session data only if server check failed
+      console.log('Clearing session data');
       localStorage.removeItem('access_token');
       localStorage.removeItem('user');
+      setUser(null);
       
     } catch (error) {
       console.error('Error checking session:', error);
