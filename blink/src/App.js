@@ -6,7 +6,6 @@ import { AuthProvider } from './context/AuthContext';
 import './styles/App.css';
 
 import Auth from './pages/Auth'; // New unified auth component
-import AuthCallback from './pages/AuthCallback'; // Magic link callback handler
 import Logout from './pages/Logout'; // New logout page
 import Cart from './components/Cart';
 import CategoryPage from './pages/CategoryPage';
@@ -25,7 +24,7 @@ function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/auth" element={<Auth />} />
-            <Route path="/auth/callback" element={<AuthCallback />} /> {/* Magic link callback */}
+            <Route path="/auth/verify" element={<Auth />} /> {/* OTP verification page */}
             <Route path="/login" element={<Auth />} /> {/* Redirect old login to auth */}
             <Route path="/signup" element={<Auth />} /> {/* Redirect old signup to auth */}
             <Route path="/logout" element={<Logout />} /> {/* New logout page */}
