@@ -17,20 +17,36 @@
   border-bottom: 1px solid #e0e0e0;
 }
 
+/* Logo container with text */
+.logo-container {
+  position: absolute;
+  top: 15px;
+  left: 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 /* Logo: top-left */
 .App-logo {
   height: 50px;
   pointer-events: none;
-  position: absolute;
-  top: 15px;
-  left: 20px;
+}
+
+/* Brand text beside logo */
+.brand-text {
+  font-size: 24px;
+  font-weight: bold;
+  color: #2d3436;
+  font-family: 'Arial', sans-serif;
+  letter-spacing: -0.5px;
 }
 
 /* Location section */
 .location-container {
   position: absolute;
-  top: 25px;
-  left: 200px;
+  top: 30px;
+  left: 320px;
   display: flex;
   align-items: center;
   cursor: pointer;
@@ -48,14 +64,13 @@
   font-weight: 500;
 }
 
-/* Search bar - center */
+/* Search bar - closer to login button */
 .search-container {
   position: absolute;
   top: 20px;
-  left: 50%;
-  transform: translateX(-50%);
+  right: 240px;
   height: 40px;
-  width: 400px;
+  width: 350px;
 }
 
 .search-input {
@@ -72,7 +87,7 @@
 .login-button {
   position: absolute;
   top: 20px;
-  right: 100px;
+  right: 120px;
   padding: 12px 24px;
   border: none;
   border-radius: 25px;

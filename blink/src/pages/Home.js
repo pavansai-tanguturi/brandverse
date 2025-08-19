@@ -99,7 +99,10 @@ function Home() {
   return (
     <div className="App">
       <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
+        <div className="logo-container">
+          <img src={logo} className="App-logo" alt="logo" />
+          <span className="brand-text">blink grocer</span>
+        </div>
 
         <div
           className="location-container"
