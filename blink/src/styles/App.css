@@ -54,7 +54,7 @@
 /* Location section */
 .location-container {
   position: absolute;
-  top: 20px;
+  top: 21px;
   left: 320px;
   display: flex;
   align-items: center;
