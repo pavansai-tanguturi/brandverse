@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { getDeliveryInfo, deliveryLocations } from '../data/mockDeliveryData';
 import logo from '../assets/logos.png';
 import cart from '../assets/cart.png';
 import locationIcon from '../assets/location.png';
@@ -11,6 +12,67 @@ function Home() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [locationName, setLocationName] = useState('Fetching location...');
+  const [deliveryTime, setDeliveryTime] = useState(null);
+  const [isLocationLoading, setIsLocationLoading] = useState(false);
+  const [showLocationModal, setShowLocationModal] = useState(false);
+  const [manualLocation, setManualLocation] = useState('');
+
+  const fetchLocation = async () => {
+    if (!navigator.geolocation) {
+      setLocationName('Geolocation not supported');
+      return;
+    }
+
+    setIsLocationLoading(true);
+    setLocationName('Updating location...');
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        try {
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`
+          );
+          const data = await response.json();
+          const newLocation = data.address.city || data.address.town || data.address.village || 'Unknown location';
+          const deliveryInfo = getDeliveryInfo(newLocation);
+          setLocationName(deliveryInfo.shortName);
+          setDeliveryTime(deliveryInfo.deliveryTime);
+          setShowLocationModal(false); // Close modal after detecting location
+        } catch (error) {
+          console.error('Error fetching location name:', error);
+          setLocationName('Location unavailable');
+          setDeliveryTime(null);
+        } finally {
+          setIsLocationLoading(false);
+        }
+      }, 
+      () => {
+        setLocationName('Location permission denied');
+        setDeliveryTime(null);
+        setIsLocationLoading(false);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0 // Always get fresh location
+      }
+    );
+  };
+
+  const handleManualLocation = () => {
+    if (manualLocation.trim()) {
+      const deliveryInfo = getDeliveryInfo(manualLocation.trim());
+      setLocationName(deliveryInfo.shortName);
+      setDeliveryTime(deliveryInfo.deliveryTime);
+      setShowLocationModal(false);
+      setManualLocation('');
+    }
+  };
+
+  const handleLocationClick = () => {
+    setShowLocationModal(true);
+  };
 
   const banners = [
   {
@@ -75,25 +137,7 @@ function Home() {
   ];
 
   useEffect(() => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(async (position) => {
-        const { latitude, longitude } = position.coords;
-        try {
-          const response = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`
-          );
-          const data = await response.json();
-          setLocationName(data.address.city || data.address.town || data.address.village || 'Unknown location');
-        } catch (error) {
-          console.error('Error fetching location name:', error);
-          setLocationName('Location unavailable');
-        }
-      }, () => {
-        setLocationName('Location permission denied');
-      });
-    } else {
-      setLocationName('Geolocation not supported');
-    }
+    fetchLocation();
   }, []);
 
   return (
@@ -101,17 +145,27 @@ function Home() {
       <header className="App-header">
         <div className="logo-container">
           <img src={logo} className="App-logo" alt="logo" />
-          <span className="brand-text">blink grocer</span>
+          <span className="brand-text">
+            <span className="blink-text">Blink</span>
+            <span className="grocer-text">Grocer</span>
+          </span>
         </div>
 
         <div
           className="location-container"
-          onClick={() =>
-            window.open(`https://www.google.com/maps/place/${locationName}`, '_blank')
-          }
+          onClick={handleLocationClick}
+          title="Click to change location"
         >
           <img src={locationIcon} alt="location" className="location-icon" />
-          <span className="location-text">{locationName}</span>
+          <div className="location-info">
+            {deliveryTime && (
+              <div className="delivery-time">Delivery in {deliveryTime} minutes</div>
+            )}
+            <div className="location-text">
+              {isLocationLoading ? 'Updating...' : locationName}
+            </div>
+          </div>
+          <span className="location-arrow">▼</span>
         </div>
 
         <div className="search-container">
@@ -132,6 +186,64 @@ function Home() {
           onClick={() => navigate('/cart')}
         />
       </header>
+
+      {/* Location Modal */}
+      {showLocationModal && (
+        <div className="location-modal-overlay" onClick={() => setShowLocationModal(false)}>
+          <div className="location-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Choose your Location</h2>
+              <button className="close-btn" onClick={() => setShowLocationModal(false)}>×</button>
+            </div>
+            <div className="modal-content">
+              <div className="location-options">
+                <button 
+                  className="detect-location-btn"
+                  onClick={fetchLocation}
+                  disabled={isLocationLoading}
+                >
+                  {isLocationLoading ? 'Detecting...' : 'Detect my location'}
+                </button>
+                <div className="or-divider">
+                  <span>OR</span>
+                </div>
+                <div className="manual-location">
+                  <input
+                    type="text"
+                    placeholder="search delivery location"
+                    value={manualLocation}
+                    onChange={(e) => setManualLocation(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleManualLocation()}
+                    className="location-search-input"
+                  />
+                </div>
+                
+                {/* Popular Locations */}
+                <div className="popular-locations">
+                  <h4>Popular Locations</h4>
+                  {deliveryLocations.slice(0, 3).map((location) => (
+                    <div 
+                      key={location.id} 
+                      className="location-item"
+                      onClick={() => {
+                        setLocationName(location.shortName);
+                        setDeliveryTime(location.deliveryTime);
+                        setShowLocationModal(false);
+                      }}
+                    >
+                      <div className="location-details">
+                        <div className="delivery-time-text">Delivery in {location.deliveryTime} minutes</div>
+                        <div className="location-name">{location.name}</div>
+                      </div>
+                      <span className="location-arrow">→</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <hr className="header-divider" />
 
