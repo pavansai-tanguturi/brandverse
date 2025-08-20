@@ -132,3 +132,89 @@
 .signup-link:hover {
   text-decoration: underline;
 }
+
+/* RESPONSIVE STYLES FOR LOGIN PAGE */
+
+/* Tablet and mobile devices */
+@media (max-width: 768px) {
+  .login-container {
+    margin: 50px auto;
+    padding: 25px 20px;
+    max-width: 90%;
+    min-width: 280px;
+  }
+
+  .login-container h2 {
+    font-size: 24px;
+    margin-bottom: 18px;
+  }
+
+  .form-group input {
+    padding: 12px;
+    font-size: 16px;
+  }
+
+  .login-btn {
+    padding: 14px;
+    font-size: 16px;
+  }
+
+  .auth-switch p {
+    font-size: 15px;
+  }
+
+  .switch-btn {
+    font-size: 15px;
+  }
+}
+
+/* Small mobile devices */
+@media (max-width: 480px) {
+  .login-container {
+    margin: 30px auto;
+    padding: 20px 15px;
+    border-radius: 12px;
+  }
+
+  .login-container h2 {
+    font-size: 22px;
+    margin-bottom: 16px;
+  }
+
+  .form-group input {
+    padding: 12px 10px;
+    font-size: 16px;
+  }
+
+  .login-btn {
+    padding: 12px;
+    font-size: 16px;
+  }
+
+  .back-btn {
+    padding: 10px 16px;
+    font-size: 14px;
+  }
+}
+
+/* Very small devices */
+@media (max-width: 320px) {
+  .login-container {
+    margin: 20px auto;
+    padding: 18px 12px;
+  }
+
+  .login-container h2 {
+    font-size: 20px;
+  }
+
+  .form-group input {
+    padding: 10px;
+    font-size: 15px;
+  }
+
+  .login-btn {
+    padding: 11px;
+    font-size: 15px;
+  }
+}

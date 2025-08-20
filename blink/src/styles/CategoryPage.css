@@ -23,3 +23,51 @@
   width: 100%;
   height: auto;
 }
+
+/* RESPONSIVE STYLES FOR CATEGORY PAGE */
+
+/* Tablet and mobile devices */
+@media (max-width: 768px) {
+  .category-page {
+    padding: 15px 10px;
+  }
+
+  .product-grid {
+    gap: 15px;
+    justify-content: center;
+  }
+
+  .product-card {
+    width: calc(50% - 10px);
+    min-width: 140px;
+    max-width: 180px;
+    padding: 12px;
+  }
+}
+
+/* Small mobile devices */
+@media (max-width: 480px) {
+  .category-page {
+    padding: 10px 8px;
+  }
+
+  .product-grid {
+    gap: 12px;
+  }
+
+  .product-card {
+    width: calc(50% - 8px);
+    min-width: 130px;
+    max-width: 160px;
+    padding: 10px;
+  }
+}
+
+/* Very small devices */
+@media (max-width: 320px) {
+  .product-card {
+    width: calc(50% - 6px);
+    min-width: 120px;
+    padding: 8px;
+  }
+}

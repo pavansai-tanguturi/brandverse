@@ -38,3 +38,81 @@
 .signup-form button:hover {
   background-color: #45a049;
 }
+
+/* RESPONSIVE STYLES FOR SIGNUP PAGE */
+
+/* Tablet and mobile devices */
+@media (max-width: 768px) {
+  .signup-container {
+    margin: 50px auto;
+    padding: 20px;
+    max-width: 90%;
+    min-width: 280px;
+  }
+
+  .signup-form input {
+    padding: 12px;
+    font-size: 16px;
+    margin-bottom: 12px;
+    border-radius: 6px;
+    border: 1px solid #ddd;
+  }
+
+  .signup-form button {
+    padding: 14px;
+    font-size: 16px;
+    margin-top: 12px;
+    border-radius: 6px;
+  }
+
+  .signup-form label {
+    font-size: 16px;
+    margin-top: 12px;
+    margin-bottom: 6px;
+  }
+}
+
+/* Small mobile devices */
+@media (max-width: 480px) {
+  .signup-container {
+    margin: 30px auto;
+    padding: 18px 15px;
+    border-radius: 6px;
+  }
+
+  .signup-form input {
+    padding: 12px 10px;
+    font-size: 16px;
+  }
+
+  .signup-form button {
+    padding: 12px;
+    font-size: 16px;
+  }
+
+  .signup-form label {
+    font-size: 15px;
+  }
+}
+
+/* Very small devices */
+@media (max-width: 320px) {
+  .signup-container {
+    margin: 20px auto;
+    padding: 16px 12px;
+  }
+
+  .signup-form input {
+    padding: 10px;
+    font-size: 15px;
+  }
+
+  .signup-form button {
+    padding: 11px;
+    font-size: 15px;
+  }
+
+  .signup-form label {
+    font-size: 14px;
+  }
+}

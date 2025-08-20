@@ -563,3 +563,355 @@ body {
 .banner-content button:hover {
   background-color: #008f4c;
 }
+
+/* RESPONSIVE STYLES - Mobile First Approach */
+
+/* Tablet and below (768px) */
+@media (max-width: 768px) {
+  .App-header {
+    min-height: auto;
+    padding: 12px 15px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    gap: 8px;
+  }
+
+  /* Create a flexbox container for the top row */
+  .App-header::before {
+    content: '';
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    height: 40px;
+    position: relative;
+  }
+
+  /* Logo container - left side of flexbox */
+  .logo-container {
+    position: absolute;
+    top: 12px;
+    left: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    z-index: 2;
+    height: 40px;
+  }
+
+  /* Brand text adjustments */
+  .brand-text {
+    font-size: 18px;
+    gap: 6px;
+    display: flex;
+    align-items: center;
+  }
+
+  /* Right side container for login and cart */
+  .login-button,
+  .cart-icon {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 2;
+  }
+
+  /* Login button - right side, centered vertically */
+  .login-button {
+    right: 60px;
+    padding: 8px 16px;
+    font-size: 14px;
+    border-radius: 20px;
+    white-space: nowrap;
+    height: 32px;
+    display: flex;
+    align-items: center;
+  }
+
+  /* Cart icon - far right, centered vertically */
+  .cart-icon {
+    right: 15px;
+    height: 24px;
+  }
+
+  /* Location container - second row, minimal gap */
+  .location-container {
+    position: relative;
+    top: 0;
+    left: 0;
+    width: 100%;
+    margin-top: 40px;
+    margin-bottom: 8px;
+    padding: 12px 16px;
+  }
+
+  .location-info {
+    flex: 1;
+  }
+
+  .location-text {
+    max-width: none;
+    font-size: 14px;
+  }
+
+  /* Search container - third row, minimal gap */
+  .search-container {
+    position: relative;
+    top: 0;
+    right: 0;
+    width: 100%;
+    height: auto;
+    margin-bottom: 8px;
+  }
+
+  .search-input {
+    padding: 14px 20px;
+    font-size: 16px;
+    border-radius: 8px;
+  }
+
+  /* Category adjustments */
+  .category-section {
+    padding: 15px 10px;
+  }
+
+  .category-title {
+    font-size: 20px;
+    margin-bottom: 15px;
+  }
+
+  .category-grid {
+    gap: 15px;
+    justify-content: center;
+  }
+
+  .category-card {
+    width: calc(50% - 10px);
+    min-width: 140px;
+    max-width: 160px;
+  }
+
+  /* Banner adjustments */
+  .banner-section {
+    padding: 0 15px;
+    gap: 10px;
+  }
+
+  .banner-card.third,
+  .banner-card.half {
+    flex: 1 1 100%;
+    min-width: 100%;
+  }
+
+  .banner-card.full {
+    height: 200px;
+  }
+
+  .banner-content h2 {
+    font-size: 1.4rem;
+  }
+
+  .banner-content p {
+    font-size: 0.9rem;
+  }
+
+  /* Location modal adjustments */
+  .location-modal {
+    width: 95vw;
+    margin: 10px;
+  }
+
+  .modal-header {
+    padding: 20px 16px 12px;
+  }
+
+  .modal-content {
+    padding: 20px 16px;
+  }
+
+  .location-search-input {
+    font-size: 16px;
+    padding: 14px 16px;
+  }
+
+  .location-item {
+    padding: 14px 12px;
+  }
+
+  .location-name {
+    max-width: 250px;
+    font-size: 14px;
+  }
+}
+
+/* Small mobile devices (480px and below) */
+@media (max-width: 480px) {
+  .App-header {
+    padding: 10px 12px;
+    gap: 6px;
+  }
+
+  .App-header::before {
+    height: 36px;
+  }
+
+  .logo-container {
+    top: 10px;
+    left: 12px;
+    gap: 8px;
+    height: 36px;
+  }
+
+  .brand-text {
+    font-size: 16px;
+    gap: 4px;
+  }
+
+  .login-button {
+    right: 50px;
+    padding: 6px 12px;
+    font-size: 13px;
+    height: 28px;
+  }
+
+  .cart-icon {
+    height: 22px;
+    right: 12px;
+  }
+
+  .location-container {
+    margin-top: 36px;
+    padding: 10px 12px;
+    margin-bottom: 6px;
+  }
+
+  .delivery-time {
+    font-size: 11px;
+  }
+
+  .location-text {
+    font-size: 12px;
+  }
+
+  .search-input {
+    padding: 12px 16px;
+    font-size: 14px;
+  }
+
+  .category-card {
+    width: calc(50% - 8px);
+    min-width: 120px;
+    height: 110px;
+  }
+
+  .category-image {
+    height: 110px;
+  }
+
+  .category-name {
+    font-size: 14px;
+    margin-top: 8px;
+  }
+
+  .banner-content {
+    padding: 15px;
+  }
+
+  .banner-content h2 {
+    font-size: 1.2rem;
+    margin-bottom: 8px;
+  }
+
+  .banner-content p {
+    font-size: 0.85rem;
+    margin-bottom: 12px;
+  }
+
+  .banner-content button {
+    padding: 6px 12px;
+    font-size: 14px;
+  }
+}
+
+/* Large tablets and small desktops (769px to 1024px) */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .search-container {
+    width: 300px;
+    right: 200px;
+  }
+
+  .login-button {
+    right: 100px;
+  }
+
+  .cart-icon {
+    right: 25px;
+  }
+
+  .location-container {
+    left: 280px;
+  }
+
+  .category-grid {
+    gap: 18px;
+  }
+
+  .banner-section {
+    gap: 12px;
+  }
+}
+
+/* Extra small devices - improve touch targets */
+@media (max-width: 320px) {
+  .App-header {
+    padding: 8px 10px;
+    gap: 5px;
+  }
+
+  .App-header::before {
+    height: 32px;
+  }
+
+  .logo-container {
+    top: 8px;
+    left: 10px;
+    height: 32px;
+  }
+
+  .brand-text {
+    font-size: 14px;
+  }
+
+  .login-button {
+    right: 42px;
+    padding: 4px 8px;
+    font-size: 12px;
+    height: 24px;
+  }
+
+  .cart-icon {
+    height: 20px;
+    right: 10px;
+  }
+
+  .location-container {
+    margin-top: 32px;
+    padding: 8px 10px;
+    margin-bottom: 5px;
+  }
+
+  .search-input {
+    padding: 10px 14px;
+    font-size: 14px;
+  }
+
+  .category-card {
+    min-width: 110px;
+    height: 100px;
+  }
+
+  .category-image {
+    height: 100px;
+  }
+}
