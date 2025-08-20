@@ -133,6 +133,7 @@
   text-decoration: underline;
 }
 
+<<<<<<< HEAD
 /* RESPONSIVE STYLES FOR LOGIN PAGE */
 
 /* Tablet and mobile devices */
@@ -217,4 +218,83 @@
     padding: 11px;
     font-size: 15px;
   }
+=======
+/* OTP Input Styles */
+.otp-input {
+  padding: 15px !important;
+  font-size: 18px !important;
+  letter-spacing: 2px !important;
+  text-align: center !important;
+  font-family: 'Courier New', monospace !important;
+  border: 2px solid #007bff !important;
+  border-radius: 8px !important;
+  background-color: #f8f9fa !important;
+  max-width: 200px !important;
+  margin: 0 auto !important;
+}
+
+.otp-input:focus {
+  outline: none !important;
+  border-color: #0056b3 !important;
+  box-shadow: 0 0 5px rgba(0, 123, 255, 0.3) !important;
+}
+
+.otp-verification-box {
+  text-align: center;
+  padding: 20px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.otp-verification-box h3 {
+  color: #333;
+  margin-bottom: 10px;
+}
+
+.otp-verification-box p {
+  color: #666;
+  margin: 5px 0;
+}
+
+.step-indicator {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 20px;
+  gap: 10px;
+}
+
+.step {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  color: white;
+}
+
+.step.active {
+  background-color: #007bff;
+}
+
+.step.completed {
+  background-color: #28a745;
+}
+
+.step.inactive {
+  background-color: #ccc;
+}
+
+.step-line {
+  width: 40px;
+  height: 2px;
+  background-color: #ccc;
+}
+
+.step-line.active {
+  background-color: #007bff;
+>>>>>>> 676113ae4727b77a6859f21dec29b4b854883a26
 }

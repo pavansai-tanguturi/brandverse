@@ -1,18 +1,22 @@
 // src/pages/SignUp.js
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import '../styles/Signup.css';
 
 function SignUp() {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
+    password: '',
+    confirmPassword: ''
   });
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [signupComplete, setSignupComplete] = useState(false);
-  const [isExistingUser, setIsExistingUser] = useState(false);
+
+  const { signup } = useAuth();
 
   const handleChange = (e) => {
     setFormData(prev => ({
@@ -26,32 +30,28 @@ function SignUp() {
     setError('');
     setLoading(true);
 
+    // Validate passwords match
+    if (formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match');
+      setLoading(false);
+      return;
+    }
+
+    // Validate password length
+    if (formData.password.length < 6) {
+      setError('Password must be at least 6 characters long');
+      setLoading(false);
+      return;
+    }
+
     try {
-      const response = await fetch('http://localhost:3001/signup', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          email: formData.email, 
-          name: formData.name 
-        }),
-      });
+      const result = await signup(formData.email, formData.name, formData.password);
 
-      const result = await response.json();
-
-      if (!response.ok) {
-        setError(result.error || 'Signup failed');
-      } else {
+      if (result.success) {
         setSignupComplete(true);
-        
-        if (result.type === 'existing_user_login') {
-          setIsExistingUser(true);
-          setMessage(`Welcome back! We've sent a magic link to ${formData.email} for login.`);
-        } else {
-          setIsExistingUser(false);
-          setMessage('Account created successfully! Please check your email to confirm your account.');
-        }
+        setMessage(result.message);
+      } else {
+        setError(result.error || 'Signup failed');
       }
     } catch (err) {
       setError('Network error. Please try again.');
@@ -86,6 +86,28 @@ function SignUp() {
             required
           />
 
+          <label>Password</label>
+          <input
+            type="password"
+            name="password"
+            placeholder="Enter your password"
+            value={formData.password}
+            onChange={handleChange}
+            required
+            minLength="6"
+          />
+
+          <label>Confirm Password</label>
+          <input
+            type="password"
+            name="confirmPassword"
+            placeholder="Confirm your password"
+            value={formData.confirmPassword}
+            onChange={handleChange}
+            required
+            minLength="6"
+          />
+
           <button type="submit" disabled={loading}>
             {loading ? 'Creating Account...' : 'Sign Up'}
           </button>
@@ -110,21 +132,9 @@ function SignUp() {
       ) : (
         <div className="signup-form">
           <div style={{ textAlign: 'center', padding: '20px' }}>
-            {isExistingUser ? (
-              <>
-                <h3>👋 Welcome Back!</h3>
-                <p>You already have an account with us.</p>
-                <p>We've sent a magic link to <strong>{formData.email}</strong></p>
-                <p>Please check your inbox and click the link to login instantly.</p>
-              </>
-            ) : (
-              <>
-                <h3>🎉 Account Created!</h3>
-                <p>We've sent a confirmation email to <strong>{formData.email}</strong></p>
-                <p>Please check your inbox and click the confirmation link to activate your account.</p>
-                <p>After confirming, you can use the magic link login.</p>
-              </>
-            )}
+            <h3>🎉 Account Created!</h3>
+            <p>Your account has been successfully created.</p>
+            <p>You can now login with your email and password.</p>
           </div>
           
           <div style={{ textAlign: 'center', marginTop: '20px' }}>
@@ -139,7 +149,7 @@ function SignUp() {
                 borderRadius: '4px'
               }}
             >
-              {isExistingUser ? 'Check Email & Login' : 'Go to Login'}
+              Go to Login
             </Link>
           </div>
           
@@ -147,8 +157,7 @@ function SignUp() {
             <button 
               onClick={() => {
                 setSignupComplete(false);
-                setIsExistingUser(false);
-                setFormData({ name: '', email: '' });
+                setFormData({ name: '', email: '', password: '', confirmPassword: '' });
                 setMessage('');
                 setError('');
               }}
@@ -160,7 +169,7 @@ function SignUp() {
                 cursor: 'pointer'
               }}
             >
-              Try Different Email
+              Create Another Account
             </button>
           </div>
         </div>
