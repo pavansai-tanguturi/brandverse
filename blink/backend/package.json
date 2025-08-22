@@ -1,19 +1,27 @@
 {
-  "name": "blink-backend",
+  "name": "ecommerce-backend",
   "version": "1.0.0",
-  "main": "index.js",
   "type": "module",
+  "main": "server.js",
   "scripts": {
-    "start": "node index.js"
+    "dev": "nodemon server.js",
+    "start": "node server.js",
+    "test": "bash test/run-all-tests.sh",
+    "test:cross-user": "bash test/run-cross-user.sh"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.55.0",
-    "cookie-parser": "^1.4.7",
+    "@supabase/supabase-js": "^2.45.0",
+    "connect-pg-simple": "^9.0.0",
     "cors": "^2.8.5",
-    "crypto": "^1.0.1",
-    "dotenv": "^17.2.1",
-    "express": "^5.1.0",
-    "express-session": "^1.18.2",
-    "nodemailer": "^7.0.5"
+    "dayjs": "^1.11.11",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "express-session": "^1.17.3",
+    "multer": "^1.4.5-lts.1",
+    "nanoid": "^5.0.7",
+    "pg": "^8.11.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0"
   }
 }
