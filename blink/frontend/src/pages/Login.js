@@ -1,33 +1,32 @@
 // src/pages/Login.js
+
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { supabase } from '../supabaseClient';
 import '../styles/Login.css';
 
-function Login() {
+const Login = () => {
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [otpSent, setOtpSent] = useState(false);
   const [message, setMessage] = useState('');
-  
-  const { user, login, logout } = useAuth();
+  const [otpStep, setOtpStep] = useState(false);
 
   const handleSendOtp = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
-    
-    const result = await login(email);
-    
-    if (result.success) {
-      setOtpSent(true);
-      setMessage(result.message);
-    } else {
-      setError(result.error);
+    try {
+      const { data, error } = await supabase.auth.signInWithOtp({ email });
+      if (error) {
+        setError(error.message);
+      } else {
+        setOtpStep(true);
+        setMessage('OTP sent to your email. Enter the 6-digit code.');
+      }
+    } catch (err) {
+      setError('Network error');
     }
-    
     setLoading(false);
   };
 
@@ -35,141 +34,69 @@ function Login() {
     e.preventDefault();
     setError('');
     setLoading(true);
-    
-    const result = await login(email, otp);
-    
-    if (result.success) {
-      setMessage(result.message);
-      // User will be automatically logged in via context
-    } else {
-      setError(result.error);
+    try {
+          const { data, error } = await supabase.auth.verifyOtp({
+            email,
+            token: otp,
+            type: 'magiclink',
+          });
+          if (error) {
+            setError(error.message);
+          } else {
+            const adminEmail = process.env.REACT_APP_ADMIN_EMAIL;
+            // store access token for admin dashboard calls if available
+            const accessToken = data?.session?.access_token || data?.access_token || null;
+            if (accessToken) {
+              try { localStorage.setItem('adminToken', accessToken); } catch (e) { /* ignore */ }
+            }
+            const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:3001';
+            if (adminEmail && email.trim().toLowerCase() === adminEmail.trim().toLowerCase()) {
+              // create server session by email so backend recognizes admin via session
+              try {
+                await fetch(`${API_BASE}/api/auth/session-from-email`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  credentials: 'include',
+                  body: JSON.stringify({ email })
+                });
+              } catch (err) {
+                // ignore — we'll still redirect but admin routes may be restricted if session not created
+              }
+              window.location.href = '/admin/dashboard';
+            } else {
+              setMessage('Login successful!');
+              setTimeout(() => {
+                window.location.href = '/';
+              }, 1200);
+            }
+      }
+    } catch (err) {
+      setError('Network error');
     }
-    
     setLoading(false);
   };
 
-  const handleLogout = async () => {
-    await logout();
-    setOtpSent(false);
-    setEmail('');
-    setOtp('');
-    setMessage('');
-    setError('');
-  };
-
-  // If user is logged in, show logout option
-  if (user) {
-    return (
-      <div className="login-container">
-        <h2>Welcome back!</h2>
-        <div className="login-form">
-          <p>Hello, <strong>{user.name || user.email}</strong></p>
-          <p>You are successfully logged in.</p>
-          <button 
-            onClick={handleLogout}
-            style={{ backgroundColor: '#dc3545', marginTop: '20px' }}
-          >
-            Logout
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="login-container">
-      <h2>Login with Verification Code</h2>
-      
-      {!otpSent ? (
-        <form className="login-form" onSubmit={handleSendOtp}>
-          <label>Email</label>
-          <input
-            type="email"
-            placeholder="Enter your email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-          <button type="submit" disabled={loading}>
-            {loading ? 'Sending Code...' : 'Send Verification Code'}
-          </button>
-          
-          {/* Signup link */}
-          <div style={{ textAlign: 'center', marginTop: '20px' }}>
-            <p>Don't have an account? 
-              <Link 
-                to="/signup" 
-                style={{ 
-                  color: '#007bff', 
-                  textDecoration: 'none',
-                  marginLeft: '5px',
-                  fontWeight: 'bold'
-                }}
-              >
-                Sign up
-              </Link>
-            </p>
-          </div>
-        </form>
-      ) : (
-        <form className="login-form" onSubmit={handleVerifyOtp}>
-          <div style={{ textAlign: 'center', padding: '20px' }}>
-            <h3>Enter Verification Code</h3>
-            <p>We've sent a verification code to <strong>{email}</strong></p>
-            <p>Enter the code from your email to complete the login process.</p>
-          </div>
-          
-          <label>Verification Code</label>
-          <input
-            type="text"
-            placeholder="Enter the 6-digit code"
-            value={otp}
-            onChange={(e) => setOtp(e.target.value)}
-            required
-            maxLength="6"
-            style={{ textAlign: 'center', fontSize: '18px', letterSpacing: '2px' }}
-          />
-          
-          <button type="submit" disabled={loading || !otp}>
-            {loading ? 'Verifying...' : 'Verify Code'}
-          </button>
-          
-          <button 
-            type="button" 
-            onClick={() => {
-              setOtpSent(false);
-              setMessage('');
-              setError('');
-              setOtp('');
-            }}
-            style={{ marginTop: '10px', backgroundColor: '#666' }}
-          >
-            Use Different Email
-          </button>
-          
-          {/* Signup link also available here */}
-          <div style={{ textAlign: 'center', marginTop: '20px' }}>
-            <p>Don't have an account? 
-              <Link 
-                to="/signup" 
-                style={{ 
-                  color: '#007bff', 
-                  textDecoration: 'none',
-                  marginLeft: '5px',
-                  fontWeight: 'bold'
-                }}
-              >
-                Sign up
-              </Link>
-            </p>
-          </div>
-        </form>
-      )}
-      
-      {message && <div style={{ color: 'green', marginTop: '10px' }}>{message}</div>}
-      {error && <div style={{ color: 'red', marginTop: '10px' }}>{error}</div>}
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
+      <div className="bg-white p-8 rounded shadow-md w-full max-w-md">
+        <h2 className="text-2xl font-bold mb-4">Login (OTP Only)</h2>
+        {!otpStep ? (
+          <form onSubmit={handleSendOtp} className="space-y-4">
+            <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} required className="w-full p-2 border rounded" />
+            <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded">{loading ? 'Sending OTP...' : 'Send OTP'}</button>
+          </form>
+        ) : (
+          <form onSubmit={handleVerifyOtp} className="space-y-4">
+            <input type="text" placeholder="Enter 6-digit OTP" value={otp} onChange={e => setOtp(e.target.value)} required maxLength="6" className="w-full p-2 border rounded text-center tracking-widest" />
+            <button type="submit" className="w-full bg-green-600 text-white py-2 rounded">{loading ? 'Verifying...' : 'Verify OTP'}</button>
+          </form>
+        )}
+        {message && <p className="text-green-500 mt-2">{message}</p>}
+        {error && <p className="text-red-500 mt-2">{error}</p>}
+        <a href="/signup" className="mt-4 text-blue-600 underline block text-center">Don't have an account? Sign Up</a>
+      </div>
     </div>
   );
-}
+};
 
 export default Login;

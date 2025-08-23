@@ -109,16 +109,39 @@ export async function addImages(req, res) {
     return res.status(403).json({ error: 'Admin only' });
 
   const { id } = req.params;
+  const { replace } = req.query; // check if we should replace existing images
+  
+  // If replace=true, delete existing images first
+  if (replace === 'true') {
+    const { data: existingImages } = await supabaseAdmin
+      .from('product_images')
+      .select('path')
+      .eq('product_id', id);
+    
+    if (existingImages?.length) {
+      // Delete from storage
+      await supabaseAdmin.storage
+        .from(process.env.PRODUCT_IMAGES_BUCKET)
+        .remove(existingImages.map(img => img.path));
+      
+      // Delete from database
+      await supabaseAdmin
+        .from('product_images')
+        .delete()
+        .eq('product_id', id);
+    }
+  }
+
   const rows = [];
-  for (const file of (req.files || [])) {
+  for (const [idx, file] of (req.files || []).entries()) {
     const ext = (file.originalname.split('.').pop() || 'jpg').toLowerCase();
     const path = `${id}/${nanoid(8)}.${ext}`;
     const { error: uErr } = await supabaseAdmin.storage
       .from(process.env.PRODUCT_IMAGES_BUCKET)
       .upload(path, file.buffer, { contentType: file.mimetype, upsert: false });
     if (uErr) return res.status(400).json({ error: uErr.message });
-    rows.push({ product_id: id, path, is_primary: false });
+    rows.push({ product_id: id, path, is_primary: idx === 0 }); // first image is primary
   }
   if (rows.length) await supabaseAdmin.from('product_images').insert(rows);
-  res.json({ uploaded: rows.length });
+  res.json({ uploaded: rows.length, replaced: replace === 'true' });
 }

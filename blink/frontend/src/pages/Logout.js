@@ -1,70 +1,47 @@
-// src/pages/Logout.js
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import '../styles/Login.css'; // Reuse existing styles
 
-function Logout() {
+const Logout = () => {
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
-  const [loading, setLoading] = useState(false);
 
-  const handleLogout = async () => {
-    setLoading(true);
-    try {
-      await logout();
-      // Redirect to home after logout
-      navigate('/');
-    } catch (error) {
-      console.error('Logout error:', error);
-    } finally {
+  useEffect(() => {
+    const doLogout = async () => {
+      setError('');
+      setLoading(true);
+      try {
+        const API_BASE = process.env.REACT_APP_API_BASE || '';
+        const logoutUrl = `${API_BASE}/api/auth/logout`;
+        // Send logout request in background so UI isn't blocked.
+        if (navigator && navigator.sendBeacon) {
+          try {
+            navigator.sendBeacon(logoutUrl);
+          } catch (e) {
+            // fallback to fetch below
+            fetch(logoutUrl, { method: 'POST', credentials: 'include' }).catch(() => {});
+          }
+        } else {
+          // fire-and-forget fetch
+          fetch(logoutUrl, { method: 'POST', credentials: 'include' }).catch(() => {});
+        }
+      } catch (err) {
+        // ignore network errors — don't block logout UX
+      }
+      try { localStorage.removeItem('adminToken'); } catch (e) { /* ignore */ }
       setLoading(false);
-    }
-  };
+      // redirect immediately
+      navigate('/login', { replace: true });
+    };
+    doLogout();
+  }, [navigate]);
 
-  const handleCancel = () => {
-    navigate('/'); // Go back to home
-  };
-
+  if (loading) return <div className="p-6 text-center">Logging out...</div>;
   return (
-    <div className="login-container">
-      <div className="login-box">
-        <h2>Logout</h2>
-        
-        {user && (
-          <div style={{ marginBottom: '20px' }}>
-            <p>Hello, <strong>{user.name || user.email}</strong></p>
-            <p>Are you sure you want to logout?</p>
-          </div>
-        )}
-
-        <div style={{ display: 'flex', gap: '10px', flexDirection: 'column' }}>
-          <button 
-            onClick={handleLogout}
-            className="login-btn"
-            disabled={loading}
-            style={{ backgroundColor: '#dc3545' }}
-          >
-            {loading ? 'Logging out...' : 'Yes, Logout'}
-          </button>
-
-          <button 
-            onClick={handleCancel}
-            className="back-btn"
-            disabled={loading}
-          >
-            Cancel
-          </button>
-        </div>
-
-        <div style={{ marginTop: '20px', padding: '15px', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
-          <p style={{ margin: '0', fontSize: '14px', color: '#666' }}>
-            Logging out will end your current session and you'll need to login again to access your account.
-          </p>
-        </div>
-      </div>
+    <div className="p-6">
+      {error ? <p className="text-red-600">{error}</p> : <p>Logged out</p>}
     </div>
   );
-}
+};
 
 export default Logout;
