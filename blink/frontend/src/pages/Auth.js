@@ -1,12 +1,10 @@
 // src/pages/Auth.js
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
 import '../styles/Login.css'; // Reuse existing styles
 
 function Auth() {
   const navigate = useNavigate();
-  const { user, login } = useAuth();
   const [isSignup, setIsSignup] = useState(false);
   const [step, setStep] = useState(1); // 1: email form, 2: OTP verification
   const [formData, setFormData] = useState({
@@ -35,8 +33,8 @@ function Auth() {
     setMessage('');
 
     try {
-      const endpoint = isSignup ? '/signup' : '/login';
-      const payload = isSignup ? { email: formData.email, name: formData.name } : { email: formData.email };
+      const endpoint = isSignup ? '/api/auth/signup' : '/api/auth/login';
+      const payload = isSignup ? { email: formData.email, name: formData.name } : { email: formData.email, password: formData.otp };
 
       const response = await fetch(`http://localhost:3001${endpoint}`, {
         method: 'POST',
@@ -54,7 +52,8 @@ function Auth() {
           setError(data.error + ' Click Login below.');
         } else if (data.userExists === false && !isSignup) {
           // User doesn't exist but trying to login  
-          setError(data.error + ' Click Sign Up below.');
+          setError(data.error);
+          setTimeout(() => navigate('/signup'), 1500); // Redirect to signup page after showing error
         } else {
           setError(data.error);
         }
@@ -79,14 +78,26 @@ function Auth() {
     setError('');
 
     try {
-      const result = await login(formData.email, formData.otp);
-
-      if (result.success) {
-        setMessage(result.message);
-        // User will be automatically logged in via context
-        navigate('/'); // Redirect to home after successful login
+      // For password-based login (admin/customer)
+      const response = await fetch('http://localhost:3001/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: formData.email, password: formData.otp })
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setMessage(data.message || 'Login successful');
+        // Save token and user info
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('role', data.role);
+        // Redirect based on role
+        if (data.role === 'admin') {
+          navigate('/admin/dashboard');
+        } else {
+          navigate('/');
+        }
       } else {
-        setError(result.error);
+        setError(data.error || 'Login failed');
       }
     } catch (err) {
       console.error('OTP verification error:', err);
@@ -164,34 +175,34 @@ function Auth() {
   };
 
   // If user is logged in, show welcome message
-  if (user) {
-    return (
-      <div className="login-container">
-        <div className="login-box">
-          <h2>Welcome back!</h2>
-          <p>Hello, <strong>{user.name || user.email}</strong></p>
-          <p>You are successfully logged in to your account.</p>
+  // if (user) {
+  //   return (
+  //     <div className="login-container">
+  //       <div className="login-box">
+  //         <h2>Welcome back!</h2>
+  //         <p>Hello, <strong>{user.name || user.email}</strong></p>
+  //         <p>You are successfully logged in to your account.</p>
           
-          <div style={{ display: 'flex', gap: '10px', flexDirection: 'column', marginTop: '20px' }}>
-            <button 
-              onClick={() => navigate('/logout')}
-              className="login-btn"
-              style={{ backgroundColor: '#dc3545' }}
-            >
-              Go to Logout Page
-            </button>
+  //         <div style={{ display: 'flex', gap: '10px', flexDirection: 'column', marginTop: '20px' }}>
+  //           <button 
+  //             onClick={() => navigate('/logout')}
+  //             className="login-btn"
+  //             style={{ backgroundColor: '#dc3545' }}
+  //           >
+  //             Go to Logout Page
+  //           </button>
             
-            <button 
-              className="back-btn"
-              onClick={() => navigate('/')}
-            >
-              Back to Home
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  //           <button 
+  //             className="back-btn"
+  //             onClick={() => navigate('/')}
+  //           >
+  //             Back to Home
+  //           </button>
+  //         </div>
+  //       </div>
+  //     </div>
+  //   );
+  // }
 
   return (
     <div className="login-container">
