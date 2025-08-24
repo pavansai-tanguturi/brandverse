@@ -6,7 +6,8 @@ import {
   createProduct,
   updateProduct,
   deleteProduct,
-  addImages
+  addImages,
+  deleteImage
 } from '../controllers/productController.js';
 
 const router = express.Router();
@@ -18,5 +19,6 @@ router.post('/', upload.array('images', 6), createProduct);
 router.patch('/:id', updateProduct);
 router.delete('/:id', deleteProduct);
 router.post('/:id/images', upload.array('images', 6), addImages);
+router.delete('/:productId/images/:imageId', deleteImage);
 
 export default router;

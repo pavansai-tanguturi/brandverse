@@ -17,6 +17,7 @@ const AdminNav = () => {
                 <Link to="/admin/dashboard" className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-700">Dashboard</Link>
                 <Link to="/admin/products" className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-700">Products</Link>
                 <Link to="/admin/orders" className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-700">Orders</Link>
+                <Link to="/admin/analytics" className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-700">Analytics</Link>
                 <Link to="/admin/users" className="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-700">Users</Link>
               </nav>
             </div>

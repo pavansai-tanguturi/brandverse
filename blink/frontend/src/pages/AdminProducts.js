@@ -6,21 +6,42 @@ const AdminProducts = () => {
   const [price, setPrice] = useState('');
   const [stock, setStock] = useState('');
   const [description, setDescription] = useState('');
-  const [imageFile, setImageFile] = useState(null);
+  const [imageFiles, setImageFiles] = useState([]);
+  const [existingImages, setExistingImages] = useState([]);
+  const [deletingImageId, setDeletingImageId] = useState(null);
+  const [categoryId, setCategoryId] = useState('');
+  const [discount, setDiscount] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [deletingProduct, setDeletingProduct] = useState(null);
   const [existingImageUrl, setExistingImageUrl] = useState(null);
 
-  // Fetch products on component mount
+  // Fetch products and categories on component mount
   useEffect(() => {
     fetchProducts();
+    fetchCategories();
   }, []);
+
+  const fetchCategories = async () => {
+    try {
+      const API_BASE = process.env.REACT_APP_API_BASE;
+      const res = await fetch(`${API_BASE}/api/categories`, {
+        credentials: 'include'
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setCategories(data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch categories:', err);
+    }
+  };
 
   const fetchProducts = async () => {
     try {
@@ -43,7 +64,10 @@ const AdminProducts = () => {
     setPrice('');
     setStock('');
     setDescription('');
-    setImageFile(null);
+    setImageFiles([]);
+    setExistingImages([]);
+    setCategoryId('');
+    setDiscount('');
     setEditingProduct(null);
     setShowAddForm(false);
     setMessage('');
@@ -63,6 +87,10 @@ const AdminProducts = () => {
         setPrice(((data.price_cents || 0) / 100).toString());
         setStock((data.stock_quantity || 0).toString());
         setDescription(data.description || '');
+        setCategoryId(data.category_id || '');
+        setDiscount((data.discount_percent || 0).toString());
+        setExistingImages(data.product_images || []);
+        console.log('Loaded product images:', data.product_images); // Debug log
         setExistingImageUrl((data.product_images && data.product_images[0] && data.product_images[0].url) || data.image_url || null);
         setShowAddForm(true);
       } else {
@@ -73,6 +101,9 @@ const AdminProducts = () => {
         setPrice(((product.price_cents || 0) / 100).toString());
         setStock((product.stock_quantity || 0).toString());
         setDescription(product.description || '');
+        setCategoryId(product.category_id || '');
+        setDiscount((product.discount_percent || 0).toString());
+        setExistingImages([]);
         setExistingImageUrl(product.image_url || null);
         setShowAddForm(true);
       }
@@ -83,6 +114,9 @@ const AdminProducts = () => {
       setPrice(((product.price_cents || 0) / 100).toString());
       setStock((product.stock_quantity || 0).toString());
       setDescription(product.description || '');
+      setCategoryId(product.category_id || '');
+      setDiscount((product.discount_percent || 0).toString());
+      setExistingImages([]);
       setExistingImageUrl(product.image_url || null);
       setShowAddForm(true);
     }
@@ -125,6 +159,44 @@ const AdminProducts = () => {
     }
   };
 
+  const handleDeleteImage = async (imageId) => {
+    console.log('Attempting to delete image with ID:', imageId); // Debug log
+    if (!window.confirm('Are you sure you want to delete this image?')) return;
+    if (!editingProduct) return;
+    
+    setDeletingImageId(imageId);
+    try {
+      const API_BASE = process.env.REACT_APP_API_BASE;
+      const token = localStorage.getItem('adminToken') || '';
+
+      console.log('DELETE request to:', `${API_BASE}/api/products/${editingProduct.id}/images/${imageId}`); // Debug log
+      const res = await fetch(`${API_BASE}/api/products/${editingProduct.id}/images/${imageId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` },
+        credentials: 'include'
+      });
+
+      console.log('Delete response status:', res.status); // Debug log
+      if (res.ok) {
+        // Remove the deleted image from existingImages
+        setExistingImages(prev => prev.filter(img => img.id !== imageId));
+        setMessage('Image deleted successfully');
+        
+        // If we deleted the last image, clear the existingImageUrl fallback
+        if (existingImages.length <= 1) {
+          setExistingImageUrl(null);
+        }
+      } else {
+        const errorData = await res.json().catch(() => ({ error: 'Failed to delete image' }));
+        setError(errorData.error || 'Failed to delete image');
+      }
+    } catch (err) {
+      setError(err.message || 'Failed to delete image');
+    } finally {
+      setDeletingImageId(null);
+    }
+  };
+
   const handleCreate = async (e) => {
     e.preventDefault();
     setError('');
@@ -146,7 +218,9 @@ const AdminProducts = () => {
         slug, 
         price_cents: Math.round(parseFloat(price) * 100), // Convert price to cents
         stock_quantity: parseInt(stock, 10), 
-        description 
+        description,
+        category_id: categoryId || null,
+        discount_percent: parseFloat(discount) || 0
       };
 
       // helper to parse responses safely
@@ -172,13 +246,14 @@ const AdminProducts = () => {
       }
       const data = parsed.data || {};
       
-      if (imageFile) {
+      if (imageFiles.length > 0) {
         const productId = isEditing ? editingProduct.id : data.id;
         const form = new FormData();
-        form.append('images', imageFile);
-        
-        // When editing, replace existing images; when creating, just add
+        for (const file of imageFiles) {
+          form.append('images', file);
+        }
         const replaceParam = isEditing ? '?replace=true' : '';
+        console.log('Uploading images:', { productId, replaceParam, imageCount: imageFiles.length });
         const imgRes = await fetch(`${API_BASE}/api/products/${productId}/images${replaceParam}`, {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${token}` },
@@ -186,7 +261,9 @@ const AdminProducts = () => {
           body: form
         });
         const imgParsed = await parseJsonSafe(imgRes);
+        console.log('Image upload response:', imgParsed);
         if (!imgParsed.ok) {
+          setError(imgParsed.data?.error || `Image upload failed: ${imgRes.status} ${imgRes.statusText} - ${imgParsed.text.slice(0,200)}`);
           throw new Error(imgParsed.data?.error || `Image upload failed: ${imgRes.status} ${imgRes.statusText} - ${imgParsed.text.slice(0,200)}`);
         }
       }
@@ -244,6 +321,18 @@ const AdminProducts = () => {
                   placeholder="Product Title"
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
+                <select
+                  value={categoryId}
+                  onChange={e => setCategoryId(e.target.value)}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="">Select Category</option>
+                  {categories.map(category => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
                 <input
                   value={price}
                   onChange={e => setPrice(e.target.value)}
@@ -251,6 +340,16 @@ const AdminProducts = () => {
                   placeholder="Price (₹)"
                   type="number"
                   step="0.01"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <input
+                  value={discount}
+                  onChange={e => setDiscount(e.target.value)}
+                  placeholder="Discount (%)"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max="100"
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
                 <input
@@ -264,16 +363,51 @@ const AdminProducts = () => {
                 <input
                   type="file"
                   accept="image/*"
-                  onChange={e => setImageFile(e.target.files[0])}
+                  multiple
+                  onChange={e => setImageFiles(Array.from(e.target.files))}
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
-                {/* existing image preview when editing */}
-                {existingImageUrl && (
+                {/* existing images preview when editing */}
+                {existingImages.length > 0 && (
+                  <div className="mt-2">
+                    <p className="text-sm font-medium text-gray-600 mb-2">Current images:</p>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                      {existingImages.map((img, index) => (
+                        <div key={img.id || index} className="relative group">
+                          <img 
+                            src={img.url} 
+                            alt={`Product view ${index + 1}`} 
+                            className="w-20 h-20 object-cover rounded-lg border" 
+                          />
+                          {img.is_primary && (
+                            <span className="absolute top-1 left-1 bg-blue-500 text-white text-xs px-1 rounded">
+                              Primary
+                            </span>
+                          )}
+                          {/* Delete button - only show on hover */}
+                          <button
+                            onClick={() => handleDeleteImage(img.id)}
+                            disabled={deletingImageId === img.id}
+                            className="absolute top-1 right-1 bg-red-500 hover:bg-red-600 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-50"
+                            title="Delete image"
+                          >
+                            {deletingImageId === img.id ? '...' : '×'}
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Upload new images above to add more. Hover over images to delete them individually.
+                    </p>
+                  </div>
+                )}
+                {/* fallback for single image */}
+                {existingImages.length === 0 && existingImageUrl && (
                   <div className="flex items-center space-x-3 mt-2">
                     <img src={existingImageUrl} alt="Current product" className="w-20 h-20 object-cover rounded-lg border" />
                     <div className="text-sm text-gray-600">
                       <p className="font-medium">Current image</p>
-                      <p>Upload a new image above to replace this one</p>
+                      <p>Upload new images above to replace or add more</p>
                     </div>
                   </div>
                 )}
@@ -329,7 +463,10 @@ const AdminProducts = () => {
                   <tr>
                     <th className="px-4 py-3 text-left font-medium text-gray-700 border-b">Image</th>
                     <th className="px-4 py-3 text-left font-medium text-gray-700 border-b">Title</th>
+                    <th className="px-4 py-3 text-left font-medium text-gray-700 border-b">Category</th>
                     <th className="px-4 py-3 text-left font-medium text-gray-700 border-b">Price</th>
+                    <th className="px-4 py-3 text-left font-medium text-gray-700 border-b">Discount</th>
+                    <th className="px-4 py-3 text-left font-medium text-gray-700 border-b">Final Price</th>
                     <th className="px-4 py-3 text-left font-medium text-gray-700 border-b">Stock</th>
                     <th className="px-4 py-3 text-left font-medium text-gray-700 border-b">Status</th>
                     <th className="px-4 py-3 text-left font-medium text-gray-700 border-b">Created</th>
@@ -349,7 +486,30 @@ const AdminProducts = () => {
                         )}
                       </td>
                       <td className="px-4 py-3 font-medium text-gray-900">{product.title}</td>
+                      <td className="px-4 py-3 text-gray-700">
+                        {product.categories?.name || 'No Category'}
+                      </td>
                       <td className="px-4 py-3 text-gray-700">₹{(product.price_cents / 100).toFixed(2)}</td>
+                      <td className="px-4 py-3 text-gray-700">
+                        {product.discount_percent > 0 ? `${product.discount_percent}%` : 'No Discount'}
+                      </td>
+                      <td className="px-4 py-3 text-gray-700">
+                        {(() => {
+                          const originalPrice = product.price_cents / 100;
+                          const discountPercent = product.discount_percent || 0;
+                          const finalPrice = originalPrice * (1 - discountPercent / 100);
+                          return (
+                            <span className={discountPercent > 0 ? 'font-semibold text-green-600' : ''}>
+                              ₹{finalPrice.toFixed(2)}
+                              {discountPercent > 0 && (
+                                <span className="text-xs text-gray-500 ml-1">
+                                  (₹{(originalPrice - finalPrice).toFixed(2)} off)
+                                </span>
+                              )}
+                            </span>
+                          );
+                        })()}
+                      </td>
                       <td className="px-4 py-3 text-gray-700">{product.stock_quantity}</td>
                       <td className="px-4 py-3">
                         <span className={`px-3 py-1 text-xs font-medium rounded-full ${
