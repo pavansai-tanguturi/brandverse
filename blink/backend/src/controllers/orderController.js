@@ -96,7 +96,18 @@ export async function listMyOrders(req, res) {
 export async function listAllOrders(_req, res) {
   const { data, error } = await supabaseAdmin
     .from('orders')
-    .select('*, order_items(*)')
+    .select(`
+      *,
+      order_items(*),
+      customers(
+        id,
+        full_name,
+        email,
+        phone,
+        shipping_address,
+        billing_address
+      )
+    `)
     .order('created_at', { ascending: false });
   if (error) return res.status(400).json({ error: error.message });
   res.json(data);

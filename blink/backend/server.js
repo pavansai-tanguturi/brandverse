@@ -10,6 +10,9 @@ import orderRoutes from './src/routes/orders.js';
 import adminRoutes from './src/routes/admin.js';
 import customerRoutes from './src/routes/customers.js';
 import adminCartRoutes from './src/routes/adminCart.js';
+import categoryRoutes from './src/routes/categories.js';
+import analyticsRoutes from './src/routes/analytics.js';
+import adminCustomerRoutes from './src/routes/adminCustomers.js';
 
 dotenv.config();
 
@@ -37,11 +40,14 @@ app.get('/health', (_req, res) => res.json({ ok: true }));
 
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
+app.use('/api/categories', categoryRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/customers', customerRoutes);
 app.use('/api/admin', adminCartRoutes);
+app.use('/api/analytics', analyticsRoutes);
+app.use('/api/admin/customers', adminCustomerRoutes);
 
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => console.log(`API listening on http://localhost:${PORT}`));

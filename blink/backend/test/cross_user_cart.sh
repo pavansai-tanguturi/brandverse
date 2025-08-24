@@ -4,7 +4,7 @@
 
 set -euo pipefail
 
-API_BASE=${API_BASE:-http://localhost:8080/api}
+API_BASE=${API_BASE:-http://localhost:3001/api}
 PRODUCT_ID=${PRODUCT_ID:?Please set PRODUCT_ID environment variable to an existing product id}
 
 TMPDIR=$(mktemp -d)
