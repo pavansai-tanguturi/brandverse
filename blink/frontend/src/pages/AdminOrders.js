@@ -104,13 +104,13 @@ const AdminOrders = () => {
 
   const getStatusColor = (status) => {
     const colors = {
-      pending: 'bg-yellow-100 text-yellow-800',
+      pending: 'bg-order-pending-100 text-order-pending-800',
       paid: 'bg-blue-100 text-blue-800',
       accepted: 'bg-green-100 text-green-800',
-      packing: 'bg-orange-100 text-orange-800',
+      packing: 'bg-order-packing-100 text-order-packing-800',
       ready: 'bg-purple-100 text-purple-800',
-      shipped: 'bg-indigo-100 text-indigo-800',
-      delivered: 'bg-emerald-100 text-emerald-800',
+      shipped: 'bg-order-shipped-100 text-order-shipped-800',
+      delivered: 'bg-order-delivered-100 text-order-delivered-800',
       cancelled: 'bg-red-100 text-red-800',
       refunded: 'bg-gray-100 text-gray-800'
     };
@@ -125,20 +125,20 @@ const AdminOrders = () => {
         disabled: 'bg-green-200 text-green-700 border-green-200'
       },
       packing: {
-        normal: 'bg-orange-500 hover:bg-orange-600 text-white border-orange-500',
-        disabled: 'bg-orange-200 text-orange-700 border-orange-200'
+        normal: 'bg-order-packing-500 hover:bg-order-packing-600 text-white border-order-packing-500',
+        disabled: 'bg-order-packing-200 text-order-packing-700 border-order-packing-200'
       },
       ready: {
         normal: 'bg-purple-500 hover:bg-purple-600 text-white border-purple-500',
         disabled: 'bg-purple-200 text-purple-700 border-purple-200'
       },
       shipped: {
-        normal: 'bg-indigo-500 hover:bg-indigo-600 text-white border-indigo-500',
-        disabled: 'bg-indigo-200 text-indigo-700 border-indigo-200'
+        normal: 'bg-order-shipped-500 hover:bg-order-shipped-600 text-white border-order-shipped-500',
+        disabled: 'bg-order-shipped-200 text-order-shipped-700 border-order-shipped-200'
       },
       delivered: {
-        normal: 'bg-emerald-500 hover:bg-emerald-600 text-white border-emerald-500',
-        disabled: 'bg-emerald-200 text-emerald-700 border-emerald-200'
+        normal: 'bg-order-delivered-500 hover:bg-order-delivered-600 text-white border-order-delivered-500',
+        disabled: 'bg-order-delivered-200 text-order-delivered-700 border-order-delivered-200'
       },
       cancelled: {
         normal: 'bg-red-500 hover:bg-red-600 text-white border-red-500',
@@ -201,7 +201,7 @@ const AdminOrders = () => {
     <>
       <AdminNav />
       <div className="min-h-screen bg-gray-100" style={{ paddingTop: '64px' }}>
-        <div className="max-w-8xl mx-auto p-6">
+        <div className="max-w-7xl mx-auto p-6">
           <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold text-gray-800">Manage Orders</h2>
