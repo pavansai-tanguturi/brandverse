@@ -3,7 +3,6 @@ import AdminNav from '../components/AdminNav';
 
 const AdminUsers = () => {
   const [customers, setCustomers] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCustomer, setSelectedCustomer] = useState(null);
@@ -14,7 +13,6 @@ const AdminUsers = () => {
   }, []);
 
   const fetchCustomers = async () => {
-    setLoading(true);
     try {
       const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:3001';
       
@@ -30,8 +28,6 @@ const AdminUsers = () => {
       }
     } catch (err) {
       setError(err.message || 'Failed to fetch customers');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -71,24 +67,11 @@ const AdminUsers = () => {
     });
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <AdminNav />
-        <div className="flex items-center justify-center p-8">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Loading customers...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-gray-50">
+    <>
       <AdminNav />
-      <div className="max-w-7xl mx-auto p-6">
+      <div className="min-h-screen bg-gray-50" style={{ paddingTop: '64px' }}>
+        <div className="max-w-8xl mx-auto p-6">
         {/* Header */}
         <div className="bg-white rounded-lg shadow-sm border p-6 mb-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -451,7 +434,8 @@ const AdminUsers = () => {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </>
   );
 };
 

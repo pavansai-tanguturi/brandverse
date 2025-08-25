@@ -204,21 +204,6 @@ const MetricCard = React.memo(({ title, value, subtitle, color, icon, gradient }
   </div>
 ));
 
-const LoadingSpinner = React.memo(() => (
-  <div className="min-h-screen bg-gray-100">
-    <AdminNav />
-    <div className="max-w-6xl mx-auto mt-10 p-8">
-      <div className="flex items-center justify-center min-h-96">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Loading Dashboard...</h3>
-          <p className="text-gray-600">Fetching your store analytics</p>
-        </div>
-      </div>
-    </div>
-  </div>
-));
-
 const ErrorAlert = React.memo(({ error }) => (
   <div className="mb-6 bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded">
     <div className="flex items-center">
@@ -263,7 +248,7 @@ const EmptyState = React.memo(({ icon, title, subtitle }) => (
 // Main component
 const AdminDashboard = () => {
   const [summary, setSummary] = useState(INITIAL_SUMMARY);
-  const { makeRequest, loading, error, retryCount } = useApiRequest();
+  const { makeRequest, error, retryCount } = useApiRequest();
 
   const fetchSummary = useCallback(async () => {
     const data = await makeRequest();
@@ -317,14 +302,12 @@ const AdminDashboard = () => {
     { label: "Low Stock Alert", value: summary.lowStockProducts, color: "red" }
   ], [summary]);
 
-  if (loading && retryCount === 0) {
-    return <LoadingSpinner />;
-  }
-
   return (
-    <div className="min-h-screen bg-gray-100">
+    <>
       <AdminNav />
-      <div className="max-w-6xl mx-auto mt-10 p-8 bg-white rounded shadow-md">
+      <div className="min-h-screen bg-gray-100" style={{ paddingTop: '64px' }}>
+      <AdminNav />
+      <div className="max-w-8xl mt-10 p-8 bg-white rounded shadow-md">
         <div className="flex items-center justify-between mb-6">
           <div>
             <h2 className="text-3xl font-bold text-blue-700">Admin Dashboard</h2>
@@ -445,6 +428,7 @@ const AdminDashboard = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 
