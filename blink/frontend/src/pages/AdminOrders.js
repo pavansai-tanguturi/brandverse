@@ -7,11 +7,23 @@ const AdminOrders = () => {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [updatingOrder, setUpdatingOrder] = useState(null);
+  const [updatingAction, setUpdatingAction] = useState(null);
   const [expandedOrder, setExpandedOrder] = useState(null);
+  const [sortByStatus, setSortByStatus] = useState(true);
 
   useEffect(() => {
     fetchOrders();
   }, []);
+
+  // Auto-dismiss success messages after 5 seconds
+  useEffect(() => {
+    if (message) {
+      const timer = setTimeout(() => {
+        setMessage('');
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [message]);
 
   const fetchOrders = async () => {
     try {
@@ -32,9 +44,19 @@ const AdminOrders = () => {
   };
 
   const updateOrderStatus = async (orderId, newStatus) => {
-    if (!window.confirm(`Are you sure you want to ${newStatus} this order?`)) return;
+    const statusActions = {
+      'accepted': 'accept',
+      'packing': 'mark as packing done',
+      'ready': 'mark as ready',
+      'shipped': 'ship',
+      'delivered': 'mark as delivered',
+      'cancelled': 'cancel'
+    };
+    
+    const actionText = statusActions[newStatus] || newStatus;
     
     setUpdatingOrder(orderId);
+    setUpdatingAction(newStatus);
     setMessage('');
     setError('');
     
@@ -51,7 +73,7 @@ const AdminOrders = () => {
       });
       
       if (res.ok) {
-        setMessage(`Order ${newStatus} successfully`);
+        setMessage(`Order ${actionText} successfully`);
         await fetchOrders(); // Refresh orders list
       } else {
         const errorData = await res.json();
@@ -61,48 +83,204 @@ const AdminOrders = () => {
       setError(err.message || 'Failed to update order status');
     } finally {
       setUpdatingOrder(null);
+      setUpdatingAction(null);
     }
+  };
+
+  const getStatusDisplayName = (status) => {
+    const statusNames = {
+      pending: 'Pending',
+      paid: 'Paid',
+      accepted: 'Preparing Package',
+      packing: 'Package Ready',
+      ready: 'Ready to Ship',
+      shipped: 'Out for Delivery',
+      delivered: 'Delivered',
+      cancelled: 'Cancelled',
+      refunded: 'Refunded'
+    };
+    return statusNames[status] || status.charAt(0).toUpperCase() + status.slice(1);
   };
 
   const getStatusColor = (status) => {
     const colors = {
       pending: 'bg-yellow-100 text-yellow-800',
       paid: 'bg-blue-100 text-blue-800',
-      shipped: 'bg-purple-100 text-purple-800',
-      delivered: 'bg-green-100 text-green-800',
+      accepted: 'bg-green-100 text-green-800',
+      packing: 'bg-orange-100 text-orange-800',
+      ready: 'bg-purple-100 text-purple-800',
+      shipped: 'bg-indigo-100 text-indigo-800',
+      delivered: 'bg-emerald-100 text-emerald-800',
       cancelled: 'bg-red-100 text-red-800',
       refunded: 'bg-gray-100 text-gray-800'
     };
     return colors[status] || 'bg-gray-100 text-gray-800';
   };
 
+  // Get button styling based on the target status
+  const getButtonStyle = (targetStatus, isDisabled) => {
+    const buttonStyles = {
+      accepted: {
+        normal: 'bg-green-500 hover:bg-green-600 text-white border-green-500',
+        disabled: 'bg-green-200 text-green-700 border-green-200'
+      },
+      packing: {
+        normal: 'bg-orange-500 hover:bg-orange-600 text-white border-orange-500',
+        disabled: 'bg-orange-200 text-orange-700 border-orange-200'
+      },
+      ready: {
+        normal: 'bg-purple-500 hover:bg-purple-600 text-white border-purple-500',
+        disabled: 'bg-purple-200 text-purple-700 border-purple-200'
+      },
+      shipped: {
+        normal: 'bg-indigo-500 hover:bg-indigo-600 text-white border-indigo-500',
+        disabled: 'bg-indigo-200 text-indigo-700 border-indigo-200'
+      },
+      delivered: {
+        normal: 'bg-emerald-500 hover:bg-emerald-600 text-white border-emerald-500',
+        disabled: 'bg-emerald-200 text-emerald-700 border-emerald-200'
+      },
+      cancelled: {
+        normal: 'bg-red-500 hover:bg-red-600 text-white border-red-500',
+        disabled: 'bg-red-200 text-red-700 border-red-200'
+      }
+    };
+
+    const style = buttonStyles[targetStatus] || buttonStyles.accepted;
+    const baseClasses = 'px-4 py-2 rounded-md text-sm font-medium border-2 transition-all';
+    
+    if (isDisabled) {
+      return `${baseClasses} ${style.disabled} cursor-not-allowed opacity-60`;
+    } else {
+      return `${baseClasses} ${style.normal} shadow-md hover:shadow-lg`;
+    }
+  };
+
   const canAccept = (status) => status === 'pending' || status === 'paid';
   const canReject = (status) => status === 'pending' || status === 'paid';
+  const canStartPacking = (status) => status === 'accepted';
+  const canMarkReady = (status) => status === 'packing';
+  const canShip = (status) => status === 'ready';
+  const canDeliver = (status) => status === 'shipped';
+
+  const isButtonLoading = (orderId, action) => {
+    return updatingOrder === orderId && updatingAction === action;
+  };
+
+  const isButtonDisabled = (orderId) => {
+    return updatingOrder === orderId;
+  };
+
+  const sortOrdersByStatus = (orders) => {
+    const statusPriority = {
+      'pending': 1,
+      'paid': 2,
+      'accepted': 3,
+      'packing': 4,
+      'ready': 5,
+      'shipped': 6,
+      'delivered': 7,
+      'cancelled': 8,
+      'refunded': 9
+    };
+
+    return [...orders].sort((a, b) => {
+      const priorityA = statusPriority[a.status] || 999;
+      const priorityB = statusPriority[b.status] || 999;
+      
+      if (priorityA !== priorityB) {
+        return priorityA - priorityB;
+      }
+      
+      // If same status, sort by creation date (newest first)
+      return new Date(b.created_at) - new Date(a.created_at);
+    });
+  };
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <>
       <AdminNav />
-      
-      <div className="max-w-7xl mx-auto mt-8 p-6 bg-white rounded shadow">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold">Manage Orders</h2>
-          <button
-            onClick={fetchOrders}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
-          >
-            Refresh
-          </button>
-        </div>
+      <div className="min-h-screen bg-gray-100" style={{ paddingTop: '64px' }}>
+        <div className="max-w-8xl mx-auto p-6">
+          <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-800">Manage Orders</h2>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setSortByStatus(!sortByStatus)}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                    sortByStatus 
+                      ? 'bg-purple-600 hover:bg-purple-700 text-white' 
+                      : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
+                  }`}
+                >
+                  {sortByStatus ? 'Sort by Status ✓' : 'Sort by Date'}
+                </button>
+                <button
+                  onClick={fetchOrders}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center transition-colors"
+                >
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  Refresh
+                </button>
+              </div>
+            </div>
 
-        {/* Messages */}
+        {/* Enhanced Messages */}
         {message && (
-          <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded">
-            {message}
+          <div className="mb-6 p-4 bg-green-50 border-l-4 border-green-400 rounded-md shadow-sm">
+            <div className="flex items-center">
+              <svg className="w-5 h-5 text-green-400 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+              <p className="text-green-800 font-medium">{message}</p>
+              <button 
+                onClick={() => setMessage('')}
+                className="ml-auto text-green-600 hover:text-green-800"
+              >
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+              </button>
+            </div>
           </div>
         )}
         {error && (
-          <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
-            {error}
+          <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-400 rounded-md shadow-sm">
+            <div className="flex items-center">
+              <svg className="w-5 h-5 text-red-400 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+              <p className="text-red-800 font-medium">{error}</p>
+              <button 
+                onClick={() => setError('')}
+                className="ml-auto text-red-600 hover:text-red-800"
+              >
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Status Summary */}
+        {!loading && orders.length > 0 && sortByStatus && (
+          <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+            <h3 className="text-sm font-medium text-gray-700 mb-3">Order Status Summary:</h3>
+            <div className="flex flex-wrap gap-3">
+              {['pending', 'paid', 'accepted', 'packing', 'ready', 'shipped', 'delivered'].map(status => {
+                const count = orders.filter(order => order.status === status).length;
+                if (count === 0) return null;
+                return (
+                  <div key={status} className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(status)}`}>
+                    {getStatusDisplayName(status)}: {count}
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
 
@@ -131,7 +309,7 @@ const AdminOrders = () => {
                 </tr>
               </thead>
               <tbody className="bg-white">
-                {orders.map((order) => (
+                {(sortByStatus ? sortOrdersByStatus(orders) : orders.slice().sort((a, b) => new Date(b.created_at) - new Date(a.created_at))).map((order) => (
                   <tr key={order.id} className="border-b hover:bg-gray-50">
                     <td className="px-4 py-3 text-sm font-mono text-gray-900">
                       {order.id.slice(0, 8)}...
@@ -224,39 +402,71 @@ const AdminOrders = () => {
                     </td>
                     <td className="px-4 py-3">
                       <span className={`px-3 py-1 text-xs font-medium rounded-full ${getStatusColor(order.status)}`}>
-                        {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                        {getStatusDisplayName(order.status)}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-500">
                       {new Date(order.created_at).toLocaleDateString()}
                     </td>
                     <td className="px-4 py-3">
-                      <div className="flex space-x-2">
+                      <div className="flex flex-wrap gap-2">
                         {canAccept(order.status) && (
                           <button
-                            onClick={() => updateOrderStatus(order.id, 'shipped')}
-                            disabled={updatingOrder === order.id}
-                            className={`bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm ${updatingOrder === order.id ? 'opacity-60 cursor-not-allowed' : ''}`}
+                            onClick={() => updateOrderStatus(order.id, 'accepted')}
+                            disabled={isButtonDisabled(order.id)}
+                            className={getButtonStyle('accepted', isButtonDisabled(order.id))}
                           >
-                            {updatingOrder === order.id ? 'Accepting...' : 'Accept'}
+                            {isButtonLoading(order.id, 'accepted') ? 'Accepting...' : 'Accept'}
                           </button>
                         )}
+                        
+                        {canStartPacking(order.status) && (
+                          <button
+                            onClick={() => updateOrderStatus(order.id, 'packing')}
+                            disabled={isButtonDisabled(order.id)}
+                            className={getButtonStyle('packing', isButtonDisabled(order.id))}
+                          >
+                            {isButtonLoading(order.id, 'packing') ? 'Processing...' : 'Packing Done'}
+                          </button>
+                        )}
+                        
+                        {canMarkReady(order.status) && (
+                          <button
+                            onClick={() => updateOrderStatus(order.id, 'ready')}
+                            disabled={isButtonDisabled(order.id)}
+                            className={getButtonStyle('ready', isButtonDisabled(order.id))}
+                          >
+                            {isButtonLoading(order.id, 'ready') ? 'Marking...' : 'Mark Ready'}
+                          </button>
+                        )}
+                        
+                        {canShip(order.status) && (
+                          <button
+                            onClick={() => updateOrderStatus(order.id, 'shipped')}
+                            disabled={isButtonDisabled(order.id)}
+                            className={getButtonStyle('shipped', isButtonDisabled(order.id))}
+                          >
+                            {isButtonLoading(order.id, 'shipped') ? 'Shipping...' : 'Out for Shipment'}
+                          </button>
+                        )}
+                        
+                        {canDeliver(order.status) && (
+                          <button
+                            onClick={() => updateOrderStatus(order.id, 'delivered')}
+                            disabled={isButtonDisabled(order.id)}
+                            className={getButtonStyle('delivered', isButtonDisabled(order.id))}
+                          >
+                            {isButtonLoading(order.id, 'delivered') ? 'Marking...' : 'Mark Delivered'}
+                          </button>
+                        )}
+                        
                         {canReject(order.status) && (
                           <button
                             onClick={() => updateOrderStatus(order.id, 'cancelled')}
-                            disabled={updatingOrder === order.id}
-                            className={`bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm ${updatingOrder === order.id ? 'opacity-60 cursor-not-allowed' : ''}`}
+                            disabled={isButtonDisabled(order.id)}
+                            className={getButtonStyle('cancelled', isButtonDisabled(order.id))}
                           >
-                            {updatingOrder === order.id ? 'Rejecting...' : 'Reject'}
-                          </button>
-                        )}
-                        {order.status === 'shipped' && (
-                          <button
-                            onClick={() => updateOrderStatus(order.id, 'delivered')}
-                            disabled={updatingOrder === order.id}
-                            className={`bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm ${updatingOrder === order.id ? 'opacity-60 cursor-not-allowed' : ''}`}
-                          >
-                            {updatingOrder === order.id ? 'Marking...' : 'Mark Delivered'}
+                            {isButtonLoading(order.id, 'cancelled') ? 'Rejecting...' : 'Reject'}
                           </button>
                         )}
                       </div>
@@ -267,8 +477,10 @@ const AdminOrders = () => {
             </table>
           </div>
         )}
+          </div>
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 
