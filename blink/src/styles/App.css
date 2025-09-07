@@ -242,3 +242,165 @@ body {
 .banner-content button:hover {
   background-color: #008f4c;
 }
+
+/* Product Section */
+.product-section {
+  padding: 40px;
+  background: #fafafa;
+}
+
+.product-title {
+  font-size: 26px;
+  font-weight: bold;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.product-category {
+  margin-bottom: 40px;
+}
+
+.product-category-title {
+  font-size: 22px;
+  margin: 15px 0;
+  color: #444;
+  border-left: 5px solid #ff6f00;
+  padding-left: 10px;
+}
+
+/* Grid Layout */
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); /* increased min width */
+  gap: 25px;
+}
+
+/* Product Card */
+.product-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.12);
+  text-align: center;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer;
+  width: 200px;   /* fixed width for slider mode */
+  height: 300px;  /* taller card */
+  flex: 0 0 auto; /* important for slider */
+}
+
+.product-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.18);
+}
+
+/* Product Image */
+.product-image {
+  width: 100%;
+  height: 150px;   /* bigger image */
+  object-fit: contain;
+  margin-bottom: 14px;
+}
+
+/* Name & Price */
+.product-card h4 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #222;
+  margin: 10px 0 6px;
+}
+
+.product-card p {
+  font-size: 16px;
+  font-weight: bold;
+  color: #ff6f00;
+  margin-bottom: 12px;
+}
+
+/* Action Buttons - Small Icons in One Line */
+.product-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.product-actions button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 18px; /* Icon size */
+  color: #555;
+  transition: color 0.2s ease;
+}
+
+.product-actions button:hover {
+  color: #ff6f00;
+}
+
+
+/* Slider */
+.slider-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.product-slider {
+  display: flex;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  gap: 25px;
+  padding: 15px;
+}
+
+.product-slider::-webkit-scrollbar {
+  display: none; /* hide scrollbar */
+}
+
+.slider-btn {
+  position: absolute;
+  top: 45%;
+  transform: translateY(-50%);
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 50%;
+  cursor: pointer;
+  padding: 10px;
+  font-size: 22px;
+  z-index: 2;
+}
+
+.slider-btn.left {
+  left: 0;
+}
+
+.slider-btn.right {
+  right: 0;
+}
+
+/* Responsive Design */
+
+/* For tablets and smaller screens */
+@media (max-width: 1024px) {
+  .product-grid {
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 15px;
+  }
+
+  .product-card {
+    padding: 12px;
+  }
+
+  .product-image {
+    height: 140px;
+  }
+
+  .product-card h4 {
+    font-size: 14px;
+  }
+
+  .product-card p {
+    font-size: 13px;
+  }
+}
