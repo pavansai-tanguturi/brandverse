@@ -21,76 +21,72 @@ export const AuthProvider = ({ children }) => {
 
   const checkUserSession = async () => {
     try {
-      // First check localStorage for saved session
-      const savedToken = localStorage.getItem('access_token');
-      const savedUser = localStorage.getItem('user');
+      // Check session using the new /me endpoint
+      const response = await fetch('http://localhost:3001/me', {
+        method: 'GET',
+        credentials: 'include' // Include session cookies
+      });
       
-      console.log('Checking session - Token exists:', !!savedToken, 'User exists:', !!savedUser);
-      
-      if (savedToken && savedUser) {
-        try {
-          const parsedUser = JSON.parse(savedUser);
-          console.log('Parsed user from localStorage:', parsedUser);
-          
-          // Set user immediately from localStorage, then verify with server
-          setUser(parsedUser);
-          
-          // Verify token is still valid with server
-          const response = await fetch('http://localhost:3001/check-session', {
-            method: 'GET',
-            headers: {
-              'Authorization': `Bearer ${savedToken}`
-            }
-          });
-          
-          if (response.ok) {
-            const result = await response.json();
-            console.log('Server session check result:', result);
-            if (result.user) {
-              // Update user data from server response
-              setUser(result.user);
-              // Make sure the updated data is saved
-              localStorage.setItem('user', JSON.stringify(result.user));
-              setLoading(false);
-              return;
-            }
-          } else {
-            console.log('Server session check failed, status:', response.status);
-          }
-        } catch (parseError) {
-          console.error('Error parsing saved user:', parseError);
+      if (response.ok) {
+        const result = await response.json();
+        console.log('Session check result:', result);
+        if (result.user) {
+          setUser(result.user);
+          setLoading(false);
+          return;
         }
       } else {
-        console.log('No saved session found');
+        console.log('Session check failed, status:', response.status);
       }
       
-      // Clear invalid session data only if server check failed
-      console.log('Clearing session data');
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('user');
+      // No valid session
       setUser(null);
       
     } catch (error) {
       console.error('Error checking session:', error);
+      setUser(null);
     }
     setLoading(false);
   };
 
-  const login = async (email) => {
+  const login = async (email, otp = null) => {
     try {
-      const response = await fetch('http://localhost:3001/send-magic-link', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email }),
-      });
-      
-      const result = await response.json();
-      if (response.ok) {
-        return { success: true, message: result.message };
+      if (!otp) {
+        // Step 1: Send OTP
+        const response = await fetch('http://localhost:3001/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify({ email }),
+        });
+        
+        const result = await response.json();
+        if (response.ok) {
+          return { success: true, message: result.message };
+        } else {
+          return { success: false, error: result.error };
+        }
       } else {
-        return { success: false, error: result.error };
+        // Step 2: Verify OTP and login
+        const response = await fetch('http://localhost:3001/verify-otp', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include', // Include session cookies
+          body: JSON.stringify({ email, token: otp }),
+        });
+        
+        const result = await response.json();
+        if (response.ok) {
+          // Session is now stored server-side, update user state
+          setUser(result.user);
+          return { success: true, message: result.message };
+        } else {
+          return { success: false, error: result.error };
+        }
       }
     } catch (error) {
       return { success: false, error: 'Network error' };
@@ -99,26 +95,17 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     try {
-      const token = localStorage.getItem('access_token');
-      
-      if (token) {
-        await fetch('http://localhost:3001/logout', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-      }
+      // Call logout endpoint to clear session
+      await fetch('http://localhost:3001/logout', {
+        method: 'POST',
+        credentials: 'include'
+      });
       
       setUser(null);
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('user');
     } catch (error) {
       console.error('Logout error:', error);
-      // Still clear local data even if server request fails
+      // Still clear user state even if server request fails
       setUser(null);
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('user');
     }
   };
 

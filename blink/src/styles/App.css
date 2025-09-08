@@ -1,79 +1,381 @@
 .App {
   text-align: left;
+  margin: 0;
+  padding: 0;
 }
 
 .App-header {
-  
-  min-height: 20vh;
+  min-height: 80px;
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: calc(10px + 2vmin);
   color: rgb(0, 0, 0);
+  padding: 10px 20px;
+  background-color: #ffffff;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+/* Logo container with text */
+.logo-container {
+  position: absolute;
+  top: 15px;
+  left: 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 /* Logo: top-left */
 .App-logo {
-  height: 20vmin;
+  height: 50px;
   pointer-events: none;
-  position: absolute;
-  top: 20;
-  left: 20px;
+}
+
+/* Brand text beside logo */
+.brand-text {
+  font-size: 24px;
+  font-weight: bold;
+  font-family: 'Arial', sans-serif;
+  letter-spacing: -0.5px;
+  display: flex;
+  gap: 8px;
+}
+
+.blink-text {
+  color: #00D084;  /* Green color like in the image */
+}
+
+.grocer-text {
+  color: #2196F3;  /* Blue color like in the image */
 }
 
 /* Location section */
 .location-container {
   position: absolute;
-  top: 40px;
-  left: 300px;
+  top: 21px;
+  left: 320px;
   display: flex;
   align-items: center;
   cursor: pointer;
   color: #313638;
+  padding: 8px 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background-color: #fff;
+  transition: all 0.2s ease;
+}
+
+.location-container:hover {
+  border-color: #00b14f;
+  box-shadow: 0 2px 8px rgba(0, 177, 79, 0.1);
 }
 
 .location-icon {
-  width: 24px;
-  height: 24px;
-  margin-right: 6px;
+  width: 20px;
+  height: 20px;
+  margin-right: 12px;
+  flex-shrink: 0;
+}
+
+.location-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  margin-right: 12px;
+}
+
+.delivery-time {
+  font-size: 12px;
+  font-weight: 600;
+  color: #333;
+  line-height: 1.2;
+  margin-bottom: 2px;
 }
 
 .location-text {
-  font-size: 16px;
-  font-weight: 500;
+  font-size: 13px;
+  font-weight: 400;
+  color: #666;
+  line-height: 1.2;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-/* Search bar - center */
+.location-arrow {
+  margin-left: 5px;
+  font-size: 12px;
+  color: #666;
+}
+
+/* Location Modal */
+.location-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.location-modal {
+  background: white;
+  border-radius: 12px;
+  width: 600px;
+  max-width: 90vw;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px 24px 16px 24px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #333;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #666;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.close-btn:hover {
+  color: #333;
+}
+
+.modal-content {
+  padding: 24px;
+}
+
+.location-options {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.detect-location-btn {
+  background-color: #00b894;
+  color: white;
+  border: none;
+  padding: 14px 24px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  width: 100%;
+}
+
+.detect-location-btn:hover:not(:disabled) {
+  background-color: #00a085;
+}
+
+.detect-location-btn:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.or-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #666;
+  font-size: 14px;
+  position: relative;
+  margin: 10px 0;
+}
+
+.or-divider::before,
+.or-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background-color: #e0e0e0;
+}
+
+.or-divider span {
+  padding: 0 16px;
+  background-color: white;
+}
+
+.location-search-input {
+  width: 100%;
+  padding: 14px 16px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 16px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.location-search-input:focus {
+  border-color: #00b894;
+}
+
+.popular-locations {
+  margin-top: 24px;
+}
+
+.popular-locations h4 {
+  margin: 0 0 16px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+.location-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  border: 1px solid #f0f0f0;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.location-item:hover {
+  border-color: #00b894;
+  background-color: #f8fffe;
+}
+
+.location-details {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.delivery-time-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 4px;
+}
+
+.location-name {
+  font-size: 13px;
+  color: #666;
+  max-width: 400px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.location-item .location-arrow {
+  color: #00b894;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.or-divider::before,
+.or-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #ddd;
+}
+
+.or-divider span {
+  padding: 0 15px;
+  background: white;
+}
+
+.manual-location {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.location-search-input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.location-search-input:focus {
+  border-color: #00b894;
+  box-shadow: 0 0 0 3px rgba(0, 184, 148, 0.1);
+}
+
+.set-location-btn {
+  background-color: #00b894;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  align-self: flex-end;
+  transition: background-color 0.2s;
+}
+
+.set-location-btn:hover {
+  background-color: #00a085;
+}
+
+/* Search bar - closer to login button */
 .search-container {
   position: absolute;
-  top: 40px;
-  left: 500px;
+  top: 20px;
+  right: 240px;
   height: 40px;
-  width: 700px;
+  width: 350px;
 }
 
 .search-input {
   width: 100%;
-  max-width: 400px;
-  padding: 10px;
-  border-radius: 20px;
-  border: 1px solid #ccc;
-  font-size: 16px;
+  padding: 12px 20px;
+  border-radius: 25px;
+  border: 1px solid #ddd;
+  font-size: 14px;
+  outline: none;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 /* Login button */
 .login-button {
   position: absolute;
-  top: 40px;
-  right: 200px;
-  padding: 10px 20px;
+  top: 20px;
+  right: 120px;
+  padding: 12px 24px;
   border: none;
-  border-radius: 20px;
+  border-radius: 25px;
   background-color: #313638;
   color: white;
-  font-size: 16px;
+  font-size: 14px;
   cursor: pointer;
+  font-weight: 500;
 }
 
 .login-button:hover {
@@ -83,9 +385,9 @@
 /* Cart icon */
 .cart-icon {
   position: absolute;
-  top: 40px;
-  right: 50px;
-  height: 40px;
+  top: 25px;
+  right: 30px;
+  height: 30px;
   cursor: pointer;
 }
 
@@ -115,20 +417,21 @@
 
 .header-divider {
   border: none;
-  height: 2px;
-  background-color: #ccc;
+  height: 1px;
+  background-color: #ddd;
   margin: 0;
 }
 
 /* Category Section */
 .category-section {
-  padding: 20px;
+  padding: 15px 20px;
 }
 
 .category-title {
   text-align: center;
   font-size: 24px;
-  margin-bottom: 20px;
+  margin-bottom: 15px;
+  margin-top: 5px;
   font-weight: bold;
 }
 
@@ -173,18 +476,29 @@ body {
   font-family: Arial, sans-serif;
 }
 
+/* Remove default margins from all elements */
+* {
+  box-sizing: border-box;
+}
+
+/* Ensure no extra spacing on main container */
+#root {
+  margin: 0;
+  padding: 0;
+}
+
 .banner-section {
   display: flex;
   flex-wrap: wrap;
-  gap: 20px;
-  margin: 20px auto;
+  gap: 15px;
+  margin: 10px auto;
   max-width: 1200px;
+  padding: 0 20px;
 }
 
 .banner-card {
   position: relative;
   height: 200px;
-  width: 385px;
   border-radius: 12px;
   overflow: hidden;
   background-size: cover;
@@ -193,17 +507,24 @@ body {
   align-items: center;
 }
 
+/* Three banners: third width each */
+.banner-card.third {
+  flex: 1 1 calc(33.333% - 10px);
+  min-width: 280px;
+}
+
 /* Two banners: half width each */
 .banner-card.half {
-  flex: 1 1 calc(50% - 20px);
+  flex: 1 1 calc(50% - 10px);
 }
 
 /* Single banner: full width */
 .banner-card.full {
   position: relative;
-  height: 300px;
-  width: 1200px;
-  border-radius: 22px;
+  height: 250px;
+  width: 100%;
+  flex: 1 1 100%;
+  border-radius: 12px;
   overflow: hidden;
   background-size: cover;
   background-position: center;
@@ -241,4 +562,356 @@ body {
 
 .banner-content button:hover {
   background-color: #008f4c;
+}
+
+/* RESPONSIVE STYLES - Mobile First Approach */
+
+/* Tablet and below (768px) */
+@media (max-width: 768px) {
+  .App-header {
+    min-height: auto;
+    padding: 12px 15px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    gap: 8px;
+  }
+
+  /* Create a flexbox container for the top row */
+  .App-header::before {
+    content: '';
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    height: 40px;
+    position: relative;
+  }
+
+  /* Logo container - left side of flexbox */
+  .logo-container {
+    position: absolute;
+    top: 12px;
+    left: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    z-index: 2;
+    height: 40px;
+  }
+
+  /* Brand text adjustments */
+  .brand-text {
+    font-size: 18px;
+    gap: 6px;
+    display: flex;
+    align-items: center;
+  }
+
+  /* Right side container for login and cart */
+  .login-button,
+  .cart-icon {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 2;
+  }
+
+  /* Login button - right side, centered vertically */
+  .login-button {
+    right: 60px;
+    padding: 8px 16px;
+    font-size: 14px;
+    border-radius: 20px;
+    white-space: nowrap;
+    height: 32px;
+    display: flex;
+    align-items: center;
+  }
+
+  /* Cart icon - far right, centered vertically */
+  .cart-icon {
+    right: 15px;
+    height: 24px;
+  }
+
+  /* Location container - second row, minimal gap */
+  .location-container {
+    position: relative;
+    top: 0;
+    left: 0;
+    width: 100%;
+    margin-top: 40px;
+    margin-bottom: 8px;
+    padding: 12px 16px;
+  }
+
+  .location-info {
+    flex: 1;
+  }
+
+  .location-text {
+    max-width: none;
+    font-size: 14px;
+  }
+
+  /* Search container - third row, minimal gap */
+  .search-container {
+    position: relative;
+    top: 0;
+    right: 0;
+    width: 100%;
+    height: auto;
+    margin-bottom: 8px;
+  }
+
+  .search-input {
+    padding: 14px 20px;
+    font-size: 16px;
+    border-radius: 8px;
+  }
+
+  /* Category adjustments */
+  .category-section {
+    padding: 15px 10px;
+  }
+
+  .category-title {
+    font-size: 20px;
+    margin-bottom: 15px;
+  }
+
+  .category-grid {
+    gap: 15px;
+    justify-content: center;
+  }
+
+  .category-card {
+    width: calc(50% - 10px);
+    min-width: 140px;
+    max-width: 160px;
+  }
+
+  /* Banner adjustments */
+  .banner-section {
+    padding: 0 15px;
+    gap: 10px;
+  }
+
+  .banner-card.third,
+  .banner-card.half {
+    flex: 1 1 100%;
+    min-width: 100%;
+  }
+
+  .banner-card.full {
+    height: 200px;
+  }
+
+  .banner-content h2 {
+    font-size: 1.4rem;
+  }
+
+  .banner-content p {
+    font-size: 0.9rem;
+  }
+
+  /* Location modal adjustments */
+  .location-modal {
+    width: 95vw;
+    margin: 10px;
+  }
+
+  .modal-header {
+    padding: 20px 16px 12px;
+  }
+
+  .modal-content {
+    padding: 20px 16px;
+  }
+
+  .location-search-input {
+    font-size: 16px;
+    padding: 14px 16px;
+  }
+
+  .location-item {
+    padding: 14px 12px;
+  }
+
+  .location-name {
+    max-width: 250px;
+    font-size: 14px;
+  }
+}
+
+/* Small mobile devices (480px and below) */
+@media (max-width: 480px) {
+  .App-header {
+    padding: 10px 12px;
+    gap: 6px;
+  }
+
+  .App-header::before {
+    height: 36px;
+  }
+
+  .logo-container {
+    top: 10px;
+    left: 12px;
+    gap: 8px;
+    height: 36px;
+  }
+
+  .brand-text {
+    font-size: 16px;
+    gap: 4px;
+  }
+
+  .login-button {
+    right: 50px;
+    padding: 6px 12px;
+    font-size: 13px;
+    height: 28px;
+  }
+
+  .cart-icon {
+    height: 22px;
+    right: 12px;
+  }
+
+  .location-container {
+    margin-top: 36px;
+    padding: 10px 12px;
+    margin-bottom: 6px;
+  }
+
+  .delivery-time {
+    font-size: 11px;
+  }
+
+  .location-text {
+    font-size: 12px;
+  }
+
+  .search-input {
+    padding: 12px 16px;
+    font-size: 14px;
+  }
+
+  .category-card {
+    width: calc(50% - 8px);
+    min-width: 120px;
+    height: 110px;
+  }
+
+  .category-image {
+    height: 110px;
+  }
+
+  .category-name {
+    font-size: 14px;
+    margin-top: 8px;
+  }
+
+  .banner-content {
+    padding: 15px;
+  }
+
+  .banner-content h2 {
+    font-size: 1.2rem;
+    margin-bottom: 8px;
+  }
+
+  .banner-content p {
+    font-size: 0.85rem;
+    margin-bottom: 12px;
+  }
+
+  .banner-content button {
+    padding: 6px 12px;
+    font-size: 14px;
+  }
+}
+
+/* Large tablets and small desktops (769px to 1024px) */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .search-container {
+    width: 300px;
+    right: 200px;
+  }
+
+  .login-button {
+    right: 100px;
+  }
+
+  .cart-icon {
+    right: 25px;
+  }
+
+  .location-container {
+    left: 280px;
+  }
+
+  .category-grid {
+    gap: 18px;
+  }
+
+  .banner-section {
+    gap: 12px;
+  }
+}
+
+/* Extra small devices - improve touch targets */
+@media (max-width: 320px) {
+  .App-header {
+    padding: 8px 10px;
+    gap: 5px;
+  }
+
+  .App-header::before {
+    height: 32px;
+  }
+
+  .logo-container {
+    top: 8px;
+    left: 10px;
+    height: 32px;
+  }
+
+  .brand-text {
+    font-size: 14px;
+  }
+
+  .login-button {
+    right: 42px;
+    padding: 4px 8px;
+    font-size: 12px;
+    height: 24px;
+  }
+
+  .cart-icon {
+    height: 20px;
+    right: 10px;
+  }
+
+  .location-container {
+    margin-top: 32px;
+    padding: 8px 10px;
+    margin-bottom: 5px;
+  }
+
+  .search-input {
+    padding: 10px 14px;
+    font-size: 14px;
+  }
+
+  .category-card {
+    min-width: 110px;
+    height: 100px;
+  }
+
+  .category-image {
+    height: 100px;
+  }
 }

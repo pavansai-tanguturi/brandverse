@@ -6,14 +6,15 @@ import '../styles/Login.css';
 
 function Login() {
   const [email, setEmail] = useState('');
+  const [otp, setOtp] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [linkSent, setLinkSent] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
   const [message, setMessage] = useState('');
   
   const { user, login, logout } = useAuth();
 
-  const handleSendMagicLink = async (e) => {
+  const handleSendOtp = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
@@ -21,8 +22,25 @@ function Login() {
     const result = await login(email);
     
     if (result.success) {
-      setLinkSent(true);
+      setOtpSent(true);
       setMessage(result.message);
+    } else {
+      setError(result.error);
+    }
+    
+    setLoading(false);
+  };
+
+  const handleVerifyOtp = async (e) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+    
+    const result = await login(email, otp);
+    
+    if (result.success) {
+      setMessage(result.message);
+      // User will be automatically logged in via context
     } else {
       setError(result.error);
     }
@@ -32,8 +50,9 @@ function Login() {
 
   const handleLogout = async () => {
     await logout();
-    setLinkSent(false);
+    setOtpSent(false);
     setEmail('');
+    setOtp('');
     setMessage('');
     setError('');
   };
@@ -59,10 +78,10 @@ function Login() {
 
   return (
     <div className="login-container">
-      <h2>Login with Magic Link</h2>
+      <h2>Login with Verification Code</h2>
       
-      {!linkSent ? (
-        <form className="login-form" onSubmit={handleSendMagicLink}>
+      {!otpSent ? (
+        <form className="login-form" onSubmit={handleSendOtp}>
           <label>Email</label>
           <input
             type="email"
@@ -72,7 +91,7 @@ function Login() {
             required
           />
           <button type="submit" disabled={loading}>
-            {loading ? 'Sending Magic Link...' : 'Send Magic Link'}
+            {loading ? 'Sending Code...' : 'Send Verification Code'}
           </button>
           
           {/* Signup link */}
@@ -93,20 +112,37 @@ function Login() {
           </div>
         </form>
       ) : (
-        <div className="login-form">
+        <form className="login-form" onSubmit={handleVerifyOtp}>
           <div style={{ textAlign: 'center', padding: '20px' }}>
-            <h3>Check your email!</h3>
-            <p>We've sent a magic link to <strong>{email}</strong></p>
-            <p>Click the link in your email to complete the login process.</p>
+            <h3>Enter Verification Code</h3>
+            <p>We've sent a verification code to <strong>{email}</strong></p>
+            <p>Enter the code from your email to complete the login process.</p>
           </div>
+          
+          <label>Verification Code</label>
+          <input
+            type="text"
+            placeholder="Enter the 6-digit code"
+            value={otp}
+            onChange={(e) => setOtp(e.target.value)}
+            required
+            maxLength="6"
+            style={{ textAlign: 'center', fontSize: '18px', letterSpacing: '2px' }}
+          />
+          
+          <button type="submit" disabled={loading || !otp}>
+            {loading ? 'Verifying...' : 'Verify Code'}
+          </button>
+          
           <button 
             type="button" 
             onClick={() => {
-              setLinkSent(false);
+              setOtpSent(false);
               setMessage('');
               setError('');
+              setOtp('');
             }}
-            style={{ marginTop: '20px', backgroundColor: '#666' }}
+            style={{ marginTop: '10px', backgroundColor: '#666' }}
           >
             Use Different Email
           </button>
@@ -127,7 +163,7 @@ function Login() {
               </Link>
             </p>
           </div>
-        </div>
+        </form>
       )}
       
       {message && <div style={{ color: 'green', marginTop: '10px' }}>{message}</div>}

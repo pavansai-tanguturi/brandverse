@@ -1,31 +1,46 @@
-// Basic Express server setup
+// Stage 1 Backend - Clean & Modular OTP Authentication
 import express from 'express';
 import cors from 'cors';
+import session from 'express-session';
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
 
 // Load environment variables
 dotenv.config();
 
-// Log unhandled promise rejections
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('Unhandled Rejection:', reason);
-});
-
 const app = express();
+
 // Log all incoming requests
 app.use((req, res, next) => {
   console.log(`${req.method} ${req.url}`);
   next();
 });
+
+// CORS configuration
 app.use(cors({
-  origin: '*',
+  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
+
 app.use(express.json());
 
-// Supabase client initialization
+// ✅ Session setup (memory store for dev, use Redis for production)
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || 'super-secret-key-change-in-production',
+    resave: false,
+    saveUninitialized: false,
+    cookie: { 
+      secure: process.env.NODE_ENV === 'production', // HTTPS in production
+      httpOnly: true, 
+      maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    },
+  })
+);
+
+// ✅ Supabase client initialization
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_ANON_KEY;
 
@@ -36,88 +51,104 @@ if (!supabaseUrl || !supabaseKey) {
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-app.get('/', (req, res) => {
-  res.send('Backend is running');
-});
-
-// GET route for login (for browser testing)
-app.get('/login', (req, res) => {
-  res.send('Login endpoint is working. Use POST request with email/mobile and OTP to login.');
-});
-
-// Unified Login/Signup route with magic link
 // Helper function to validate email format
 function isValidEmail(email) {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return emailRegex.test(email);
 }
 
-// Signup endpoint - for new users
+// Root endpoint
+app.get('/', (req, res) => {
+  res.json({ 
+    message: 'Brandverse Backend - Stage 1 OTP Authentication',
+    status: 'running',
+    endpoints: [
+      'POST /signup - Create account with email confirmation',
+      'POST /login - Send OTP to email', 
+      'POST /verify-otp - Verify OTP and login',
+      'POST /resend-otp - Resend OTP code',
+      'GET /me - Get current user data',
+      'POST /logout - Logout user'
+    ]
+  });
+});
+
+// 1️⃣ SIGN UP - Creates user account with email confirmation
 app.post('/signup', async (req, res) => {
   try {
-    const { email, name } = req.body;
+    const { email, name, password } = req.body;
 
     if (!email || !name) {
       return res.status(400).json({ error: 'Email and name are required' });
     }
 
-    // Validate email format
     if (!isValidEmail(email)) {
       return res.status(400).json({ error: 'Invalid email format' });
     }
 
-    console.log('Attempting signup for email:', email);
+    console.log('Creating account for:', email);
 
     // Check if user already exists
     const { data: existingUser, error: checkError } = await supabase
       .from('users')
-      .select('*')
+      .select('email')
       .eq('email', email)
       .single();
 
-    if (checkError && checkError.code !== 'PGRST116') {
-      console.error('Error checking existing user:', checkError);
-      return res.status(500).json({ error: 'Database error' });
-    }
-
     if (existingUser) {
+      console.log('User already exists:', email);
       return res.status(400).json({ 
         error: 'User already exists. Please login instead.',
         userExists: true 
       });
     }
 
-    console.log('Sending magic link for signup to:', email);
+    // If error is not "no rows found", it's a real error
+    if (checkError && checkError.code !== 'PGRST116') {
+      console.error('Database check error:', checkError);
+      return res.status(500).json({ error: 'Database error occurred' });
+    }
 
-    // Send magic link for signup
-    const { error: magicLinkError } = await supabase.auth.signInWithOtp({
-      email: email,
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password: password || `temp-${Date.now()}`, // Temp password for OTP flow
       options: {
-        emailRedirectTo: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/auth/callback`
+        data: {
+          name: name // Store name in user metadata
+        }
       }
     });
 
-    if (magicLinkError) {
-      console.error('Magic link error:', magicLinkError);
-      return res.status(400).json({ error: `Magic link failed: ${magicLinkError.message}` });
+    if (error) {
+      console.error('Signup error:', error);
+      if (error.message.includes('already registered')) {
+        return res.status(400).json({ 
+          error: 'User already exists. Please login instead.',
+          userExists: true 
+        });
+      }
+      return res.status(400).json({ error: error.message });
     }
 
-    console.log('Magic link sent successfully, storing user data...');
+    // Store user info in our database
+    if (data.user) {
+      const { error: insertError } = await supabase
+        .from('users')
+        .insert([{ 
+          id: data.user.id,
+          email: email, 
+          name: name, 
+          created_at: new Date().toISOString() 
+        }]);
 
-    // Store user info (will be activated when they click magic link)
-    const { error: insertError } = await supabase
-      .from('users')
-      .insert([{ email, name, created_at: new Date().toISOString() }]);
-
-    if (insertError) {
-      console.error('Error storing user data:', insertError);
-      return res.status(500).json({ error: 'Failed to create user account' });
+      if (insertError) {
+        console.error('Error storing user data:', insertError);
+      }
     }
 
-    console.log('User data stored successfully');
-
+    console.log('✅ Account created, confirmation email sent');
     res.json({ 
-      message: 'Signup successful! Check your email for the magic link.',
+      message: 'Account created! Please check your email for the verification code.',
       action: 'signup'
     });
 
@@ -127,7 +158,7 @@ app.post('/signup', async (req, res) => {
   }
 });
 
-// Login endpoint - for existing users only (magic link)
+// 2️⃣ LOGIN - Send OTP to email
 app.post('/login', async (req, res) => {
   try {
     const { email } = req.body;
@@ -136,53 +167,30 @@ app.post('/login', async (req, res) => {
       return res.status(400).json({ error: 'Email is required' });
     }
 
-    // Validate email format
     if (!isValidEmail(email)) {
       return res.status(400).json({ error: 'Invalid email format' });
     }
 
-    console.log('Attempting login for email:', email);
+    console.log('Sending OTP to:', email);
 
-    // Check if user exists
-    const { data: existingUser, error: checkError } = await supabase
-      .from('users')
-      .select('*')
-      .eq('email', email)
-      .single();
+    const { data, error } = await supabase.auth.signInWithOtp({
+      email,
+      options: { shouldCreateUser: false }
+    });
 
-    if (checkError && checkError.code !== 'PGRST116') {
-      console.error('Error checking existing user:', checkError);
-      return res.status(500).json({ error: 'Database error' });
-    }
-
-    if (!existingUser) {
-      return res.status(400).json({ 
-        error: 'User not found. Please signup first.',
-        userExists: false 
-      });
-    }
-
-    console.log('User found, sending magic link for login to:', email);
-
-    // Send magic link for login
-    const { error: magicLinkError } = await supabase.auth.signInWithOtp({
-      email: email,
-      options: {
-        emailRedirectTo: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/auth/callback`
+    if (error) {
+      console.error('Login OTP error:', error);
+      if (error.message.includes('User not found')) {
+        return res.status(400).json({ 
+          error: 'No account found with this email address',
+          userExists: false
+        });
       }
-    });
-
-    if (magicLinkError) {
-      console.error('Magic link error:', magicLinkError);
-      return res.status(400).json({ error: `Magic link failed: ${magicLinkError.message}` });
+      return res.status(400).json({ error: error.message });
     }
 
-    console.log('Magic link sent successfully for login');
-
-    res.json({ 
-      message: 'Magic link sent! Check your email to login.',
-      action: 'login'
-    });
+    console.log('✅ OTP sent successfully');
+    res.json({ message: 'OTP sent to your email. Check your inbox!' });
 
   } catch (error) {
     console.error('Login error:', error);
@@ -190,266 +198,222 @@ app.post('/login', async (req, res) => {
   }
 });
 
-// Handle magic link callback and store user data
-app.post('/auth/callback', async (req, res) => {
-  const { access_token, refresh_token } = req.body;
-  
+// 3️⃣ VERIFY OTP - Verify code and create session
+app.post('/verify-otp', async (req, res) => {
   try {
-    const { data: { user }, error } = await supabase.auth.getUser(access_token);
-    
-    if (error || !user) {
-      return res.status(401).json({ error: 'Invalid token' });
-    }
-    
-    // Store/update user in database
-    const { error: upsertError } = await supabase
-      .from('users')
-      .upsert({
-        id: user.id,
-        email: user.email,
-        name: user.user_metadata?.name || '',
-        last_login: new Date().toISOString(),
-        created_at: user.created_at || new Date().toISOString()
-      }, {
-        onConflict: 'id'
-      });
-    
-    if (upsertError) {
-      console.error('Error storing user:', upsertError);
-      // Don't fail the request, just log the error
-    }
-    
-    return res.json({ 
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.user_metadata?.name || ''
-      },
-      access_token,
-      refresh_token
-    });
-  } catch (err) {
-    console.error('Callback error:', err);
-    return res.status(500).json({ error: 'Internal server error' });
-  }
-});
+    const { email, token } = req.body;
 
-// Remove old separate signup route - not needed anymore
+    if (!email || !token) {
+      return res.status(400).json({ error: 'Email and OTP code are required' });
+    }
 
-// Send Magic Link route (renamed for clarity)
-app.post('/send-magic-link', async (req, res) => {
-  const { email } = req.body;
-  
-  if (!email) {
-    return res.status(400).json({ error: 'Email required' });
-  }
-  
-  try {
-    // First, check if user exists in auth.users
-    const { error: authError } = await supabase.auth.signInWithOtp({ 
+    console.log('Verifying OTP for:', email);
+
+    const { data, error } = await supabase.auth.verifyOtp({
       email,
-      options: {
-        shouldCreateUser: false // Don't create new users, only login existing ones
-      }
+      token,
+      type: 'email' // Use 'email' type for OTP verification
     });
-    
-    if (authError) {
-      // If user doesn't exist, create them first
-      const { error: signupError } = await supabase.auth.signUp({
-        email,
-        password: 'temp-password',
-      });
-      
-      if (signupError) {
-        return res.status(400).json({ error: signupError.message });
-      }
-      
-      return res.json({ 
-        message: 'Account created! Please check your email to confirm your account first.',
-        type: 'signup_confirmation'
-      });
-    }
-    
-    return res.json({ 
-      message: 'Magic link sent to your email. Please check your inbox and click the link to login.',
-      type: 'magic_link'
-    });
-  } catch (err) {
-    console.error('Send magic link error:', err);
-    return res.status(500).json({ error: 'Internal server error' });
-  }
-});
 
-// Check user session
-app.get('/check-session', async (req, res) => {
-  const authHeader = req.headers.authorization;
-  
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.json({ user: null });
-  }
-  
-  const token = authHeader.substring(7);
-  
-  try {
-    const { data: { user }, error } = await supabase.auth.getUser(token);
-    
-    if (error || !user) {
-      return res.json({ user: null });
+    if (error) {
+      console.error('OTP verification error:', error);
+      return res.status(400).json({ error: 'Invalid or expired OTP code' });
     }
-    
-    // Store/update user in database
-    const { error: upsertError } = await supabase
+
+    if (!data.user || !data.session) {
+      return res.status(400).json({ error: 'OTP verification failed' });
+    }
+
+    // ✅ Save session in Express (this persists across requests)
+    req.session.user = {
+      id: data.user.id,
+      email: data.user.email,
+      name: data.user.user_metadata?.name || ''
+    };
+
+    // Update user's last login in database
+    await supabase
       .from('users')
       .upsert({
-        id: user.id,
-        email: user.email,
-        name: user.user_metadata?.name || '',
+        id: data.user.id,
+        email: data.user.email,
+        name: data.user.user_metadata?.name || '',
         last_login: new Date().toISOString(),
-        created_at: new Date().toISOString()
+        created_at: data.user.created_at || new Date().toISOString()
       }, {
         onConflict: 'id'
       });
-    
-    if (upsertError) {
-      console.error('Error storing user:', upsertError);
-    }
-    
-    return res.json({ 
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.user_metadata?.name || ''
-      }
+
+    console.log('✅ Login successful for:', data.user.email);
+    res.json({ 
+      message: 'Login successful!', 
+      user: req.session.user 
     });
-  } catch (err) {
-    console.error('Session check error:', err);
-    return res.json({ user: null });
+
+  } catch (error) {
+    console.error('Verify OTP error:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-// Logout route
-app.post('/logout', async (req, res) => {
-  const authHeader = req.headers.authorization;
-  
-  if (authHeader && authHeader.startsWith('Bearer ')) {
-    const token = authHeader.substring(7);
-    
-    try {
-      await supabase.auth.signOut(token);
-    } catch (err) {
-      console.error('Logout error:', err);
-    }
-  }
-  
-  return res.json({ message: 'Logged out successfully' });
-});
-
-// Send OTP route (keeping for backward compatibility)
-app.post('/send-otp', async (req, res) => {
-  const { email, phone } = req.body;
-  
-  if (!email && !phone) {
-    return res.status(400).json({ error: 'Email or phone number required' });
-  }
-  
+// 🔄 RESEND OTP - Resend OTP code to email
+app.post('/resend-otp', async (req, res) => {
   try {
-    let result;
-    if (email) {
-      // Send OTP via email with shouldCreateUser: false to prevent auto-signup
-      result = await supabase.auth.signInWithOtp({ 
-        email,
-        options: {
-          shouldCreateUser: false
-        }
-      });
-    } else {
-      // Send OTP via SMS
-      result = await supabase.auth.signInWithOtp({ phone });
+    const { email, type } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ error: 'Email is required' });
     }
-    
-    const { error } = result;
+
+    if (!isValidEmail(email)) {
+      return res.status(400).json({ error: 'Invalid email format' });
+    }
+
+    console.log('Resending OTP to:', email, 'type:', type || 'signup');
+
+    // For login flow, use signInWithOtp instead of resend
+    if (type === 'login') {
+      const { data, error } = await supabase.auth.signInWithOtp({
+        email: email,
+        options: { shouldCreateUser: false }
+      });
+
+      if (error) {
+        console.error('Login OTP resend error:', error);
+        return res.status(400).json({ error: error.message });
+      }
+
+      console.log('✅ Login OTP resent successfully');
+      return res.json({ 
+        message: 'Login code resent! Check your email for the new code.',
+        action: 'resend'
+      });
+    }
+
+    // For signup flow, use the resend method
+    const { data, error } = await supabase.auth.resend({
+      type: 'signup',
+      email: email
+    });
+
     if (error) {
+      console.error('Signup resend error:', error);
+      console.error('Full error details:', JSON.stringify(error, null, 2));
+      
+      // Handle specific error types with user-friendly messages
+      if (error.message.includes('rate limit') || error.message.includes('45 seconds')) {
+        return res.status(429).json({ 
+          error: 'Please wait 45 seconds before requesting another code. This is a security measure.',
+          retryAfter: 45
+        });
+      }
+      
+      if (error.message.includes('security purposes')) {
+        return res.status(429).json({ 
+          error: 'Rate limit exceeded. Please wait a moment before trying again.',
+          retryAfter: 45
+        });
+      }
+      
+      if (error.message.includes('not found') || error.message.includes('no user')) {
+        return res.status(400).json({ error: 'No signup in progress for this email. Please start signup process first.' });
+      }
+      
       return res.status(400).json({ error: error.message });
     }
+
+    console.log('✅ Signup OTP resent successfully');
+    console.log('Resend response:', data);
     
-    return res.json({ 
-      message: email ? 'Magic link sent to email. Please check your inbox and click the link to login.' : 'OTP sent to phone',
-      sent: true,
-      type: email ? 'magic_link' : 'otp'
+    res.json({ 
+      message: 'Verification code resent! Check your email (including spam folder) for the new code.',
+      action: 'resend'
     });
-  } catch (err) {
-    console.error('Send OTP error:', err);
-    return res.status(500).json({ error: 'Internal server error' });
+
+  } catch (error) {
+    console.error('Resend error:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-// Verify OTP and login
-app.post('/verify-otp', async (req, res) => {
-  const { email, phone, token } = req.body;
-  
-  if (!token) {
-    return res.status(400).json({ error: 'OTP token required' });
+// 4️⃣ GET USER - Check session and return user data
+app.get('/me', (req, res) => {
+  if (!req.session.user) {
+    return res.status(401).json({ error: 'Not logged in' });
   }
-  
-  if (!email && !phone) {
-    return res.status(400).json({ error: 'Email or phone number required' });
-  }
-  
+
+  console.log('✅ User session active:', req.session.user.email);
+  res.json({ user: req.session.user });
+});
+
+// 5️⃣ LOGOUT - Clear session
+app.post('/logout', async (req, res) => {
   try {
-    let result;
-    if (email) {
-      result = await supabase.auth.verifyOtp({
-        email,
-        token,
-        type: 'email'
-      });
-    } else {
-      result = await supabase.auth.verifyOtp({
-        phone,
-        token,
-        type: 'sms'
-      });
+    if (req.session.user) {
+      console.log('Logging out user:', req.session.user.email);
     }
     
-    const { data, error } = result;
-    if (error) {
-      return res.status(401).json({ error: error.message });
-    }
-    
-    return res.json({ 
-      user: data.user, 
-      session: data.session,
-      message: 'Login successful'
+    // Clear Express session
+    req.session.destroy((err) => {
+      if (err) {
+        console.error('Session destroy error:', err);
+        return res.status(500).json({ error: 'Logout failed' });
+      }
+      
+      console.log('✅ User logged out successfully');
+      res.json({ message: 'Logged out successfully' });
     });
-  } catch (err) {
-    console.error('Verify OTP error:', err);
-    return res.status(500).json({ error: 'Internal server error' });
+
+  } catch (error) {
+    console.error('Logout error:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-// Legacy login route (keeping for backward compatibility)
-app.post('/login', async (req, res) => {
-  const { email, password } = req.body;
-  if (!email || !password) {
-    return res.status(400).json({ error: 'Email and password required' });
-  }
+// 6️⃣ RESEND OTP - Resend verification code
+app.post('/resend-otp', async (req, res) => {
   try {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) {
-      return res.status(401).json({ error: error.message });
+    const { email, type } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ error: 'Email is required' });
     }
-    return res.json({ user: data.user, session: data.session });
-  } catch (err) {
-    return res.status(500).json({ error: 'Internal server error' });
+
+    if (!isValidEmail(email)) {
+      return res.status(400).json({ error: 'Invalid email format' });
+    }
+
+    console.log('Resending OTP to:', email, 'type:', type || 'signup');
+
+    const { data, error } = await supabase.auth.resend({
+      type: type || 'signup',
+      email: email
+    });
+
+    if (error) {
+      console.error('Resend OTP error:', error);
+      return res.status(400).json({ error: `Failed to resend OTP: ${error.message}` });
+    }
+
+    console.log('✅ OTP resent successfully');
+    res.json({ 
+      message: 'Verification code resent! Check your email.',
+      action: 'resend'
+    });
+
+  } catch (error) {
+    console.error('Resend OTP error:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-// Error logging middleware (after all routes)
+// Error handling middleware
 app.use((err, req, res, next) => {
-  console.error('Error:', err);
+  console.error('Server Error:', err);
   res.status(500).json({ error: 'Internal server error' });
 });
 
+// Start server
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
