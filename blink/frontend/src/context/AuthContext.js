@@ -21,22 +21,21 @@ export const AuthProvider = ({ children }) => {
 
   const checkUserSession = async () => {
     try {
-      // Check session using the new /me endpoint
-      const response = await fetch('http://localhost:3001/me', {
+      // Check session using the customers/me endpoint
+      const response = await fetch('http://localhost:3001/api/customers/me', {
         method: 'GET',
         credentials: 'include' // Include session cookies
       });
       
       if (response.ok) {
         const result = await response.json();
-        console.log('Session check result:', result);
-        if (result.user) {
-          setUser(result.user);
+        if (result && (result.user || result.id)) {
+          // Handle both formats: {user: {...}} or direct user object {...}
+          const userData = result.user || result;
+          setUser(userData);
           setLoading(false);
           return;
         }
-      } else {
-        console.log('Session check failed, status:', response.status);
       }
       
       // No valid session
@@ -53,7 +52,7 @@ export const AuthProvider = ({ children }) => {
     try {
       if (!otp) {
         // Step 1: Send OTP
-        const response = await fetch('http://localhost:3001/login', {
+        const response = await fetch('http://localhost:3001/api/auth/login', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -70,7 +69,7 @@ export const AuthProvider = ({ children }) => {
         }
       } else {
         // Step 2: Verify OTP and login
-        const response = await fetch('http://localhost:3001/verify-otp', {
+        const response = await fetch('http://localhost:3001/api/auth/verify-otp', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -109,12 +108,17 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const refreshUser = async () => {
+    await checkUserSession();
+  };
+
   const value = {
     user,
     login,
     logout,
     loading,
-    setUser
+    setUser,
+    refreshUser
   };
 
   return (
