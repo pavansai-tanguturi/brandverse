@@ -34,7 +34,7 @@ function Auth() {
 
     try {
       const endpoint = isSignup ? '/api/auth/signup' : '/api/auth/login';
-      const payload = isSignup ? { email: formData.email, name: formData.name } : { email: formData.email, password: formData.otp };
+      const payload = { email: formData.email, name: formData.name };
 
       const response = await fetch(`http://localhost:3001${endpoint}`, {
         method: 'POST',
@@ -78,26 +78,29 @@ function Auth() {
     setError('');
 
     try {
-      // For password-based login (admin/customer)
-      const response = await fetch('http://localhost:3001/api/auth/login', {
+      const response = await fetch('http://localhost:3001/api/auth/verify-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: formData.email, password: formData.otp })
+        credentials: 'include',
+        body: JSON.stringify({ 
+          email: formData.email, 
+          token: formData.otp,
+          type: 'magiclink'
+        })
       });
       const data = await response.json();
       if (response.ok) {
-        setMessage(data.message || 'Login successful');
-        // Save token and user info
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('role', data.role);
-        // Redirect based on role
-        if (data.role === 'admin') {
+        setMessage(data.message || 'Authentication successful');
+        
+        // Check if user is admin
+        const adminEmail = process.env.REACT_APP_ADMIN_EMAIL;
+        if (adminEmail && formData.email.trim().toLowerCase() === adminEmail.trim().toLowerCase()) {
           navigate('/admin/dashboard');
         } else {
-          navigate('/');
+          navigate('/home');
         }
       } else {
-        setError(data.error || 'Login failed');
+        setError(data.error || 'OTP verification failed');
       }
     } catch (err) {
       console.error('OTP verification error:', err);

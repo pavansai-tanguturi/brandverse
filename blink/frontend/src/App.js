@@ -5,6 +5,7 @@ import Auth from './pages/Auth';
 import Login from './pages/Login';
 import SignUp from './pages/SignUp';
 import Home from './pages/Home';
+import ProductPage from './pages/ProductPage';
 import Cart from './components/Cart';
 import HealthCheck from './pages/HealthCheck';
 import CustomerDashboard from './pages/customer/CustomerDashboard';
@@ -25,6 +26,7 @@ function App() {
           {/* Regular User Routes */}
           <Route path="/" element={<Home />} />
           <Route path="/home" element={<Home />} />
+          <Route path="/product/:id" element={<ProductPage />} />
           <Route path="/cart" element={<Cart />} />
           <Route path="/dashboard" element={<CustomerDashboard />} />
           

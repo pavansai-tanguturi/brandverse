@@ -1,10 +1,12 @@
 // src/pages/Login.js
 
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import '../styles/Login.css';
 
 const Login = () => {
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
   const [error, setError] = useState('');
@@ -17,7 +19,7 @@ const Login = () => {
     setError('');
     setLoading(true);
     try {
-      const { data, error } = await supabase.auth.signInWithOtp({ email });
+      const { error } = await supabase.auth.signInWithOtp({ email });
       if (error) {
         setError(error.message);
       } else {
@@ -62,11 +64,11 @@ const Login = () => {
               } catch (err) {
                 // ignore — we'll still redirect but admin routes may be restricted if session not created
               }
-              window.location.href = '/admin/dashboard';
+              navigate('/admin/dashboard');
             } else {
-              setMessage('Login successful!');
+              setMessage('Login successful! Redirecting to home...');
               setTimeout(() => {
-                window.location.href = '/';
+                navigate('/home');
               }, 1200);
             }
       }

@@ -3,7 +3,7 @@ import { ensureCustomer } from '../models/userModel.js';
 
 export async function signup(req, res) {
   try {
-    const { email, password, full_name } = req.body;
+    const { email, full_name } = req.body;
     
     // First check if a customer with this email already exists in our database
     const { data: existingCustomer } = await supabaseAdmin
@@ -19,12 +19,12 @@ export async function signup(req, res) {
       });
     }
     
-    const { data, error } = await supabaseAnon.auth.signUp({
+    // Send OTP for passwordless signup
+    const { error } = await supabaseAnon.auth.signInWithOtp({
       email,
-      password,
       options: { 
         data: { full_name },
-        emailRedirectTo: undefined // Disable email verification
+        emailRedirectTo: `${process.env.FRONTEND_URL || 'http://localhost:3002'}/auth/callback`
       }
     });
     
@@ -41,19 +41,7 @@ export async function signup(req, res) {
       return res.status(400).json({ error: error.message });
     }
 
-    // Check if signup returned an existing user (identities will be empty for existing users)
-    if (!data.user || (data.user.identities && data.user.identities.length === 0)) {
-      return res.status(400).json({ 
-        error: "User already exists. Please login instead.",
-        code: "USER_ALREADY_EXISTS"
-      });
-    }
-
-    // Successful signup - log the user in automatically
-    req.session.user = { id: data.user.id, email: data.user.email };
-    await ensureCustomer(data.user);
-
-    res.json({ message: 'Signup successful. You are now logged in.', user: req.session.user });
+    res.json({ message: 'OTP sent to your email. Please verify to complete signup.' });
   } catch (e) { 
     res.status(500).json({ error: e.message }); 
   }
@@ -61,12 +49,12 @@ export async function signup(req, res) {
 
 export async function login(req, res) {
   try {
-    const { email, password } = req.body;
+    const { email } = req.body;
 
-    // Admin login using env-configured credentials
-    if (email === process.env.AUTH_U && password === process.env.AUTH_P) {
+    // Admin login using env-configured email (no password needed)
+    const adminEmail = process.env.ADMIN_EMAIL || process.env.AUTH_U;
+    if (email === adminEmail) {
       const adminId = process.env.ADMIN_ID || 'admin';
-      const adminEmail = process.env.ADMIN_EMAIL || process.env.AUTH_U || 'admin';
         req.session.user = { id: adminId, email: adminEmail, isAdmin: true };
         // Ensure there is a customers row for the admin as well
         try {
@@ -78,15 +66,58 @@ export async function login(req, res) {
         return res.json({ message: 'Admin logged in', user: req.session.user, admin: true });
     }
 
-    // Regular user login through Supabase
-    const { data, error } = await supabaseAnon.auth.signInWithPassword({ email, password });
+    // Regular user login through OTP
+    const { error } = await supabaseAnon.auth.signInWithOtp({
+      email,
+      options: {
+        emailRedirectTo: `${process.env.FRONTEND_URL || 'http://localhost:3002'}/auth/callback`
+      }
+    });
+    
     if (error) return res.status(400).json({ error: error.message });
 
+    res.json({ message: 'OTP sent to your email. Please verify to login.' });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+}
+
+export async function verifyOtp(req, res) {
+  try {
+    const { email, token, type = 'magiclink' } = req.body;
+
+    const { data, error } = await supabaseAnon.auth.verifyOtp({
+      email,
+      token,
+      type
+    });
+
+    if (error) return res.status(400).json({ error: error.message });
+
+    // Set session for the authenticated user
     req.session.user = { id: data.user.id, email: data.user.email };
     await ensureCustomer(data.user);
 
-    res.json({ message: 'Logged in', user: req.session.user, admin: false });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+    res.json({ message: 'OTP verified successfully', user: req.session.user });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+}
+
+export async function sessionFromEmail(req, res) {
+  try {
+    const { email } = req.body;
+    
+    // Create session based on email (used for admin authentication)
+    const adminEmail = process.env.ADMIN_EMAIL || process.env.AUTH_U;
+    if (email === adminEmail) {
+      const adminId = process.env.ADMIN_ID || 'admin';
+      req.session.user = { id: adminId, email: adminEmail, isAdmin: true };
+      return res.json({ message: 'Admin session created', user: req.session.user });
+    }
+    
+    res.status(400).json({ error: 'Invalid email for session creation' });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 }
 
 export async function me(req, res) {
