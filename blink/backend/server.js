@@ -25,6 +25,7 @@ const corsOptions = {
   origin: process.env.NODE_ENV === 'production' 
     ? [
         'https://brandverse-46he.vercel.app',
+        'https://brandverse-ebon.vercel.app',
         'https://brandverse.vercel.app',
         process.env.FRONTEND_URL
       ].filter(Boolean)
