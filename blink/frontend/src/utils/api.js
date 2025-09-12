@@ -1,10 +1,17 @@
 // Centralized API utility for handling environment-specific URLs
-const API_BASE_URL = (
-  process.env.NODE_ENV === 'production' || 
-  window.location.hostname !== 'localhost'
-) 
+// Force production URL when deployed on Vercel domains
+const isDeployed = window.location.hostname.includes('vercel.app') || 
+                  window.location.hostname !== 'localhost';
+
+const API_BASE_URL = isDeployed 
   ? 'https://brandverse-46he.vercel.app'
   : 'http://localhost:3001';
+
+console.log('API_BASE_URL determined:', API_BASE_URL, {
+  hostname: window.location.hostname,
+  isDeployed,
+  NODE_ENV: process.env.NODE_ENV
+});
 
 export const apiCall = async (endpoint, options = {}) => {
   const url = `${API_BASE_URL}${endpoint}`;
