@@ -4,6 +4,7 @@ import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
 import { WishlistProvider } from './context/WishlistContext';
 import { AddressProvider } from './context/AddressContext';
+import EnvironmentInfo from './components/EnvironmentInfo';
 import Auth from './pages/Auth';
 import Login from './pages/Login';
 import SignUp from './pages/SignUp';
@@ -30,6 +31,7 @@ function App() {
       <CartProvider>
         <WishlistProvider>
           <AddressProvider>
+            <EnvironmentInfo />
             <Router>
           <Routes>
             {/* Regular User Routes */}
