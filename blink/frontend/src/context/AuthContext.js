@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { supabase } from '../supabaseClient';
 import { apiCall } from '../utils/api';
 
 const AuthContext = createContext();
@@ -23,30 +22,20 @@ export const AuthProvider = ({ children }) => {
 
   const checkUserSession = async () => {
     try {
-      // Check session using the customers/me endpoint
-      const response = await apiCall('/api/customers/me', {
-        method: 'GET'
-      });
+      const response = await apiCall('/api/customers/me');
       
       if (response.ok) {
-        const result = await response.json();
-        if (result && (result.user || result.id)) {
-          // Handle both formats: {user: {...}} or direct user object {...}
-          const userData = result.user || result;
-          setUser(userData);
-          setLoading(false);
-          return;
-        }
+        const userData = await response.json();
+        setUser(userData);
+      } else {
+        setUser(null);
       }
-      
-      // No valid session
-      setUser(null);
-      
     } catch (error) {
       console.error('Error checking session:', error);
       setUser(null);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const login = async (email, otp = null) => {
@@ -87,30 +76,22 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     try {
-      // Call logout endpoint to clear session
-      await apiCall('/logout', {
-        method: 'POST'
+      await apiCall('/api/auth/logout', {
+        method: 'POST',
       });
-      
-      setUser(null);
     } catch (error) {
       console.error('Logout error:', error);
-      // Still clear user state even if server request fails
+    } finally {
       setUser(null);
     }
   };
 
-  const refreshUser = async () => {
-    await checkUserSession();
-  };
-
   const value = {
     user,
+    loading,
     login,
     logout,
-    loading,
-    setUser,
-    refreshUser
+    checkSession: checkUserSession,
   };
 
   return (
