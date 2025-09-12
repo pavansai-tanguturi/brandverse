@@ -1,4 +1,4 @@
-// config/api.js or utils/api.js
+// Centralized API utility for handling environment-specific URLs
 const API_BASE_URL = process.env.NODE_ENV === 'production' 
   ? process.env.REACT_APP_API_URL || 'https://brandverse-46he.vercel.app'
   : 'http://localhost:3001';
