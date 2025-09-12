@@ -6,7 +6,11 @@ console.log('Environment variables:', {
   REACT_APP_API_BASE: process.env.REACT_APP_API_BASE
 });
 
-const API_BASE_URL = process.env.NODE_ENV === 'production' 
+// Force production URLs when deployed
+const API_BASE_URL = (
+  process.env.NODE_ENV === 'production' || 
+  window.location.hostname !== 'localhost'
+) 
   ? process.env.REACT_APP_API_URL || process.env.REACT_APP_API_BASE || 'https://brandverse-46he.vercel.app'
   : 'http://localhost:3001';
 

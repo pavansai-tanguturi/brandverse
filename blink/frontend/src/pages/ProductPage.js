@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
 import { CustomerIcon, CartIcon } from '../components/icons';
+import { API_BASE_URL } from '../utils/api';
 import logo from '../assets/logos.png';
 import locationIcon from '../assets/location.png';
 import Footer from '../components/Footer';
@@ -41,7 +42,7 @@ const ProductPage = () => {
 
   const fetchProduct = useCallback(async () => {
     try {
-      const response = await fetch(`http://localhost:3001/api/products/${id}`);
+      const response = await fetch(`${API_BASE_URL}/api/products/${id}`);
       if (response.ok) {
         const data = await response.json();
         setProduct(data);
