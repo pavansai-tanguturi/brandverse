@@ -1,6 +1,13 @@
 import express from 'express';
 import { requireAuth, requireAdmin } from '../middleware/auth.js';
-import { createOrder, listMyOrders, listAllOrders, updateOrderStatus } from '../controllers/orderController.js';
+import { 
+  createOrder, 
+  listMyOrders, 
+  listAllOrders, 
+  updateOrderStatus, 
+  confirmPayment, 
+  handleWebhook 
+} from '../controllers/orderController.js';
 
 const router = express.Router();
 
@@ -8,5 +15,9 @@ router.post('/', requireAuth, createOrder);
 router.get('/', requireAuth, listMyOrders);
 router.get('/admin', requireAdmin, listAllOrders);
 router.patch('/admin/:id/status', requireAdmin, updateOrderStatus);
+
+// Payment routes
+router.post('/confirm-payment', requireAuth, confirmPayment);
+router.post('/webhook', handleWebhook); // No auth required for webhooks
 
 export default router;

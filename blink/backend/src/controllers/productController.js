@@ -39,13 +39,26 @@ export async function getProduct(req, res) {
     .eq('id', id)
     .single();
   if (error) return res.status(404).json({ error: error.message });
+  
+  // Generate signed URLs for all product images
   const withUrls = await Promise.all((data.product_images || []).map(async (img) => {
     const { data: signed } = await supabaseAdmin.storage
       .from(process.env.PRODUCT_IMAGES_BUCKET)
       .createSignedUrl(img.path, 600);
     return { ...img, url: signed?.signedUrl || null };
   }));
-  res.json({ ...data, product_images: withUrls });
+  
+  // Find primary image and create image_url field (same as listProducts)
+  const primary = (data.product_images || []).find(i => i.is_primary) || data.product_images?.[0];
+  let image_url = null;
+  if (primary) {
+    const { data: signed } = await supabaseAdmin.storage
+      .from(process.env.PRODUCT_IMAGES_BUCKET)
+      .createSignedUrl(primary.path, 600);
+    image_url = signed?.signedUrl || null;
+  }
+  
+  res.json({ ...data, product_images: withUrls, image_url });
 }
 
 export async function createProduct(req, res) {

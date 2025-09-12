@@ -2,7 +2,6 @@
 // src/pages/SignUp.js
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../supabaseClient';
 import { Link } from 'react-router-dom';
 import '../styles/Signup.css';
 function SignUp() {
@@ -32,21 +31,25 @@ function SignUp() {
     setLoading(true);
 
     try {
-      // Request passwordless signup with Supabase (magic link)
-      const { error } = await supabase.auth.signInWithOtp({
-        email: formData.email,
-        options: {
-          data: { 
-            full_name: formData.name 
-          },
-          emailRedirectTo: `${window.location.origin}/auth/callback`
-        }
+      // Use backend signup endpoint for consistency
+      const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:3001';
+      const response = await fetch(`${API_BASE}/api/auth/signup`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ 
+          name: formData.name,
+          email: formData.email 
+        })
       });
-      if (error) {
-        setError(error.message);
-      } else {
+
+      const data = await response.json();
+      
+      if (response.ok) {
         setOtpStep(true);
-        setMessage('An OTP has been sent to your email. Please enter the 6-digit code to verify.');
+        setMessage(data.message || 'An OTP has been sent to your email. Please enter the 6-digit code to verify.');
+      } else {
+        setError(data.error || 'Signup failed. Please try again.');
       }
     } catch (err) {
       setError('Network error. Please try again.');
@@ -58,19 +61,37 @@ function SignUp() {
     setError('');
     setLoading(true);
     try {
-      const { error } = await supabase.auth.verifyOtp({
-        email: formData.email,
-        token: formData.otp,
-        type: 'signup'
+      // Use backend verify-otp endpoint for consistency
+      const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:3001';
+      const response = await fetch(`${API_BASE}/api/auth/verify-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ 
+          email: formData.email, 
+          token: formData.otp,
+          type: 'magiclink'
+        })
       });
-      if (error) {
-        setError(error.message);
-      } else {
+
+      const data = await response.json();
+      
+      if (response.ok) {
         setSignupComplete(true);
-        setMessage('Your account is verified! Redirecting to home...');
-        setTimeout(() => {
-          navigate('/home');
-        }, 2000);
+        
+        if (data.admin) {
+          setMessage('Admin account verified! Redirecting to admin dashboard...');
+          setTimeout(() => {
+            navigate('/admin/dashboard');
+          }, 2000);
+        } else {
+          setMessage('Your account is verified! Redirecting to home...');
+          setTimeout(() => {
+            navigate('/home');
+          }, 2000);
+        }
+      } else {
+        setError(data.error || 'OTP verification failed');
       }
     } catch (err) {
       setError('Network error. Please try again.');

@@ -1,6 +1,8 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useCart } from '../context/CartContext';
+import { useWishlist } from '../context/WishlistContext';
 import { CustomerIcon, CartIcon } from '../components/icons';
 import logo from '../assets/logos.png';
 import locationIcon from '../assets/location.png';
@@ -11,10 +13,31 @@ const ProductPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { addToCart } = useCart();
+  const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
+
+  // Use product images if available, otherwise use primary image_url, otherwise fallback
+  const productImages = useMemo(() => {
+    if (!product) return ['https://images.unsplash.com/photo-1560472354-b33ff0c44a43?auto=format&fit=crop&w=600&q=80'];
+    
+    if (product.product_images && product.product_images.length > 0) {
+      // Use all available product images with signed URLs
+      const validImages = product.product_images
+        .filter(img => img.url) // Only include images with valid URLs
+        .map(img => img.url);
+      return validImages.length > 0 ? validImages : [product.image_url || 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?auto=format&fit=crop&w=600&q=80'];
+    } else if (product.image_url) {
+      // Fallback to single image_url
+      return [product.image_url];
+    } else {
+      // Final fallback to placeholder
+      return ['https://images.unsplash.com/photo-1560472354-b33ff0c44a43?auto=format&fit=crop&w=600&q=80'];
+    }
+  }, [product]);
 
   const fetchProduct = useCallback(async () => {
     try {
@@ -38,35 +61,7 @@ const ProductPage = () => {
     fetchProduct();
   }, [fetchProduct]);
 
-  const handleAddToCart = async () => {
-    if (!user) {
-      navigate('/login');
-      return;
-    }
 
-    try {
-      const response = await fetch('http://localhost:3001/api/cart/add', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          productId: product.id,
-          quantity: quantity
-        })
-      });
-
-      if (response.ok) {
-        alert('Product added to cart successfully!');
-      } else {
-        alert('Failed to add product to cart');
-      }
-    } catch (error) {
-      console.error('Error adding to cart:', error);
-      alert('Error adding product to cart');
-    }
-  };
 
   const calculateDiscountedPrice = (price, discount) => {
     if (discount && discount > 0) {
@@ -135,8 +130,6 @@ const ProductPage = () => {
       </div>
     );
   }
-
-  const productImages = product.image_url ? [product.image_url] : ['https://images.unsplash.com/photo-1560472354-b33ff0c44a43?auto=format&fit=crop&w=600&q=80'];
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -210,14 +203,16 @@ const ProductPage = () => {
       </header>
       
       <div className="container mx-auto px-4 py-8" style={{ paddingTop: '100px' }}>
-        {/* Breadcrumb */}
-        <nav className="breadcrumb mb-6">
-          <span onClick={() => navigate('/')} className="breadcrumb-link">Home</span>
-          <span className="breadcrumb-separator">/</span>
-          <span onClick={() => navigate('/products')} className="breadcrumb-link">Products</span>
-          <span className="breadcrumb-separator">/</span>
-          <span className="breadcrumb-current">{product.title}</span>
-        </nav>
+        {/* Back Button */}
+        <button 
+          onClick={() => navigate(-1)}
+          className="back-button mb-6 flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors"
+        >
+          <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+          Back
+        </button>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
           {/* Product Images */}
@@ -303,7 +298,10 @@ const ProductPage = () => {
                 <label htmlFor="quantity">Quantity:</label>
                 <div className="quantity-controls">
                   <button 
-                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setQuantity(Math.max(1, quantity - 1));
+                    }}
                     className="quantity-btn"
                     disabled={quantity <= 1}
                   >
@@ -313,13 +311,19 @@ const ProductPage = () => {
                     id="quantity"
                     type="number" 
                     value={quantity} 
-                    onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                    onChange={(e) => {
+                      e.stopPropagation();
+                      setQuantity(Math.max(1, parseInt(e.target.value) || 1));
+                    }}
                     min="1"
                     max={product.stock_quantity || 99}
                     className="quantity-input"
                   />
                   <button 
-                    onClick={() => setQuantity(Math.min(product.stock_quantity || 99, quantity + 1))}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setQuantity(Math.min(product.stock_quantity || 99, quantity + 1));
+                    }}
                     className="quantity-btn"
                     disabled={quantity >= (product.stock_quantity || 99)}
                   >
@@ -330,18 +334,40 @@ const ProductPage = () => {
 
               <div className="action-buttons">
                 <button 
-                  onClick={handleAddToCart}
-                  className="add-to-cart-btn-large"
-                  disabled={product.stock_quantity <= 0}
+                  onClick={() => {
+                    if (isInWishlist(product.id)) {
+                      removeFromWishlist(product.id);
+                    } else {
+                      // Use the correct image from productImages array
+                      const productWithCorrectImage = {
+                        ...product,
+                        image_url: productImages[0] // Use the first image from our computed array
+                      };
+                      addToWishlist(productWithCorrectImage);
+                    }
+                  }}
+                  className={`wishlist-btn ${isInWishlist(product.id) ? 'wishlist-btn-active' : ''}`}
+                  title={isInWishlist(product.id) ? "Remove from Wishlist" : "Add to Wishlist"}
                 >
-                  {product.stock_quantity > 0 ? 'Add to Cart' : 'Out of Stock'}
+                  <svg width="20" height="20" fill={isInWishlist(product.id) ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                  </svg>
+                  {isInWishlist(product.id) ? 'Remove from Wishlist' : 'Add to Wishlist'}
                 </button>
                 <button 
-                  onClick={() => navigate('/cart')}
+                  onClick={async () => {
+                    try {
+                      await addToCart(product, quantity);
+                      navigate('/cart');
+                    } catch (error) {
+                      console.error('Error adding to cart:', error);
+                      alert('Error adding product to cart');
+                    }
+                  }}
                   className="buy-now-btn"
                   disabled={product.stock_quantity <= 0}
                 >
-                  Buy Now
+                  Proceed
                 </button>
               </div>
             </div>
@@ -351,14 +377,22 @@ const ProductPage = () => {
               <h4>Delivery Information</h4>
               <div className="delivery-options">
                 <div className="delivery-option">
-                  <span className="delivery-icon">🚚</span>
+                  <div className="delivery-icon">
+                    <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
                   <div>
                     <p className="delivery-title">Standard Delivery</p>
                     <p className="delivery-desc">5-7 business days - Free on orders over ₹2000</p>
                   </div>
                 </div>
                 <div className="delivery-option">
-                  <span className="delivery-icon">⚡</span>
+                  <div className="delivery-icon">
+                    <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                  </div>
                   <div>
                     <p className="delivery-title">Express Delivery</p>
                     <p className="delivery-desc">1-2 business days - ₹499</p>

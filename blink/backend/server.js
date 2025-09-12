@@ -14,6 +14,7 @@ import categoryRoutes from './src/routes/categories.js';
 import analyticsRoutes from './src/routes/analytics.js';
 import adminCustomerRoutes from './src/routes/adminCustomers.js';
 import deliveryRoutes from './src/routes/delivery.js';
+import addressRoutes from './src/routes/addresses.js';
 
 dotenv.config();
 
@@ -50,6 +51,7 @@ app.use('/api/admin', adminCartRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/admin/customers', adminCustomerRoutes);
 app.use('/api/delivery', deliveryRoutes);
+app.use('/api/addresses', addressRoutes);
 
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => console.log(`API listening on http://localhost:${PORT}`));

@@ -19,7 +19,6 @@ function Home() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
-
   // Fetch products from admin panel
   const fetchProducts = async () => {
     try {
@@ -391,8 +390,15 @@ function Home() {
                       <span className="product-price">₹{(product.price_cents / 100).toFixed(2)}</span>
                     )}
                   </div>
-                  <button className="add-to-cart-btn">
-                    Add to Cart
+                  <button 
+                    className="add-to-cart-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(`/product/${product.id}`);
+                    }}
+                    disabled={product.stock_quantity <= 0}
+                  >
+                    {product.stock_quantity <= 0 ? 'Out of Stock' : 'Add to Cart'}
                   </button>
                 </div>
               </div>

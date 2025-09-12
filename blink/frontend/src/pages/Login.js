@@ -2,11 +2,12 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../supabaseClient';
+import { useAuth } from '../context/AuthContext';
 import '../styles/Login.css';
 
 const Login = () => {
   const navigate = useNavigate();
+  const { refreshUser } = useAuth();
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
   const [error, setError] = useState('');
@@ -19,15 +20,26 @@ const Login = () => {
     setError('');
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithOtp({ email });
-      if (error) {
-        setError(error.message);
-      } else {
+      const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:3001';
+      
+      // Use backend login endpoint for consistent flow
+      const response = await fetch(`${API_BASE}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+
+      const data = await response.json();
+      
+      if (response.ok) {
         setOtpStep(true);
-        setMessage('OTP sent to your email. Enter the 6-digit code.');
+        setMessage(data.message || 'OTP sent to your email. Enter the 6-digit code.');
+      } else {
+        setError(data.error || 'Failed to send OTP');
       }
     } catch (err) {
-      setError('Network error');
+      console.error('Send OTP error:', err);
+      setError('Network error. Please try again.');
     }
     setLoading(false);
   };
@@ -37,43 +49,45 @@ const Login = () => {
     setError('');
     setLoading(true);
     try {
-          const { data, error } = await supabase.auth.verifyOtp({
-            email,
-            token: otp,
-            type: 'magiclink',
-          });
-          if (error) {
-            setError(error.message);
-          } else {
-            const adminEmail = process.env.REACT_APP_ADMIN_EMAIL;
-            // store access token for admin dashboard calls if available
-            const accessToken = data?.session?.access_token || data?.access_token || null;
-            if (accessToken) {
-              try { localStorage.setItem('adminToken', accessToken); } catch (e) { /* ignore */ }
-            }
-            const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:3001';
-            if (adminEmail && email.trim().toLowerCase() === adminEmail.trim().toLowerCase()) {
-              // create server session by email so backend recognizes admin via session
-              try {
-                await fetch(`${API_BASE}/api/auth/session-from-email`, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  credentials: 'include',
-                  body: JSON.stringify({ email })
-                });
-              } catch (err) {
-                // ignore — we'll still redirect but admin routes may be restricted if session not created
-              }
-              navigate('/admin/dashboard');
-            } else {
-              setMessage('Login successful! Redirecting to home...');
-              setTimeout(() => {
-                navigate('/home');
-              }, 1200);
-            }
+      const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:3001';
+      
+      // Use backend OTP verification for proper session creation
+      const response = await fetch(`${API_BASE}/api/auth/verify-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ 
+          email: email, 
+          token: otp,
+          type: 'magiclink'
+        })
+      });
+
+      const data = await response.json();
+      
+      if (response.ok) {
+        setMessage('Authentication successful!');
+        
+        // Check if user is admin based on backend response
+        if (data.admin) {
+          navigate('/admin/dashboard');
+        } else {
+          setMessage('Login successful! Refreshing user session...');
+          
+          // Refresh the AuthContext to get the new user session
+          await refreshUser();
+          
+          setMessage('Login successful! Redirecting to home...');
+          setTimeout(() => {
+            navigate('/home');
+          }, 1200);
+        }
+      } else {
+        setError(data.error || 'OTP verification failed');
       }
     } catch (err) {
-      setError('Network error');
+      console.error('OTP verification error:', err);
+      setError('Network error. Please try again.');
     }
     setLoading(false);
   };

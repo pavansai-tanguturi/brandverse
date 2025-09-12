@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import MiniCart from './MiniCart';
 
 const Navigation = () => {
   const { user, logout, loading } = useAuth();
@@ -40,6 +41,9 @@ const Navigation = () => {
           </div>
           
           <div className="flex items-center space-x-3">
+            {/* Mini Cart */}
+            <MiniCart />
+            
             {user ? (
               <div className="flex items-center space-x-3">
                 <Link 

@@ -3,7 +3,8 @@ import { ensureCustomer } from '../models/userModel.js';
 
 export async function signup(req, res) {
   try {
-    const { email, full_name } = req.body;
+    const { email, full_name, name } = req.body;
+    const userName = full_name || name; // Accept either parameter name
     
     // First check if a customer with this email already exists in our database
     const { data: existingCustomer } = await supabaseAdmin
@@ -23,7 +24,7 @@ export async function signup(req, res) {
     const { error } = await supabaseAnon.auth.signInWithOtp({
       email,
       options: { 
-        data: { full_name },
+        data: { full_name: userName },
         emailRedirectTo: `${process.env.FRONTEND_URL || 'http://localhost:3002'}/auth/callback`
       }
     });
@@ -51,22 +52,7 @@ export async function login(req, res) {
   try {
     const { email } = req.body;
 
-    // Admin login using env-configured email (no password needed)
-    const adminEmail = process.env.ADMIN_EMAIL || process.env.AUTH_U;
-    if (email === adminEmail) {
-      const adminId = process.env.ADMIN_ID || 'admin';
-        req.session.user = { id: adminId, email: adminEmail, isAdmin: true };
-        // Ensure there is a customers row for the admin as well
-        try {
-          await ensureCustomer({ id: adminId, email: adminEmail });
-        } catch (err) {
-          // ignore provisioning errors but log to console
-          console.warn('[auth] failed to ensure admin customer row', err.message || err);
-        }
-        return res.json({ message: 'Admin logged in', user: req.session.user, admin: true });
-    }
-
-    // Regular user login through OTP
+    // Send OTP for all users (including admin)
     const { error } = await supabaseAnon.auth.signInWithOtp({
       email,
       options: {
@@ -76,7 +62,14 @@ export async function login(req, res) {
     
     if (error) return res.status(400).json({ error: error.message });
 
-    res.json({ message: 'OTP sent to your email. Please verify to login.' });
+    // Check if this is admin email for frontend UI purposes
+    const adminEmail = process.env.ADMIN_EMAIL || process.env.AUTH_U;
+    const isAdminEmail = email === adminEmail;
+
+    res.json({ 
+      message: 'OTP sent to your email. Please verify to login.',
+      isAdmin: isAdminEmail
+    });
   } catch (e) { res.status(500).json({ error: e.message }); }
 }
 
@@ -92,11 +85,42 @@ export async function verifyOtp(req, res) {
 
     if (error) return res.status(400).json({ error: error.message });
 
-    // Set session for the authenticated user
-    req.session.user = { id: data.user.id, email: data.user.email };
-    await ensureCustomer(data.user);
+    // Check if this is admin user
+    const adminEmail = process.env.ADMIN_EMAIL || process.env.AUTH_U;
+    const adminId = process.env.ADMIN_ID || 'admin';
+    const isAdmin = email === adminEmail;
 
-    res.json({ message: 'OTP verified successfully', user: req.session.user });
+    // Set session with admin privileges if applicable
+    if (isAdmin) {
+      req.session.user = { 
+        id: adminId, 
+        email: adminEmail, 
+        isAdmin: true 
+      };
+      
+      // Ensure there is a customers row for the admin as well
+      try {
+        await ensureCustomer({ id: adminId, email: adminEmail });
+      } catch (err) {
+        console.warn('[auth] failed to ensure admin customer row', err.message || err);
+      }
+      
+      res.json({ 
+        message: 'Admin OTP verified successfully', 
+        user: req.session.user, 
+        admin: true 
+      });
+    } else {
+      // Regular user
+      req.session.user = { id: data.user.id, email: data.user.email };
+      await ensureCustomer(data.user);
+
+      res.json({ 
+        message: 'OTP verified successfully', 
+        user: req.session.user,
+        admin: false
+      });
+    }
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
