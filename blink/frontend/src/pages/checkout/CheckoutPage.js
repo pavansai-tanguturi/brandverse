@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Navigation from '../../components/Navigation';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
+import { API_BASE_URL } from '../../utils/api';
 
 const CheckoutPage = () => {
   const { user } = useAuth();
@@ -31,8 +32,7 @@ const CheckoutPage = () => {
 
   const fetchAddresses = useCallback(async () => {
     try {
-      const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:3001';
-      const response = await fetch(`${API_BASE}/api/addresses`, {
+      const response = await fetch(`${API_BASE_URL}/api/addresses`, {
         credentials: 'include'
       });
       if (response.ok) {

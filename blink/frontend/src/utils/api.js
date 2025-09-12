@@ -23,4 +23,6 @@ export const apiCall = async (endpoint, options = {}) => {
   }
 };
 
+// Export both the utility function and base URL for backward compatibility
+export { API_BASE_URL };
 export default API_BASE_URL;
