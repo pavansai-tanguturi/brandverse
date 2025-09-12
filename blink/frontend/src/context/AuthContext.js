@@ -1,4 +1,6 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { supabase } from '../supabaseClient';
+import { apiCall } from '../utils/api';
 
 const AuthContext = createContext();
 
@@ -22,9 +24,8 @@ export const AuthProvider = ({ children }) => {
   const checkUserSession = async () => {
     try {
       // Check session using the customers/me endpoint
-      const response = await fetch('http://localhost:3001/api/customers/me', {
-        method: 'GET',
-        credentials: 'include' // Include session cookies
+      const response = await apiCall('/api/customers/me', {
+        method: 'GET'
       });
       
       if (response.ok) {
@@ -52,12 +53,8 @@ export const AuthProvider = ({ children }) => {
     try {
       if (!otp) {
         // Step 1: Send OTP
-        const response = await fetch('http://localhost:3001/api/auth/login', {
+        const response = await apiCall('/api/auth/login', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          credentials: 'include',
           body: JSON.stringify({ email }),
         });
         
@@ -69,12 +66,8 @@ export const AuthProvider = ({ children }) => {
         }
       } else {
         // Step 2: Verify OTP and login
-        const response = await fetch('http://localhost:3001/api/auth/verify-otp', {
+        const response = await apiCall('/api/auth/verify-otp', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          credentials: 'include', // Include session cookies
           body: JSON.stringify({ email, token: otp }),
         });
         
@@ -95,9 +88,8 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     try {
       // Call logout endpoint to clear session
-      await fetch('http://localhost:3001/logout', {
-        method: 'POST',
-        credentials: 'include'
+      await apiCall('/logout', {
+        method: 'POST'
       });
       
       setUser(null);
