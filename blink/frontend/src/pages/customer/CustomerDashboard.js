@@ -48,7 +48,7 @@ const CustomerDashboard = () => {
   // API Functions
   const fetchUserProfile = useCallback(async () => {
     try {
-      const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:3001';
+      const API_BASE = process.env.REACT_APP_API_BASE || 'https://brandverse-46he.vercel.app';
       const response = await fetch(`${API_BASE}/api/customers/me`, {
         credentials: 'include'
       });
@@ -72,7 +72,7 @@ const CustomerDashboard = () => {
   const fetchOrders = async () => {
     try {
       setLoadingData(true);
-      const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:3001';
+      const API_BASE = process.env.REACT_APP_API_BASE || 'https://brandverse-46he.vercel.app';
       const response = await fetch(`${API_BASE}/api/orders`, {
         credentials: 'include'
       });
@@ -94,7 +94,7 @@ const CustomerDashboard = () => {
   const updateUserProfile = async (updatedInfo) => {
     try {
       setUpdating(true);
-      const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:3001';
+      const API_BASE = process.env.REACT_APP_API_BASE || 'https://brandverse-46he.vercel.app';
       
       // Only update basic profile fields that exist in the customers table
       const profileData = {

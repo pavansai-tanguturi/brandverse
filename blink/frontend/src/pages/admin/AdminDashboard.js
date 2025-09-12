@@ -100,7 +100,7 @@ const useApiRequest = () => {
   const [retryCount, setRetryCount] = useState(0);
 
   const API_BASE = useMemo(() => 
-    process.env.REACT_APP_API_BASE || 'http://localhost:3001', 
+    process.env.REACT_APP_API_BASE || 'https://brandverse-46he.vercel.app', 
     []
   );
 
