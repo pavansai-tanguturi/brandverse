@@ -27,15 +27,24 @@ const corsOptions = {
         'https://brandverse-46he.vercel.app',
         'https://brandverse-ebon.vercel.app',
         'https://brandverse.vercel.app',
+        'https://brandverse-pavansais-projects.vercel.app', // Add your actual domain
         process.env.FRONTEND_URL
       ].filter(Boolean)
-    : 'http://localhost:3000',
+    : [
+        'http://localhost:3000',
+        'http://localhost:3001',
+        'https://brandverse-pavansais-projects.vercel.app' // Allow your Vercel domain in dev mode too
+      ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 };
 
 app.use(cors(corsOptions));
+
+// Handle preflight requests explicitly
+app.options('*', cors(corsOptions));
+
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true }));
 
@@ -47,8 +56,8 @@ app.use(
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      sameSite: 'lax',
-      secure: false, // set true behind HTTPS / reverse proxy
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // Important for cross-origin
+      secure: process.env.NODE_ENV === 'production', // true for HTTPS in production
       maxAge: 1000 * 60 * 60 * 24 * 7 // 7 days
     }
   })
