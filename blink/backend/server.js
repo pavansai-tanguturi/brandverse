@@ -19,7 +19,22 @@ import addressRoutes from './src/routes/addresses.js';
 dotenv.config();
 
 const app = express();
-app.use(cors({ origin: 'http://localhost:3000', credentials: true }));
+
+// CORS configuration for production and development
+const corsOptions = {
+  origin: process.env.NODE_ENV === 'production' 
+    ? [
+        'https://brandverse-46he.vercel.app',
+        'https://brandverse.vercel.app',
+        process.env.FRONTEND_URL
+      ].filter(Boolean)
+    : 'http://localhost:3000',
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+};
+
+app.use(cors(corsOptions));
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true }));
 
@@ -53,5 +68,16 @@ app.use('/api/admin/customers', adminCustomerRoutes);
 app.use('/api/delivery', deliveryRoutes);
 app.use('/api/addresses', addressRoutes);
 
-const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => console.log(`API listening on http://localhost:${PORT}`));
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({ ok: true, timestamp: new Date().toISOString() });
+});
+
+// For local development
+if (process.env.NODE_ENV !== 'production') {
+  const PORT = process.env.PORT || 8080;
+  app.listen(PORT, () => console.log(`API listening on http://localhost:${PORT}`));
+}
+
+// Export for Vercel
+export default app;
