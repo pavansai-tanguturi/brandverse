@@ -125,12 +125,67 @@ const CheckoutPage = () => {
     }
   };
 
+  // Sync frontend cart to backend before order creation
+  const syncCartToBackend = async () => {
+    const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
+    
+    // Get existing backend cart and clear items
+    try {
+      const cartResponse = await fetch(`${API_BASE}/api/cart`, {
+        credentials: 'include'
+      });
+      
+      if (cartResponse.ok) {
+        const cartData = await cartResponse.json();
+        // Remove existing items one by one
+        if (cartData.items && cartData.items.length > 0) {
+          for (const item of cartData.items) {
+            try {
+              await fetch(`${API_BASE}/api/cart/items/${item.id}`, {
+                method: 'DELETE',
+                credentials: 'include'
+              });
+            } catch (error) {
+              console.warn(`Could not remove item ${item.id}:`, error);
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.warn('Could not get existing cart:', error);
+    }
+    
+    // Add each item from frontend cart to backend
+    for (const item of items) {
+      try {
+        await fetch(`${API_BASE}/api/cart/items`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify({
+            product_id: item.id,
+            quantity: item.quantity,
+            unit_price_cents: item.price_cents
+          })
+        });
+      } catch (error) {
+        console.error(`Failed to sync item ${item.id}:`, error);
+        throw new Error(`Failed to sync cart item: ${item.title}`);
+      }
+    }
+  };
+
   const createOrderAndPayment = async () => {
     try {
       setLoading(true);
       setError('');
       
       const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
+      
+      // First sync the frontend cart to backend
+      await syncCartToBackend();
       
       // Create order with Razorpay
       const response = await fetch(`${API_BASE}/api/orders`, {

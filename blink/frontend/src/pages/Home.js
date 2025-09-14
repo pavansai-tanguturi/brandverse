@@ -113,7 +113,7 @@ function Home() {
     }, 4000); // Change banner every 4 seconds
 
     return () => clearInterval(interval);
-  }); // Removed dependency array to avoid stale closure
+  }, [banners.length]); // Added proper dependency array
 
   // Prevent admin access from customer interface
   const checkAdminAccess = useCallback(() => {
