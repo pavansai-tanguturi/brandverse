@@ -55,7 +55,7 @@ const addressReducer = (state, action) => {
         ...state,
         addresses: state.addresses.map(addr => ({
           ...addr,
-          is_default: addr.id === action.payload.id && addr.type === action.payload.type
+          is_default: addr.id === action.payload.id
         })),
         loading: false,
         error: null
@@ -93,12 +93,12 @@ export const AddressProvider = ({ children }) => {
 
   // Fetch addresses for a customer
   const fetchAddresses = useCallback(async (customerId) => {
-    if (!customerId) return;
-    
     dispatch({ type: ADDRESS_ACTIONS.SET_LOADING, payload: true });
     
     try {
-      const response = await fetch(`${API_BASE}/addresses/customer/${customerId}`);
+      const response = await fetch(`${API_BASE}/addresses`, {
+        credentials: 'include'
+      });
       
       if (!response.ok) {
         throw new Error(`Failed to fetch addresses: ${response.status}`);
@@ -117,11 +117,12 @@ export const AddressProvider = ({ children }) => {
     dispatch({ type: ADDRESS_ACTIONS.SET_LOADING, payload: true });
     
     try {
-      const response = await fetch(`${API_BASE}/addresses/customer/${customerId}`, {
+      const response = await fetch(`${API_BASE}/addresses`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify(addressData)
       });
       
@@ -150,6 +151,7 @@ export const AddressProvider = ({ children }) => {
         headers: {
           'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify(addressData)
       });
       
@@ -174,7 +176,8 @@ export const AddressProvider = ({ children }) => {
     
     try {
       const response = await fetch(`${API_BASE}/addresses/${addressId}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        credentials: 'include'
       });
       
       if (!response.ok) {
@@ -191,7 +194,7 @@ export const AddressProvider = ({ children }) => {
   }, [API_BASE]);
 
   // Set default address
-  const setDefaultAddress = useCallback(async (addressId, type) => {
+  const setDefaultAddress = useCallback(async (addressId) => {
     dispatch({ type: ADDRESS_ACTIONS.SET_LOADING, payload: true });
     
     try {
@@ -200,7 +203,7 @@ export const AddressProvider = ({ children }) => {
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ type })
+        credentials: 'include'
       });
       
       if (!response.ok) {
@@ -211,7 +214,7 @@ export const AddressProvider = ({ children }) => {
       const updatedAddress = await response.json();
       dispatch({ 
         type: ADDRESS_ACTIONS.SET_DEFAULT_ADDRESS, 
-        payload: { id: addressId, type } 
+        payload: { id: addressId } 
       });
       return updatedAddress;
     } catch (error) {

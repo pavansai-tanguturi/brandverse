@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import MiniCart from './MiniCart';
+import CartIcon from './CartIcon';
 
 const Navigation = () => {
   const { user, logout, loading } = useAuth();
@@ -121,9 +122,7 @@ const Navigation = () => {
             onClick={closeSidebar}
             className="flex items-center px-3 py-2 text-gray-700 rounded-md hover:bg-blue-50 hover:text-blue-700 transition-colors"
           >
-            <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5L5 21h14M7 13v8a2 2 0 002 2h6a2 2 0 002-2v-8m-8 0V9a2 2 0 012-2h4a2 2 0 012 2v4.01" />
-            </svg>
+            <CartIcon className="w-5 h-5 mr-3" strokeColor="currentColor" />
             Cart
           </Link>
 

@@ -1,4 +1,5 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
+import { apiCall } from '../utils/api';
 
 const AuthContext = createContext();
 
@@ -11,83 +12,103 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(() => {
+    // Try to get user from localStorage on initial load
+    try {
+      const savedUser = localStorage.getItem('user');
+      return savedUser ? JSON.parse(savedUser) : null;
+    } catch (error) {
+      console.error('Error loading user from localStorage:', error);
+      return null;
+    }
+  });
   const [loading, setLoading] = useState(true);
+
+  // Save user to localStorage whenever user state changes
+  useEffect(() => {
+    if (user) {
+      localStorage.setItem('user', JSON.stringify(user));
+    } else {
+      localStorage.removeItem('user');
+    }
+  }, [user]);
 
   // Check if user is logged in on app start
   useEffect(() => {
     checkUserSession();
   }, []);
 
-  const checkUserSession = async () => {
+    const checkUserSession = useCallback(async () => {
     try {
-      // Check session using the customers/me endpoint
-      const response = await fetch('http://localhost:3001/api/customers/me', {
-        method: 'GET',
-        credentials: 'include' // Include session cookies
-      });
-      
-      if (response.ok) {
-        const result = await response.json();
-        if (result && (result.user || result.id)) {
-          // Handle both formats: {user: {...}} or direct user object {...}
-          const userData = result.user || result;
+      // First check localStorage for backed up user data
+      const cachedUser = localStorage.getItem('user');
+      if (cachedUser) {
+        try {
+          const userData = JSON.parse(cachedUser);
           setUser(userData);
-          setLoading(false);
-          return;
+        } catch (e) {
+          console.error('Failed to parse cached user data:', e);
+          localStorage.removeItem('user');
         }
       }
-      
-      // No valid session
-      setUser(null);
-      
+
+      const response = await apiCall('/api/auth/user', {
+        method: 'GET',
+      });
+
+      if (response.user) {
+        setUser(response.user);
+        // Update localStorage with fresh data
+        localStorage.setItem('user', JSON.stringify(response.user));
+      } else {
+        // If session check fails, clear everything
+        setUser(null);
+        localStorage.removeItem('user');
+      }
     } catch (error) {
-      console.error('Error checking session:', error);
-      setUser(null);
+      console.error('Session check failed:', error);
+      // Keep cached user if available, otherwise clear
+      const cachedUser = localStorage.getItem('user');
+      if (!cachedUser) {
+        setUser(null);
+      }
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
-  };
+  }, []);
 
   const login = async (email, otp = null) => {
     try {
       if (!otp) {
         // Step 1: Send OTP
-        const response = await fetch('http://localhost:3001/api/auth/login', {
+        const response = await apiCall('/api/auth/login', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          credentials: 'include',
           body: JSON.stringify({ email }),
         });
         
-        const result = await response.json();
-        if (response.ok) {
-          return { success: true, message: result.message };
+        if (response.message) {
+          return { success: true, message: response.message };
         } else {
-          return { success: false, error: result.error };
+          return { success: false, error: response.error || 'Login failed' };
         }
       } else {
         // Step 2: Verify OTP and login
-        const response = await fetch('http://localhost:3001/api/auth/verify-otp', {
+        const response = await apiCall('/api/auth/verify-otp', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          credentials: 'include', // Include session cookies
           body: JSON.stringify({ email, token: otp }),
         });
         
-        const result = await response.json();
-        if (response.ok) {
-          // Session is now stored server-side, update user state
-          setUser(result.user);
-          return { success: true, message: result.message };
+        if (response.user) {
+          // Session is now stored server-side, update user state and localStorage
+          setUser(response.user);
+          localStorage.setItem('user', JSON.stringify(response.user));
+          return { success: true, message: response.message || 'Login successful' };
         } else {
-          return { success: false, error: result.error };
+          return { success: false, error: response.error || 'OTP verification failed' };
         }
       }
     } catch (error) {
+      console.error('Login error:', error);
       return { success: false, error: 'Network error' };
     }
   };
@@ -95,16 +116,17 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     try {
       // Call logout endpoint to clear session
-      await fetch('http://localhost:3001/logout', {
-        method: 'POST',
-        credentials: 'include'
+      await apiCall('/api/auth/logout', {
+        method: 'POST'
       });
       
       setUser(null);
+      localStorage.removeItem('user');
     } catch (error) {
       console.error('Logout error:', error);
       // Still clear user state even if server request fails
       setUser(null);
+      localStorage.removeItem('user');
     }
   };
 

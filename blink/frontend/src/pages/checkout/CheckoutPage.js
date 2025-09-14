@@ -6,8 +6,16 @@ import { useCart } from '../../context/CartContext';
 
 const CheckoutPage = () => {
   const { user } = useAuth();
-  const { items, getCartTotal, clearCart } = useCart();
+  const { items, getCartTotal, getCartSubtotal, getTotalDiscount, clearCart } = useCart();
   const navigate = useNavigate();
+
+  // Helper function to calculate discounted price for an item
+  const getItemDiscountedPrice = (item) => {
+    if (item.discount_percent > 0) {
+      return item.price_cents * (1 - item.discount_percent / 100);
+    }
+    return item.price_cents;
+  };
 
   const [step, setStep] = useState(1); // 1: Review, 2: Address, 3: Payment
   const [addresses, setAddresses] = useState([]);
@@ -25,6 +33,7 @@ const CheckoutPage = () => {
     postal_code: '',
     country: 'India',
     landmark: '',
+    type: 'both', // Default to 'both' for shipping and billing
     is_default: true
   });
   // const [orderData, setOrderData] = useState(null);
@@ -94,6 +103,7 @@ const CheckoutPage = () => {
           postal_code: '',
           country: 'India',
           landmark: '',
+          type: 'both',
           is_default: true
         });
       } else if (response.status === 401) {
@@ -300,10 +310,25 @@ const CheckoutPage = () => {
                       <div className="flex-1">
                         <h3 className="font-medium text-gray-900">{item.title}</h3>
                         <p className="text-gray-500">Quantity: {item.quantity}</p>
-                        <p className="text-gray-500">Price: ₹{(item.price_cents / 100).toFixed(2)} each</p>
+                        {item.discount_percent > 0 ? (
+                          <div className="space-y-1">
+                            <p className="text-gray-500">
+                              Price: ₹{(getItemDiscountedPrice(item) / 100).toFixed(2)} each
+                              <span className="ml-2 text-xs text-gray-400 line-through">₹{(item.price_cents / 100).toFixed(2)}</span>
+                            </p>
+                            <p className="text-green-600 text-sm">
+                              Save ₹{((item.price_cents - getItemDiscountedPrice(item)) / 100).toFixed(2)} ({item.discount_percent}% off)
+                            </p>
+                          </div>
+                        ) : (
+                          <p className="text-gray-500">Price: ₹{(item.price_cents / 100).toFixed(2)} each</p>
+                        )}
                       </div>
                       <div className="text-right">
-                        <p className="font-semibold">₹{((item.price_cents / 100) * item.quantity).toFixed(2)}</p>
+                        <p className="font-semibold">₹{((getItemDiscountedPrice(item) / 100) * item.quantity).toFixed(2)}</p>
+                        {item.discount_percent > 0 && (
+                          <p className="text-xs text-gray-400 line-through">₹{((item.price_cents / 100) * item.quantity).toFixed(2)}</p>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -726,8 +751,14 @@ const CheckoutPage = () => {
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span>Subtotal ({items.length} items):</span>
-                  <span>₹{(getCartTotal() / 100).toFixed(2)}</span>
+                  <span>₹{(getCartSubtotal() / 100).toFixed(2)}</span>
                 </div>
+                {getTotalDiscount() > 0 && (
+                  <div className="flex justify-between text-green-600">
+                    <span>Discount:</span>
+                    <span>-₹{(getTotalDiscount() / 100).toFixed(2)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between">
                   <span>Shipping:</span>
                   <span className="text-green-600">Free</span>
@@ -741,6 +772,11 @@ const CheckoutPage = () => {
                   <span>Total:</span>
                   <span>₹{(getCartTotal() / 100).toFixed(2)}</span>
                 </div>
+                {getTotalDiscount() > 0 && (
+                  <div className="text-green-600 text-sm text-right">
+                    You saved ₹{(getTotalDiscount() / 100).toFixed(2)}!
+                  </div>
+                )}
               </div>
 
               <div className="mt-6 text-xs text-gray-500">

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
+import CartIcon from './CartIcon';
 import '../styles/MiniCart.css';
 
 const MiniCart = () => {
@@ -43,9 +44,7 @@ const MiniCart = () => {
       {/* Cart Icon with Badge */}
       <div className="cart-trigger" onClick={toggleCart}>
         <div className="cart-icon">
-          <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.5 6M7 13l-1.5 6m0 0h9M17 21a2 2 0 100-4 2 2 0 000 4zM9 21a2 2 0 100-4 2 2 0 000 4z" />
-          </svg>
+          <CartIcon className="w-6 h-6" strokeColor="currentColor" />
           {itemCount > 0 && (
             <span className="cart-badge">{itemCount}</span>
           )}
@@ -71,9 +70,7 @@ const MiniCart = () => {
               {items.length === 0 ? (
                 <div className="empty-cart">
                   <div className="empty-cart-icon">
-                    <svg width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.5 6M7 13l-1.5 6m0 0h9" />
-                    </svg>
+                    <CartIcon className="w-12 h-12" strokeColor="currentColor" />
                   </div>
                   <p>Your cart is empty</p>
                   <button className="continue-shopping" onClick={() => setIsOpen(false)}>
