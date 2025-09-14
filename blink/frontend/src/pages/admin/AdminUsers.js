@@ -14,7 +14,7 @@ const AdminUsers = () => {
 
   const fetchCustomers = async () => {
     try {
-      const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:3001';
+      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
       
       const res = await fetch(`${API_BASE}/api/admin/customers`, {
         credentials: 'include'
@@ -33,7 +33,7 @@ const AdminUsers = () => {
 
   const viewCustomerDetails = async (customerId) => {
     try {
-      const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:3001';
+      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
       
       const res = await fetch(`${API_BASE}/api/admin/customers/${customerId}`, {
         credentials: 'include'

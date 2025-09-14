@@ -60,7 +60,7 @@ const AnalyticsDashboard = () => {
     setError('');
     setIsRefreshing(true);
     try {
-      const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:3001';
+      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
       
       const res = await fetch(`${API_BASE}/api/admin/analytics/summary?startDate=${dateRange.start}&endDate=${dateRange.end}`, {
         credentials: 'include'
@@ -89,7 +89,7 @@ const AnalyticsDashboard = () => {
   const exportData = async (format) => {
     setExportLoading(true);
     try {
-      const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:3001';
+      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
       
       const res = await fetch(`${API_BASE}/api/admin/analytics/export?format=${format}&startDate=${dateRange.start}&endDate=${dateRange.end}`, {
         credentials: 'include'

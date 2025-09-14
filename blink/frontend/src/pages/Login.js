@@ -20,7 +20,7 @@ const Login = () => {
     setError('');
     setLoading(true);
     try {
-      const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:3001';
+      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
       
       // Use backend login endpoint for consistent flow
       const response = await fetch(`${API_BASE}/api/auth/login`, {
@@ -49,7 +49,7 @@ const Login = () => {
     setError('');
     setLoading(true);
     try {
-      const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:3001';
+      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
       
       // Use backend OTP verification for proper session creation
       const response = await fetch(`${API_BASE}/api/auth/verify-otp`, {

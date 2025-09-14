@@ -32,7 +32,7 @@ function SignUp() {
 
     try {
       // Use backend signup endpoint for consistency
-      const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:3001';
+      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
       const response = await fetch(`${API_BASE}/api/auth/signup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -62,7 +62,7 @@ function SignUp() {
     setLoading(true);
     try {
       // Use backend verify-otp endpoint for consistency
-      const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:3001';
+      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
       const response = await fetch(`${API_BASE}/api/auth/verify-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

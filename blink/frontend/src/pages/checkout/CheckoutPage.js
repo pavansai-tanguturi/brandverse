@@ -31,7 +31,7 @@ const CheckoutPage = () => {
 
   const fetchAddresses = useCallback(async () => {
     try {
-      const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:3001';
+      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
       const response = await fetch(`${API_BASE}/api/addresses`, {
         credentials: 'include'
       });
@@ -68,7 +68,7 @@ const CheckoutPage = () => {
     e.preventDefault();
     try {
       setLoading(true);
-      const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:3001';
+      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
       
       const response = await fetch(`${API_BASE}/api/addresses`, {
         method: 'POST',
@@ -120,7 +120,7 @@ const CheckoutPage = () => {
       setLoading(true);
       setError('');
       
-      const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:3001';
+      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
       
       // Create order with Razorpay
       const response = await fetch(`${API_BASE}/api/orders`, {
@@ -189,7 +189,7 @@ const CheckoutPage = () => {
 
   const handlePaymentSuccess = async (razorpayResponse, orderId) => {
     try {
-      const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:3001';
+      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
       
       const response = await fetch(`${API_BASE}/api/orders/confirm-payment`, {
         method: 'POST',

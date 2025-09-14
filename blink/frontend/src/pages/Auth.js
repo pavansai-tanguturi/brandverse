@@ -93,7 +93,7 @@ function Auth() {
         setMessage(data.message || 'Authentication successful');
         
         // Check if user is admin
-        const adminEmail = process.env.REACT_APP_ADMIN_EMAIL;
+        const adminEmail = import.meta.env.VITE_ADMIN_EMAIL;
         if (adminEmail && formData.email.trim().toLowerCase() === adminEmail.trim().toLowerCase()) {
           navigate('/admin/dashboard');
         } else {

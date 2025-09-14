@@ -100,7 +100,7 @@ const useApiRequest = () => {
   const [retryCount, setRetryCount] = useState(0);
 
   const API_BASE = useMemo(() => 
-    process.env.REACT_APP_API_BASE || 'http://localhost:3001', 
+    import.meta.env.VITE_API_BASE || 'http://localhost:3001', 
     []
   );
 

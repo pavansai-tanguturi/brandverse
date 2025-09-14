@@ -11,7 +11,7 @@ const Logout = () => {
       setError('');
       setLoading(true);
       try {
-        const API_BASE = process.env.REACT_APP_API_BASE || '';
+        const API_BASE = import.meta.env.VITE_API_BASE || '';
         const logoutUrl = `${API_BASE}/api/auth/logout`;
         // Send logout request in background so UI isn't blocked.
         if (navigator && navigator.sendBeacon) {
