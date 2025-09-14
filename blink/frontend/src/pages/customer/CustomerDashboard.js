@@ -7,7 +7,7 @@ import { useCart } from '../../context/CartContext';
 import { useNavigate } from 'react-router-dom';
 
 const CustomerDashboard = () => {
-  const { user, loading } = useAuth();
+  const { user, loading, logout } = useAuth();
   const navigate = useNavigate();
   const { items: wishlistItems, removeFromWishlist } = useWishlist();
   const { addToCart } = useCart();
@@ -142,6 +142,15 @@ const CustomerDashboard = () => {
     }
   }, [user, loading, navigate, fetchUserProfile]); // Note: fetchUserProfile and fetchOrders are stable functions
 
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
+
   const getStatusColor = (status, paymentStatus) => {
     // Payment status takes priority
     if (paymentStatus === 'failed') {
@@ -197,20 +206,35 @@ const CustomerDashboard = () => {
           <div className="border-b border-gray-200">
             {/* Mobile Tab Navigation - Dropdown */}
             <div className="sm:hidden">
-              <label htmlFor="tabs" className="sr-only">Select a tab</label>
-              <select
-                id="tabs"
-                name="tabs"
-                value={activeTab}
-                onChange={(e) => setActiveTab(e.target.value)}
-                className="block w-full px-3 py-2 border-0 border-b border-gray-200 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="orders">Orders</option>
-                <option value="wishlist">Wishlist</option>
-                <option value="settings">Settings</option>
-                <option value="payment">Payment</option>
-                <option value="addresses">Addresses</option>
-              </select>
+              <div className="flex items-center justify-between px-3 py-2">
+                <div className="flex-1">
+                  <label htmlFor="tabs" className="sr-only">Select a tab</label>
+                  <select
+                    id="tabs"
+                    name="tabs"
+                    value={activeTab}
+                    onChange={(e) => setActiveTab(e.target.value)}
+                    className="block w-full px-0 py-2 border-0 border-b border-gray-200 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="orders">Orders</option>
+                    <option value="wishlist">Wishlist</option>
+                    <option value="settings">Settings</option>
+                    <option value="payment">Payment</option>
+                    <option value="addresses">Addresses</option>
+                  </select>
+                </div>
+                
+                {/* Mobile Logout Button */}
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center gap-1 px-3 py-2 text-red-500 hover:text-red-700 font-medium text-sm"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                  </svg>
+                  <span>Logout</span>
+                </button>
+              </div>
             </div>
             
             {/* Desktop Tab Navigation */}
@@ -277,6 +301,19 @@ const CustomerDashboard = () => {
                   <span className="hidden sm:inline">{tab.name}</span>
                 </button>
               ))}
+              
+              {/* Logout Button */}
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-2 py-3 sm:py-4 px-2 sm:px-4 border-b-2 border-transparent text-red-500 hover:text-red-700 hover:border-red-300 font-medium text-xs sm:text-sm whitespace-nowrap flex-shrink-0 ml-auto"
+              >
+                <span className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                  </svg>
+                </span>
+                <span className="hidden sm:inline">Logout</span>
+              </button>
             </nav>
           </div>
 

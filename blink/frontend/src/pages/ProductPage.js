@@ -4,8 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
 import { CustomerIcon, CartIcon } from '../components/icons';
-import logo from '../assets/logos.png';
-import locationIcon from '../assets/location.png';
+import Navigation from '../components/Navigation';
 import Footer from '../components/Footer';
 import '../styles/App.css';
 
@@ -70,29 +69,16 @@ const ProductPage = () => {
     return price;
   };
 
-
-
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        {/* Header */}
-        <header className="modern-header">
-          <div className="header-container">
-            <div className="brand-section">
-              <img
-                src={logo}
-                className="brand-logo"
-                alt="Brandverse"
-                onClick={() => navigate('/')}
-              />
-              <span className="brand-name">Brandverse</span>
-            </div>
-          </div>
-        </header>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
+        <Navigation showSearch={true} />
         
-        <div className="loading-container" style={{ paddingTop: '100px' }}>
-          <div className="loading-spinner"></div>
-          <p>Loading product...</p>
+        <div className="flex items-center justify-center min-h-screen pt-24">
+          <div className="text-center bg-white/80 backdrop-blur-lg rounded-2xl p-8 shadow-xl">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-700 font-medium">Loading product...</p>
+          </div>
         </div>
       </div>
     );
@@ -100,28 +86,16 @@ const ProductPage = () => {
 
   if (!product) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        {/* Header */}
-        <header className="modern-header">
-          <div className="header-container">
-            <div className="brand-section">
-              <img
-                src={logo}
-                className="brand-logo"
-                alt="Brandverse"
-                onClick={() => navigate('/')}
-              />
-              <span className="brand-name">Brandverse</span>
-            </div>
-          </div>
-        </header>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
+        <Navigation showSearch={true} />
         
-        <div className="container mx-auto px-4 py-8" style={{ paddingTop: '100px' }}>
-          <div className="text-center">
+        <div className="container mx-auto px-4 py-8 pt-24">
+          <div className="text-center bg-white/80 backdrop-blur-lg rounded-2xl p-12 shadow-xl max-w-md mx-auto">
             <h1 className="text-2xl font-bold text-gray-900 mb-4">Product Not Found</h1>
+            <p className="text-gray-600 mb-6">Sorry, we couldn't find the product you're looking for.</p>
             <button 
               onClick={() => navigate('/')}
-              className="banner-button"
+              className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-8 py-3 rounded-xl transition-all shadow-lg"
             >
               Go Back Home
             </button>
@@ -132,77 +106,10 @@ const ProductPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Enhanced Navigation Header */}
-      <header className="modern-header">
-        <div className="header-container">
-          {/* Logo and Brand */}
-          <div className="brand-section">
-            <img
-              src={logo}
-              className="brand-logo"
-              alt="Brandverse"
-              onClick={() => navigate('/')}
-            />
-            <span className="brand-name">Brandverse</span>
-          </div>
-
-          {/* Location Display */}
-          <div className="location-section" onClick={() => navigate('/delivery-locations')}>
-            <img src={locationIcon} className="location-icon" alt="location" />
-            <div className="location-info">
-              <span className="location-label">Deliver to</span>
-              <span className="location-text">Your Location</span>
-            </div>
-          </div>
-
-          {/* Search Bar */}
-          <form className="search-section">
-            <input 
-              type="text" 
-              placeholder="Search for products, brands and more..." 
-              className="search-input"
-            />
-            <button type="submit" className="search-button">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-            </button>
-          </form>
-
-          {/* User Actions */}
-          <div className="user-actions">
-            {user ? (
-              <div className="user-menu">
-                <Link to="/dashboard" className="user-profile">
-                  <div className="customer-icon">
-                    <CustomerIcon width={24} height={24} color="#F18500" />
-                  </div>
-                  <span>Hi, {user.name || user.email?.split('@')[0] || 'User'}</span>
-                </Link>
-                <button 
-                  className="logout-button" 
-                  onClick={() => navigate('/logout')}
-                >
-                  Logout
-                </button>
-              </div>
-            ) : (
-              <div className="auth-buttons">
-                <Link to="/login" className="login-button">Login</Link>
-              </div>
-            )}
-
-            {/* Cart */}
-            <div className="cart-section" onClick={() => navigate('/cart')}>
-              <CartIcon width={24} height={24} color="#F18500" strokeWidth={2} />
-              <span className="cart-text">Cart</span>
-            </div>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
+      <Navigation showSearch={true} />
       
-      <div className="container mx-auto px-4 py-8" style={{ paddingTop: '100px' }}>
+      <div className="container mx-auto px-4 py-8 pt-24">
         {/* Back Button */}
         <button 
           onClick={() => navigate(-1)}

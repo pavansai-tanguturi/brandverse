@@ -26,6 +26,16 @@
   50% { box-shadow: 0 0 40px rgba(102, 126, 234, 0.6); }
 }
 
+/* Hide Scrollbars */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 @keyframes slideInFromLeft {
   0% { transform: translateX(-100px); opacity: 0; }
   100% { transform: translateX(0); opacity: 1; }

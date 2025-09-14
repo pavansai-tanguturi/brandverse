@@ -1,10 +1,8 @@
 // src/pages/Home.js
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { CustomerIcon, CartIcon } from '../components/icons';
-import logo from '../assets/logos.png';
-import locationIcon from '../assets/location.png';
+import Navigation from '../components/Navigation';
 import Footer from '../components/Footer';
 import '../styles/App.css';
 
@@ -16,9 +14,78 @@ function Home() {
   const [checkingDelivery, setCheckingDelivery] = useState(true);
   const [userLocation, setUserLocation] = useState(null);
   const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
   const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
+  const categoriesRef = useRef(null);
+  // Get category image based on slug
+  const getCategoryImage = (slug) => {
+    const imageMap = {
+      'dairy': "https://images.unsplash.com/photo-1563636619-e9143da7973b?auto=format&fit=crop&w=200&q=80",
+      'vegetables': "https://images.unsplash.com/photo-1610348725531-843dff563e2c?auto=format&fit=crop&w=200&q=80",
+      'drinks': "https://images.unsplash.com/photo-1570197788417-0e82375c9371?auto=format&fit=crop&w=200&q=80",
+      'bakery': "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=200&q=80",
+      'grains': "https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&w=200&q=80",
+      'beverages': "https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=200&q=80",
+      'personal-care': "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?auto=format&fit=crop&w=200&q=80",
+      'cleaning': "https://images.unsplash.com/photo-1585421514738-01798e348b17?auto=format&fit=crop&w=200&q=80",
+      'frozen': "https://images.unsplash.com/photo-1571197119011-ee0bb51c1535?auto=format&fit=crop&w=200&q=80",
+      'beauty': "https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&w=200&q=80",
+      'organic': "https://images.unsplash.com/photo-1584464491033-06628f3a6b7b?auto=format&fit=crop&w=200&q=80"
+    };
+    return imageMap[slug] || "https://images.unsplash.com/photo-1584464491033-06628f3a6b7b?auto=format&fit=crop&w=200&q=80";
+  };
+
+  // Check scroll position and update arrow states
+  const updateScrollButtons = () => {
+    if (categoriesRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = categoriesRef.current;
+      setCanScrollLeft(scrollLeft > 0);
+      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 1);
+    }
+  };
+
+  // Scroll categories left
+  const scrollLeft = () => {
+    if (categoriesRef.current) {
+      const isMobile = window.innerWidth < 640;
+      const scrollAmount = isMobile 
+        ? 320 + 16 // Category width (320px) + gap (16px)
+        : Math.min(500, categoriesRef.current.clientWidth * 0.8);
+      categoriesRef.current.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+    }
+  };
+
+  // Scroll categories right  
+  const scrollRight = () => {
+    if (categoriesRef.current) {
+      const isMobile = window.innerWidth < 640;
+      const scrollAmount = isMobile 
+        ? 320 + 16 // Category width (320px) + gap (16px)
+        : Math.min(500, categoriesRef.current.clientWidth * 0.8);
+      categoriesRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    }
+  };
+
+  // Fetch categories from backend
+  const fetchCategories = async () => {
+    try {
+      const response = await fetch('http://localhost:3001/api/categories');
+      if (response.ok) {
+        const data = await response.json();
+        // Filter out 'All Products' category for home page display
+        const filteredCategories = data.filter(cat => cat.slug !== 'all');
+        setCategories(filteredCategories);
+      } else {
+        console.error('Failed to fetch categories');
+      }
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+    }
+  };
+
   // Fetch products from admin panel
   const fetchProducts = async () => {
     try {
@@ -66,13 +133,6 @@ function Home() {
     checkAdminAccess();
   }, [checkAdminAccess]);
 
-  const handleSearch = (e) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
-    }
-  };
-
   const banners = [
     {
       id: 1,
@@ -112,29 +172,17 @@ function Home() {
     }
   ];
 
-  const categories = [
-    { name: "Dairy & Breakfast", image: "https://images.unsplash.com/photo-1563636619-e9143da7973b?auto=format&fit=crop&w=200&q=80", path: "dairy" },
-    { name: "Vegetables & Fruits", image: "https://images.unsplash.com/photo-1610348725531-843dff563e2c?auto=format&fit=crop&w=200&q=80", path: "vegetables" },
-    { name: "Cold Drinks & Juices", image: "https://images.unsplash.com/photo-1570197788417-0e82375c9371?auto=format&fit=crop&w=200&q=80", path: "drinks" },
-    { name: "Bakery & Biscuits", image: "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=200&q=80", path: "bakery" },
-    { name: "Dry Fruits, Masala & Oil", image: "https://images.unsplash.com/photo-1596040033229-a9821ebd058d?auto=format&fit=crop&w=200&q=80", path: "dry-fruits" },
-    { name: "Ice Creams & Desserts", image: "https://images.unsplash.com/photo-1551024506-0bccd828d307?auto=format&fit=crop&w=200&q=80", path: "ice-cream" },
-    { name: "Beauty & Cosmetics", image: "https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&w=200&q=80", path: "beauty" },
-    { name: "Stationery Needs", image: "https://images.unsplash.com/photo-1513475382585-d06e58bcb0e0?auto=format&fit=crop&w=200&q=80", path: "stationery" },
-    { name: "Instant & Frozen Food", image: "https://images.unsplash.com/photo-1571197119011-ee0bb51c1535?auto=format&fit=crop&w=200&q=80", path: "frozen" },
-    { name: "Sweet Tooth", image: "https://images.unsplash.com/photo-1571506165871-eafa2e5cd440?auto=format&fit=crop&w=200&q=80", path: "sweets" },
-    { name: "Sauces & Spreads", image: "https://images.unsplash.com/photo-1472476443507-c7a5948772fc?auto=format&fit=crop&w=200&q=80", path: "sauces" },
-    { name: "Organic & Premium", image: "https://images.unsplash.com/photo-1584464491033-06628f3a6b7b?auto=format&fit=crop&w=200&q=80", path: "organic" },
-    { name: "Cleaning Essentials", image: "https://images.unsplash.com/photo-1585421514738-01798e348b17?auto=format&fit=crop&w=200&q=80", path: "cleaning" },
-    { name: "Personal Care", image: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?auto=format&fit=crop&w=200&q=80", path: "personal-care" },
-    { name: "Fashion & Accessories", image: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=200&q=80", path: "fashion" },
-    { name: "Tea, Coffee & Health Drinks", image: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=200&q=80", path: "beverages" },
-    { name: "Atta, Rice & Dal", image: "https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&w=200&q=80", path: "grains" },
-    { name: "Baby Care", image: "https://images.unsplash.com/photo-1584464491033-06628f3a6b7b?auto=format&fit=crop&w=200&q=80", path: "baby-care" },
-    { name: "Pet Care", image: "https://images.unsplash.com/photo-1601758228041-f3b2795255f1?auto=format&fit=crop&w=200&q=80", path: "pet-care" }
-  ];
+
+
+  // Initialize scroll buttons when categories load
+  useEffect(() => {
+    if (categories.length > 0) {
+      setTimeout(updateScrollButtons, 100);
+    }
+  }, [categories]);
 
   useEffect(() => {
+    fetchCategories();
     fetchProducts();
     
     if (navigator.geolocation) {
@@ -194,101 +242,8 @@ function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      {/* Modern Navigation Header */}
-      <header className="bg-gradient-to-r from-slate-900 via-purple-900 to-slate-900 shadow-2xl">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16 md:h-20">
-            
-            {/* Logo and Brand */}
-            <div className="flex items-center space-x-3 cursor-pointer" onClick={() => navigate('/')}>
-              <img
-                src={logo}
-                className="h-10 w-10 md:h-12 md:w-12 rounded-lg"
-                alt="Brandverse"
-              />
-              <span className="text-white font-bold text-lg md:text-xl bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-                Brandverse
-              </span>
-            </div>
-
-            {/* Location Display - Hidden on small screens */}
-            <div className="hidden md:flex items-center space-x-2 bg-white/10 backdrop-blur-lg rounded-xl px-4 py-2 cursor-pointer hover:bg-white/20 transition-all" onClick={() => navigate('/delivery-locations')}>
-              <img src={locationIcon} className="h-5 w-5" alt="location" />
-              <div className="flex flex-col">
-                <span className="text-gray-300 text-xs uppercase tracking-wide">Deliver to</span>
-                <span className="text-white text-sm font-medium">{locationName}</span>
-              </div>
-            </div>
-
-            {/* Search Bar - Responsive */}
-            <form className="flex-1 max-w-md mx-4 hidden md:block" onSubmit={handleSearch}>
-              <div className="relative">
-                <input 
-                  type="text" 
-                  placeholder="Search products..." 
-                  className="w-full bg-white/10 backdrop-blur-lg border border-white/20 rounded-xl px-4 py-3 pl-12 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-                <button type="submit" className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-300 hover:text-white">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                </button>
-              </div>
-            </form>
-
-            {/* User Actions */}
-            <div className="flex items-center space-x-2 md:space-x-4">
-              {user ? (
-                <div className="flex items-center space-x-2">
-                  <Link to="/dashboard" className="hidden md:flex items-center space-x-2 bg-white/10 backdrop-blur-lg rounded-xl px-3 py-2 text-white hover:bg-white/20 transition-all">
-                    <div className="bg-orange-500 rounded-full p-1">
-                      <CustomerIcon width={16} height={16} color="white" />
-                    </div>
-                    <span className="text-sm">Hi, {user.name || user.email?.split('@')[0] || 'User'}</span>
-                  </Link>
-                  <button 
-                    className="hidden md:block bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl transition-all"
-                    onClick={() => navigate('/logout')}
-                  >
-                    Logout
-                  </button>
-                </div>
-              ) : (
-                <Link to="/login" className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-xl transition-all">
-                  Login
-                </Link>
-              )}
-
-              {/* Cart */}
-              <div className="flex items-center space-x-2 bg-white/10 backdrop-blur-lg rounded-xl px-3 py-2 cursor-pointer hover:bg-white/20 transition-all" onClick={() => navigate('/cart')}>
-                <CartIcon width={20} height={20} color="white" strokeWidth={2} />
-                <span className="hidden md:inline text-white text-sm">Cart</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Mobile Search Bar */}
-          <form className="md:hidden pb-4" onSubmit={handleSearch}>
-            <div className="relative">
-              <input 
-                type="text" 
-                placeholder="Search products..." 
-                className="w-full bg-white/10 backdrop-blur-lg border border-white/20 rounded-xl px-4 py-3 pl-12 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-              <button type="submit" className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-300">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </button>
-            </div>
-          </form>
-        </div>
-      </header>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
+      <Navigation showSearch={true} />
 
       {/* Delivery Restriction Banner */}
       {!checkingDelivery && !deliveryAvailable && userLocation?.country && (
@@ -377,10 +332,10 @@ function Home() {
       </div>
 
       {/* Featured Products Section */}
-      <div className="bg-gray-50 py-16">
+      <div className="bg-white/70 backdrop-blur-sm py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            <h2 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
               Featured Products
             </h2>
             <Link to="/products" className="text-blue-600 hover:text-blue-800 font-semibold flex items-center space-x-2 group">
@@ -410,11 +365,11 @@ function Home() {
                       alt={product.title || 'Product'}
                       className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-300"
                     />
-                    {product.discount_percent && product.discount_percent > 0 && (
+                    {product.discount_percent && Number(product.discount_percent) > 0 ? (
                       <div className="absolute top-3 left-3 bg-red-500 text-white px-2 py-1 rounded-full text-xs font-bold">
-                        {product.discount_percent}% OFF
+                        {Number(product.discount_percent)}% OFF
                       </div>
-                    )}
+                    ) : null}
                   </div>
                   <div className="p-6">
                     <h3 className="font-bold text-lg text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
@@ -424,7 +379,7 @@ function Home() {
                       {product.description || 'No description available'}
                     </p>
                     <div className="mb-4">
-                      {product.discount_percent && product.discount_percent > 0 ? (
+                      {product.discount_percent && Number(product.discount_percent) > 0 ? (
                         <div className="space-y-1">
                           <div className="flex items-center space-x-2">
                             <span className="text-2xl font-bold text-green-600">
@@ -439,7 +394,7 @@ function Home() {
                               Save ₹{((product.price_cents / 100) * (product.discount_percent / 100)).toFixed(2)}
                             </span>
                             <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-bold">
-                              {product.discount_percent}% OFF
+                              {Number(product.discount_percent)}% OFF
                             </span>
                           </div>
                         </div>
@@ -482,35 +437,80 @@ function Home() {
       </div>
 
       {/* Categories Section */}
-      <div className="py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+      <div className="py-16 bg-white/80 backdrop-blur-sm">
+        <div className="px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12 max-w-7xl mx-auto">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
               Shop by Categories
             </h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
               Discover everything you need, organized just for you
             </p>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 md:gap-6">
-            {categories.slice(0, 12).map((item, index) => (
-              <div
-                key={index}
-                className="group cursor-pointer"
-                onClick={() => navigate(`/category/${item.path || 'category'}`)}
-              >
-                <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl p-4 mb-3 group-hover:shadow-lg transform group-hover:scale-105 transition-all duration-300">
-                  <img 
-                    src={item.image} 
-                    alt={item.name || 'Category'} 
-                    className="w-full h-16 md:h-20 object-cover rounded-xl group-hover:scale-110 transition-transform duration-300" 
-                  />
-                </div>
-                <p className="text-center text-sm md:text-base font-medium text-gray-900 group-hover:text-blue-600 transition-colors">
-                  {item.name || 'Category'}
-                </p>
-              </div>
-            ))}
+          <div className="relative">
+            {/* Left Arrow */}
+            <button
+              onClick={scrollLeft}
+              className={`absolute left-2 top-1/2 -translate-y-1/2 z-20 bg-white/90 backdrop-blur-sm shadow-xl rounded-full p-3 transition-all duration-300 ${
+                canScrollLeft ? 'opacity-100 hover:shadow-2xl hover:bg-white' : 'opacity-30 cursor-not-allowed'
+              }`}
+              disabled={!canScrollLeft}
+            >
+              <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+
+            {/* Right Arrow */}
+            <button
+              onClick={scrollRight}
+              className={`absolute right-2 top-1/2 -translate-y-1/2 z-20 bg-white/90 backdrop-blur-sm shadow-xl rounded-full p-3 transition-all duration-300 ${
+                canScrollRight ? 'opacity-100 hover:shadow-2xl hover:bg-white' : 'opacity-30 cursor-not-allowed'
+              }`}
+              disabled={!canScrollRight}
+            >
+              <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+
+            {/* Scrollable Categories Container */}
+            <div 
+              ref={categoriesRef}
+              className="flex gap-4 sm:gap-6 md:gap-8 overflow-x-auto scrollbar-hide px-4 py-4"
+              onScroll={updateScrollButtons}
+            >
+              {categories.length === 0 ? (
+                // Loading skeleton for categories
+                Array.from({ length: 4 }).map((_, index) => (
+                  <div key={index} className="flex-shrink-0 w-80 sm:w-80 md:w-96 lg:w-[28rem] xl:w-[32rem] animate-pulse">
+                    <div className="mb-6 overflow-hidden rounded-lg">
+                      <div className="w-full h-48 sm:h-56 md:h-64 lg:h-72 xl:h-80 bg-gray-300"></div>
+                    </div>
+                    <div className="bg-gray-300 h-6 rounded mx-auto w-3/4"></div>
+                  </div>
+                ))
+              ) : (
+                categories.map((item, index) => (
+                  <div
+                    key={item.id || index}
+                    className="group cursor-pointer flex-shrink-0 w-80 sm:w-80 md:w-96 lg:w-[28rem] xl:w-[32rem]"
+                    onClick={() => navigate(`/products?category=${item.slug}`)}
+                  >
+                    <div className="mb-6 overflow-hidden rounded-lg">
+                      <img 
+                        src={getCategoryImage(item.slug)} 
+                        alt={item.name || 'Category'} 
+                        className="w-full h-48 sm:h-56 md:h-64 lg:h-72 xl:h-80 object-cover group-hover:scale-105 transition-transform duration-300" 
+                      />
+                    </div>
+                    <p className="text-center text-lg sm:text-xl md:text-2xl font-medium text-gray-900 group-hover:text-blue-600 transition-colors px-2">
+                      {item.name || 'Category'}
+                    </p>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         </div>
       </div>
