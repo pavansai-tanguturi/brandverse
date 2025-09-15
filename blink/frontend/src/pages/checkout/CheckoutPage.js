@@ -220,6 +220,13 @@ const CheckoutPage = () => {
 
       if (!response.ok) {
         const errorData = await response.json();
+        
+        // Handle delivery unavailable error specifically
+        if (errorData.code === 'DELIVERY_UNAVAILABLE') {
+          setError(`${errorData.message || 'Delivery not available to your location'}\n\nPlease contact us or try a different address.`);
+          return;
+        }
+        
         throw new Error(errorData.error || 'Failed to create order');
       }
 
@@ -318,6 +325,13 @@ const CheckoutPage = () => {
 
       if (!response.ok) {
         const errorData = await response.json();
+        
+        // Handle delivery unavailable error specifically
+        if (errorData.code === 'DELIVERY_UNAVAILABLE') {
+          setError(`🚫 ${errorData.message || 'Delivery not available to your location'}\n\nPlease contact us or try a different address.`);
+          return;
+        }
+        
         throw new Error(errorData.error || 'Failed to create order');
       }
 

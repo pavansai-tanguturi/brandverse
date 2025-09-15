@@ -167,20 +167,20 @@ const AdminOrders = () => {
         disabled: 'bg-green-200 text-green-700 border-green-200'
       },
       packing: {
-        normal: 'bg-order-packing-500 hover:bg-order-packing-600 text-white border-order-packing-500',
-        disabled: 'bg-order-packing-200 text-order-packing-700 border-order-packing-200'
+        normal: 'bg-yellow-500 hover:bg-yellow-600 text-white border-yellow-500',
+        disabled: 'bg-yellow-200 text-yellow-700 border-yellow-200'
       },
       ready: {
         normal: 'bg-purple-500 hover:bg-purple-600 text-white border-purple-500',
         disabled: 'bg-purple-200 text-purple-700 border-purple-200'
       },
       shipped: {
-        normal: 'bg-order-shipped-500 hover:bg-order-shipped-600 text-white border-order-shipped-500',
-        disabled: 'bg-order-shipped-200 text-order-shipped-700 border-order-shipped-200'
+        normal: 'bg-blue-500 hover:bg-blue-600 text-white border-blue-500',
+        disabled: 'bg-blue-200 text-blue-700 border-blue-200'
       },
       delivered: {
-        normal: 'bg-order-delivered-500 hover:bg-order-delivered-600 text-white border-order-delivered-500',
-        disabled: 'bg-order-delivered-200 text-order-delivered-700 border-order-delivered-200'
+        normal: 'bg-green-500 hover:bg-green-600 text-white border-green-500',
+        disabled: 'bg-green-200 text-green-700 border-green-200'
       },
       cancelled: {
         normal: 'bg-red-500 hover:bg-red-600 text-white border-red-500',

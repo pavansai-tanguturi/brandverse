@@ -19,7 +19,9 @@ function Home() {
   const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
+  const [deliveryMessage, setDeliveryMessage] = useState('');
   const categoriesRef = useRef(null);
+
   // Get category image based on slug
   const getCategoryImage = (slug) => {
     const imageMap = {
@@ -144,6 +146,44 @@ function Home() {
     }
   };
 
+  // Updated checkDeliveryAvailability function:
+  const checkDeliveryAvailability = async (country, region = null, city = null) => {
+    if (!country || country === 'Unknown country') {
+      setCheckingDelivery(false);
+      setDeliveryAvailable(false);
+      return;
+    }
+
+    try {
+      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
+      
+      // Build query parameters
+      const params = new URLSearchParams({ country });
+      if (region && region !== 'Unknown region') params.append('region', region);
+      if (city && city !== 'Unknown city') params.append('city', city);
+      
+      const response = await fetch(`${API_BASE}/api/delivery/check?${params.toString()}`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        setDeliveryAvailable(data.available);
+        
+        // Store the delivery message for display
+        if (data.message) {
+          setDeliveryMessage(data.message);
+        }
+      } else {
+        console.log('Delivery check failed, defaulting to unavailable');
+        setDeliveryAvailable(false);
+      }
+    } catch (error) {
+      console.log('Error checking delivery availability:', error);
+      setDeliveryAvailable(false);
+    }
+    
+    setCheckingDelivery(false);
+  };
+
   // Banner carousel functionality
   useEffect(() => {
     const interval = setInterval(() => {
@@ -173,8 +213,6 @@ function Home() {
     checkAdminAccess();
   }, [checkAdminAccess]);
 
-
-
   // Initialize scroll buttons when categories load
   useEffect(() => {
     if (categories.length > 0) {
@@ -194,14 +232,31 @@ function Home() {
             `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`
           );
           const data = await response.json();
-          const city = data.address.city || data.address.town || data.address.village || 'Unknown location';
-          const country = data.address.country || '';
           
-          setLocationName(city);
-          setUserLocation({ city, country, latitude, longitude });
+          // Extract location details with better fallbacks
+          const city = data.address.city || 
+                      data.address.town || 
+                      data.address.village || 
+                      data.address.municipality || 
+                      'Unknown city';
+          const region = data.address.state || 
+                        data.address.province || 
+                        data.address.county || 
+                        null;
+          const country = data.address.country || 'Unknown country';
           
-          // Check delivery availability
-          await checkDeliveryAvailability(country);
+          setLocationName(`${city}${region ? `, ${region}` : ''}, ${country}`);
+          setUserLocation({ 
+            city, 
+            region, 
+            country, 
+            latitude, 
+            longitude,
+            fullAddress: data.display_name
+          });
+          
+          // Check delivery availability with all location details
+          await checkDeliveryAvailability(country, region, city);
         } catch (error) {
           console.error('Error fetching location name:', error);
           setLocationName('Location unavailable');
@@ -217,56 +272,63 @@ function Home() {
     }
   }, []);
 
-  const checkDeliveryAvailability = async (country) => {
-    if (!country) {
-      setCheckingDelivery(false);
-      return;
-    }
-
-    try {
-      const API_BASE = import.meta.env.VITE_API_BASE;
-      const response = await fetch(`${API_BASE}/api/delivery/check?country=${encodeURIComponent(country)}`);
-      
-      if (response.ok) {
-        const data = await response.json();
-        setDeliveryAvailable(data.available);
-      } else {
-        console.log('Delivery check failed, defaulting to available');
-        setDeliveryAvailable(true); // Default to available if check fails
-      }
-    } catch (error) {
-      console.log('Error checking delivery availability, defaulting to available:', error);
-      setDeliveryAvailable(true); // Default to available if check fails
-    }
-    
-    setCheckingDelivery(false);
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
       <Navigation showSearch={true} />
 
-      {/* Delivery Restriction Banner */}
-      {!checkingDelivery && !deliveryAvailable && userLocation?.country && (
-        <div className="bg-red-50 border-l-4 border-red-400 p-4 mx-4 my-4 rounded-lg">
+      {/* Enhanced Delivery Status Banner */}
+      {!checkingDelivery && (
+        <div className={`border-l-4 p-4 mx-4 my-4 rounded-lg ${
+          deliveryAvailable 
+            ? 'bg-green-50 border-green-400' 
+            : 'bg-red-50 border-red-400'
+        }`}>
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-              </svg>
+              {deliveryAvailable ? (
+                <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+              ) : (
+                <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+              )}
             </div>
             <div className="ml-3">
-              <p className="text-sm font-medium text-red-800">
-                We're sorry, but we currently don't deliver to {userLocation.country}.
+              <div className="flex items-center space-x-2 mb-1">
+                <svg className="h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <span className="text-sm font-medium text-gray-700">
+                  Current location: {locationName}
+                </span>
+              </div>
+              <p className={`text-sm font-medium ${
+                deliveryAvailable ? 'text-green-800' : 'text-red-800'
+              }`}>
+                {deliveryMessage || (deliveryAvailable 
+                  ? `Great! We deliver to your location.` 
+                  : `We're sorry, but we currently don't deliver to your area.`
+                )}
               </p>
-              <p className="text-sm text-red-600 mt-1">
-                We're working to expand our delivery locations. Please check back later!
-              </p>
+              {!deliveryAvailable && (
+                <p className="text-sm text-red-600 mt-1">
+                  We're working to expand our delivery locations. Please check back later or contact us for updates!
+                </p>
+              )}
+              {deliveryAvailable && (
+                <p className="text-sm text-green-600 mt-1">
+                  You can place orders and enjoy our delivery service!
+                </p>
+              )}
             </div>
           </div>
         </div>
       )}
 
+      {/* Loading state for delivery check */}
       {checkingDelivery && (
         <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mx-4 my-4 rounded-lg">
           <div className="flex items-center">
@@ -278,7 +340,7 @@ function Home() {
             </div>
             <div className="ml-3">
               <p className="text-sm font-medium text-blue-800">
-                Checking delivery availability for your location...
+                Checking delivery availability for {locationName}...
               </p>
             </div>
           </div>

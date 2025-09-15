@@ -1,6 +1,8 @@
 import { supabaseAdmin } from '../config/supabaseClient.js';
 import Razorpay from 'razorpay';
 
+
+
 // Initialize Razorpay
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID || 'rzp_test_your_key_id',
@@ -81,6 +83,95 @@ export async function createOrder(req, res) {
     // Add address information - use the same address for both shipping and billing if type is 'both'
     if (shipping_address) {
       console.log('Received shipping address:', JSON.stringify(shipping_address, null, 2));
+      
+      // 🚨 HIERARCHICAL DELIVERY CHECK: Check from specific to general (same logic as delivery API)
+      try {
+        const city = shipping_address.city;
+        const region = shipping_address.state;
+        const country = shipping_address.country || 'India';
+        
+        console.log(`🔍 Checking if delivery is available to: ${city}, ${region}, ${country}`);
+        
+        let isDeliveryAvailable = false;
+        let matchType = 'none';
+
+        // 1. Check for exact location match (city + region + country)
+        if (city && region) {
+          const { data: exactMatch, error: exactError } = await supabaseAdmin
+            .from('delivery_locations')
+            .select('*')
+            .eq('is_active', true)
+            .ilike('country', country)
+            .ilike('region', region)
+            .ilike('city', city);
+
+          if (!exactError && exactMatch && exactMatch.length > 0) {
+            isDeliveryAvailable = true;
+            matchType = 'exact';
+            console.log(`✅ Exact location match found`);
+          }
+        }
+
+        // 2. Check for region-wide delivery if no exact match
+        if (!isDeliveryAvailable && region) {
+          const { data: regionMatch, error: regionError } = await supabaseAdmin
+            .from('delivery_locations')
+            .select('*')
+            .eq('is_active', true)
+            .ilike('country', country)
+            .ilike('region', region)
+            .is('city', null);
+
+          if (!regionError && regionMatch && regionMatch.length > 0) {
+            isDeliveryAvailable = true;
+            matchType = 'region';
+            console.log(`✅ Region-wide delivery found`);
+          }
+        }
+
+        // 3. 🇮🇳 Check for COUNTRY-WIDE delivery if no region match
+        if (!isDeliveryAvailable) {
+          const { data: countryMatch, error: countryError } = await supabaseAdmin
+            .from('delivery_locations')
+            .select('*')
+            .eq('is_active', true)
+            .ilike('country', country)
+            .is('region', null)
+            .is('city', null);
+
+          if (!countryError && countryMatch && countryMatch.length > 0) {
+            isDeliveryAvailable = true;
+            matchType = 'country';
+            console.log(`✅ Country-wide delivery found for ${country}`);
+          }
+        }
+
+        if (!isDeliveryAvailable) {
+          const locationName = [shipping_address.city, shipping_address.state, shipping_address.country]
+            .filter(Boolean)
+            .join(', ');
+          
+          console.log(`❌ BLOCKING ORDER: Delivery not available to ${locationName}`);
+          
+          return res.status(400).json({ 
+            error: 'Delivery not available',
+            message: `Sorry, we don't currently deliver to ${locationName}. Please choose a different delivery address or contact us for more information.`,
+            code: 'DELIVERY_UNAVAILABLE'
+          });
+        }
+
+        console.log(`✅ Delivery confirmed available to: ${shipping_address.city}, ${shipping_address.state}, ${shipping_address.country}`);
+        
+      } catch (deliveryCheckError) {
+        console.error('❌ Error checking delivery availability:', deliveryCheckError);
+        // STRICT MODE: Block order if we can't verify delivery
+        return res.status(500).json({ 
+          error: 'Delivery verification failed',
+          message: 'Unable to verify delivery availability. Please try again later.',
+          code: 'DELIVERY_CHECK_ERROR'
+        });
+      }
+
       orderData.shipping_address = shipping_address;
       // If address type is 'both' or not specified, use it for billing too
       if (!shipping_address.type || shipping_address.type === 'both' || shipping_address.type === 'billing') {
@@ -151,6 +242,91 @@ export async function createOrder(req, res) {
         unit_price_cents: it.unit_price_cents,
         total_cents: it.unit_price_cents * it.quantity,
       });
+    }
+
+    // 🔄 STOCK MANAGEMENT: For COD orders, immediately reduce stock after order creation
+    let stockReduced = false;
+    const reducedItems = [];
+    
+    if (payment_method === 'cod') {
+      try {
+        console.log(' Reducing stock for COD order...');
+        
+        // Reduce stock for each item
+        for (const it of items) {
+          const { error: stockError } = await supabaseAdmin
+            .from('products')
+            .update({ 
+              stock_quantity: it.products.stock_quantity - it.quantity,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', it.product_id);
+          
+          if (stockError) {
+            console.error(' Failed to reduce stock for product:', it.product_id, stockError);
+            
+            // 🔄 ROLLBACK: Restore stock for previously reduced items
+            console.log(' Rolling back stock reductions...');
+            for (const reducedItem of reducedItems) {
+              await supabaseAdmin
+                .from('products')
+                .update({ 
+                  stock_quantity: reducedItem.original_quantity,
+                  updated_at: new Date().toISOString()
+                })
+                .eq('id', reducedItem.product_id);
+            }
+            
+            // Cancel the order
+            await supabaseAdmin
+              .from('orders')
+              .update({ status: 'cancelled' })
+              .eq('id', order.id);
+            
+            return res.status(500).json({ 
+              error: 'Stock update failed',
+              message: 'Unable to process order due to inventory issues. Please try again.',
+              code: 'STOCK_UPDATE_FAILED'
+            });
+          }
+          
+          // Track successfully reduced items for potential rollback
+          reducedItems.push({
+            product_id: it.product_id,
+            original_quantity: it.products.stock_quantity,
+            reduced_quantity: it.quantity
+          });
+        }
+        
+        stockReduced = true;
+        console.log(' Stock reduced successfully for all items');
+        
+      } catch (stockError) {
+        console.error(' Stock reduction failed:', stockError);
+        
+        // 🔄 ROLLBACK: Restore stock for any reduced items
+        for (const reducedItem of reducedItems) {
+          await supabaseAdmin
+            .from('products')
+            .update({ 
+              stock_quantity: reducedItem.original_quantity,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', reducedItem.product_id);
+        }
+        
+        // Cancel the order
+        await supabaseAdmin
+          .from('orders')
+          .update({ status: 'cancelled' })
+          .eq('id', order.id);
+        
+        return res.status(500).json({ 
+          error: 'Order processing failed',
+          message: 'Unable to complete order. Please try again.',
+          code: 'ORDER_PROCESSING_FAILED'
+        });
+      }
     }
 
     // Update customer address record with the latest address from this order
@@ -252,28 +428,14 @@ export async function createOrder(req, res) {
       }
     }
 
-    // For COD orders, immediately reduce stock and convert cart
-    if (payment_method === 'cod') {
-      // Reduce stock for each item
-      for (const it of items) {
-        const { error: stockError } = await supabaseAdmin
-          .from('products')
-          .update({ 
-            stock_quantity: it.products.stock_quantity - it.quantity,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', it.product_id);
-        
-        if (stockError) {
-          console.error('Failed to reduce stock for product:', it.product_id, stockError);
-        }
-      }
-
-      // Convert cart to inactive
+    // Convert cart to inactive for successful orders
+    if (payment_method === 'cod' && stockReduced) {
       await supabaseAdmin
         .from('carts')
         .update({ status: 'converted' })
         .eq('id', cart.id);
+      
+      console.log(' Cart converted to inactive status');
     }
 
     res.status(201).json({
@@ -605,5 +767,103 @@ export async function confirmCODOrder(req, res) {
   } catch (error) {
     console.error('COD confirmation error:', error);
     res.status(500).json({ error: 'COD confirmation failed' });
+  }
+}
+
+// 🔄 Restore stock for cancelled/failed orders
+export async function restoreStockForOrder(req, res) {
+  try {
+    if (!req.session?.user || req.session.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const { orderId } = req.params;
+
+    if (!orderId) {
+      return res.status(400).json({ error: 'Order ID is required' });
+    }
+
+    console.log(` Restoring stock for order: ${orderId}`);
+
+    // Get order items
+    const { data: orderItems, error: itemsError } = await supabaseAdmin
+      .from('order_items')
+      .select('product_id, quantity, title')
+      .eq('order_id', orderId);
+
+    if (itemsError) {
+      console.error(' Failed to fetch order items:', itemsError);
+      return res.status(500).json({ error: 'Failed to fetch order items' });
+    }
+
+    if (!orderItems || orderItems.length === 0) {
+      return res.status(404).json({ error: 'No items found for this order' });
+    }
+
+    // Restore stock for each item
+    const restoredItems = [];
+    for (const item of orderItems) {
+      try {
+        // Get current product stock
+        const { data: product, error: productError } = await supabaseAdmin
+          .from('products')
+          .select('stock_quantity, title')
+          .eq('id', item.product_id)
+          .single();
+
+        if (productError) {
+          console.error(` Failed to fetch product ${item.product_id}:`, productError);
+          continue;
+        }
+
+        // Restore stock
+        const { error: updateError } = await supabaseAdmin
+          .from('products')
+          .update({
+            stock_quantity: product.stock_quantity + item.quantity,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', item.product_id);
+
+        if (updateError) {
+          console.error(` Failed to restore stock for product ${item.product_id}:`, updateError);
+        } else {
+          restoredItems.push({
+            product_id: item.product_id,
+            title: product.title,
+            quantity_restored: item.quantity,
+            new_stock: product.stock_quantity + item.quantity
+          });
+          console.log(` Restored ${item.quantity} units for "${product.title}"`);
+        }
+      } catch (itemError) {
+        console.error(` Error processing item ${item.product_id}:`, itemError);
+      }
+    }
+
+    // Update order status to indicate stock was restored
+    await supabaseAdmin
+      .from('orders')
+      .update({ 
+        status: 'cancelled',
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', orderId);
+
+    console.log(`🎉 Stock restoration completed for order ${orderId}`);
+
+    res.json({
+      success: true,
+      message: `Stock restored for ${restoredItems.length} items`,
+      restoredItems: restoredItems,
+      orderId: orderId
+    });
+
+  } catch (error) {
+    console.error(' Stock restoration failed:', error);
+    res.status(500).json({ 
+      error: 'Stock restoration failed',
+      message: error.message 
+    });
   }
 }
