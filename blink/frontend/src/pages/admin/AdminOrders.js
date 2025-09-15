@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import AdminNav from '../../components/admin/AdminNav';
+import AddressDisplay from '../../components/admin/AddressDisplay';
 
 const AdminOrders = () => {
   const [orders, setOrders] = useState([]);
@@ -130,6 +131,7 @@ const AdminOrders = () => {
     const statusNames = {
       pending: 'Pending',
       paid: 'Paid',
+      confirmed: 'Confirmed (COD)',
       accepted: 'Preparing Package',
       packing: 'Package Ready',
       ready: 'Ready to Ship',
@@ -145,6 +147,7 @@ const AdminOrders = () => {
     const colors = {
       pending: 'bg-order-pending-100 text-order-pending-800',
       paid: 'bg-blue-100 text-blue-800',
+      confirmed: 'bg-emerald-100 text-emerald-800', // Special color for COD confirmed orders
       accepted: 'bg-green-100 text-green-800',
       packing: 'bg-order-packing-100 text-order-packing-800',
       ready: 'bg-purple-100 text-purple-800',
@@ -220,7 +223,7 @@ const AdminOrders = () => {
 
   const canAccept = (status) => status === 'pending' || status === 'paid';
   const canReject = (status) => status === 'pending' || status === 'paid';
-  const canStartPacking = (status) => status === 'accepted';
+  const canStartPacking = (status) => status === 'accepted' || status === 'confirmed'; // COD orders go directly to confirmed
   const canMarkReady = (status) => status === 'packing';
   const canShip = (status) => status === 'ready';
   const canDeliver = (status) => status === 'shipped';
@@ -237,13 +240,14 @@ const AdminOrders = () => {
     const statusPriority = {
       'pending': 1,
       'paid': 2,
-      'accepted': 3,
-      'packing': 4,
-      'ready': 5,
-      'shipped': 6,
-      'delivered': 7,
-      'cancelled': 8,
-      'refunded': 9
+      'confirmed': 3, // COD orders - ready for packing
+      'accepted': 4,
+      'packing': 5,
+      'ready': 6,
+      'shipped': 7,
+      'delivered': 8,
+      'cancelled': 9,
+      'refunded': 10
     };
 
     return [...orders].sort((a, b) => {
@@ -409,7 +413,7 @@ const AdminOrders = () => {
           <div className="mb-6 p-4 bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl border border-gray-200">
             <h3 className="text-sm font-semibold text-gray-700 mb-3">Order Status Summary:</h3>
             <div className="flex flex-wrap gap-3">
-              {['pending', 'paid', 'accepted', 'packing', 'ready', 'shipped', 'delivered'].map(status => {
+              {['pending', 'paid', 'confirmed', 'accepted', 'packing', 'ready', 'shipped', 'delivered'].map(status => {
                 const count = filteredOrders.filter(order => order.status === status).length;
                 if (count === 0) return null;
                 return (
@@ -492,37 +496,15 @@ const AdminOrders = () => {
                       <td className="px-6 py-4">
                         <div className="space-y-2">
                           {/* Shipping Address */}
-                          {(order.shipping_address || order.customers?.shipping_address) ? (
-                            <div className="text-sm">
-                              <div className="font-medium text-green-700 mb-1 flex items-center">
-                                <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M9 9l3-3 3 3"></path>
-                                </svg>
-                                Shipping
-                              </div>
-                              {(() => {
-                                const addr = order.shipping_address || order.customers?.shipping_address;
-                                return typeof addr === 'string' ? (
-                                  <div className="text-gray-600 text-xs">{addr}</div>
-                                ) : (
-                                  <div className="text-gray-600 text-xs">
-                                    {addr.street && <div>{addr.street}</div>}
-                                    {(addr.city || addr.state || addr.zip) && (
-                                      <div>{[addr.city, addr.state, addr.zip].filter(Boolean).join(', ')}</div>
-                                    )}
-                                    {addr.country && <div>{addr.country}</div>}
-                                  </div>
-                                );
-                              })()}
-                            </div>
-                          ) : (
-                            <div className="text-sm text-gray-400 flex items-center">
-                              <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M9 9l3-3 3 3"></path>
-                              </svg>
-                              No shipping address
-                            </div>
-                          )}
+                          <div className="text-sm">
+                            <div className="text-green-700 mb-1 text-xs font-medium uppercase tracking-wide">Shipping</div>
+                            <AddressDisplay 
+                              address={order.shipping_address || order.customers?.shipping_address}
+                              type="shipping"
+                              showLabel={false}
+                              className="text-xs"
+                            />
+                          </div>
                           {/* Delivery Restriction Message */}
                           {isDeliveryRestricted(order) && (
                             <div className="mt-2 p-2 bg-red-100 border border-red-300 rounded text-red-700 text-xs font-semibold flex items-center">
@@ -562,9 +544,35 @@ const AdminOrders = () => {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${getStatusColor(order.status)}`}>
-                          {getStatusDisplayName(order.status)}
-                        </span>
+                        <div className="flex flex-col space-y-1">
+                          <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${getStatusColor(order.status)}`}>
+                            {getStatusDisplayName(order.status)}
+                          </span>
+                          {/* Payment Method Indicator */}
+                          {order.payment_method && (
+                            <span className={`inline-flex items-center px-2 py-0.5 text-xs font-medium rounded ${
+                              order.payment_method === 'cod' 
+                                ? 'bg-orange-100 text-orange-800' 
+                                : order.payment_method === 'razorpay' 
+                                ? 'bg-blue-100 text-blue-800' 
+                                : 'bg-gray-100 text-gray-800'
+                            }`}>
+                              {order.payment_method === 'cod' && (
+                                <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M4 2a2 2 0 00-2 2v11a2 2 0 002 2h12a2 2 0 002-2V4a2 2 0 00-2-2H4zm0 2h12v11H4V4z" clipRule="evenodd"/>
+                                  <path fillRule="evenodd" d="M8 9a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" clipRule="evenodd"/>
+                                </svg>
+                              )}
+                              {order.payment_method === 'razorpay' && (
+                                <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                  <path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z"/>
+                                  <path fillRule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clipRule="evenodd"/>
+                                </svg>
+                              )}
+                              {order.payment_method.toUpperCase()}
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {new Date(order.created_at).toLocaleDateString('en-US', {

@@ -38,6 +38,46 @@ function Home() {
     return imageMap[slug] || "https://images.unsplash.com/photo-1584464491033-06628f3a6b7b?auto=format&fit=crop&w=200&q=80";
   };
 
+  // Banner data - moved before useEffect that references it
+  const banners = [
+    {
+      id: 1,
+      title: "Fresh Dairy, Everyday",
+      subtitle: "Farm-fresh milk, cheese, and dairy products delivered to your doorstep",
+      buttonText: "Shop Dairy",
+      link: "/category/dairy",
+      image: "https://images.unsplash.com/photo-1563636619-e9143da7973b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
+      color: "#2563eb"
+    },
+    {
+      id: 2,
+      title: "Fresh Groceries",
+      subtitle: "Quality groceries at unbeatable prices - delivered fresh daily",
+      buttonText: "Shop Groceries",
+      link: "/category/groceries",
+      image: "https://images.unsplash.com/photo-1542838132-92c53300491e?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
+      color: "#059669"
+    },
+    {
+      id: 3,
+      title: "Health & Wellness",
+      subtitle: "Your health is our priority - pharmacy and wellness products",
+      buttonText: "Shop Health",
+      link: "/category/pharmacy",
+      image: "https://images.unsplash.com/photo-1559757148-5c350d0d3c56?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
+      color: "#dc2626"
+    },
+    {
+      id: 4,
+      title: "Pet Care Essentials",
+      subtitle: "Everything your furry friends need for a happy, healthy life",
+      buttonText: "Shop Pet Care",
+      link: "/category/pet-care",
+      image: "https://images.unsplash.com/photo-1601758228041-f3b2795255f1?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
+      color: "#7c3aed"
+    }
+  ];
+
   // Check scroll position and update arrow states
   const updateScrollButtons = () => {
     if (categoriesRef.current) {
@@ -132,45 +172,6 @@ function Home() {
   useEffect(() => {
     checkAdminAccess();
   }, [checkAdminAccess]);
-
-  const banners = [
-    {
-      id: 1,
-      title: "Fresh Dairy, Everyday",
-      subtitle: "Farm-fresh milk, cheese, and dairy products delivered to your doorstep",
-      buttonText: "Shop Dairy",
-      link: "/category/dairy",
-      image: "https://images.unsplash.com/photo-1563636619-e9143da7973b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
-      color: "#2563eb"
-    },
-    {
-      id: 2,
-      title: "Fresh Groceries",
-      subtitle: "Quality groceries at unbeatable prices - delivered fresh daily",
-      buttonText: "Shop Groceries",
-      link: "/category/groceries",
-      image: "https://images.unsplash.com/photo-1542838132-92c53300491e?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
-      color: "#059669"
-    },
-    {
-      id: 3,
-      title: "Health & Wellness",
-      subtitle: "Your health is our priority - pharmacy and wellness products",
-      buttonText: "Shop Health",
-      link: "/category/pharmacy",
-      image: "https://images.unsplash.com/photo-1559757148-5c350d0d3c56?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
-      color: "#dc2626"
-    },
-    {
-      id: 4,
-      title: "Pet Care Essentials",
-      subtitle: "Everything your furry friends need for a happy, healthy life",
-      buttonText: "Shop Pet Care",
-      link: "/category/pet-care",
-      image: "https://images.unsplash.com/photo-1601758228041-f3b2795255f1?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
-      color: "#7c3aed"
-    }
-  ];
 
 
 

@@ -14,6 +14,7 @@ import ProductPage from './pages/ProductPage';
 import CartPage from './pages/CartPage';
 import CheckoutPage from './pages/checkout/CheckoutPage';
 import OrderSuccessPage from './pages/checkout/OrderSuccessPage';
+import OrderHistoryPage from './pages/OrderHistoryPage';
 import HealthCheck from './pages/HealthCheck';
 import CustomerDashboard from './pages/customer/CustomerDashboard';
 import AdminLogin from './pages/admin/AdminLogin';
@@ -43,6 +44,7 @@ function App() {
             <Route path="/cart" element={<CartPage />} />
             <Route path="/checkout" element={<CheckoutPage />} />
             <Route path="/order-success" element={<OrderSuccessPage />} />
+            <Route path="/orders" element={<OrderHistoryPage />} />
             <Route path="/dashboard" element={<CustomerDashboard />} />
             
             {/* Authentication Routes */}

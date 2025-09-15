@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import AdminNav from '../../components/admin/AdminNav';
+import AddressDisplay from '../../components/admin/AddressDisplay';
 
 const AdminUsers = () => {
   const [customers, setCustomers] = useState([]);
@@ -275,63 +276,20 @@ const AdminUsers = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {/* Shipping Address */}
                       <div className="border border-gray-200 rounded-lg p-4">
-                        <div className="flex items-center mb-2">
-                          <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"></path>
-                          </svg>
-                          <h5 className="font-medium text-gray-900">Shipping Address</h5>
-                        </div>
-                        {selectedCustomer.shipping_address ? (
-                          <div className="text-gray-600 text-sm">
-                            {(() => {
-                              const addr = typeof selectedCustomer.shipping_address === 'string' 
-                                ? JSON.parse(selectedCustomer.shipping_address) 
-                                : selectedCustomer.shipping_address;
-                              return (
-                                <div>
-                                  {addr.street && <div>{addr.street}</div>}
-                                  {(addr.city || addr.state || addr.zip) && (
-                                    <div>{[addr.city, addr.state, addr.zip].filter(Boolean).join(', ')}</div>
-                                  )}
-                                  {addr.country && <div>{addr.country}</div>}
-                                </div>
-                              );
-                            })()}
-                          </div>
-                        ) : (
-                          <p className="text-gray-400 text-sm">No shipping address provided</p>
-                        )}
+                        <AddressDisplay 
+                          address={selectedCustomer.shipping_address}
+                          type="shipping"
+                          showLabel={true}
+                        />
                       </div>
 
                       {/* Billing Address */}
                       <div className="border border-gray-200 rounded-lg p-4">
-                        <div className="flex items-center mb-2">
-                          <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z"></path>
-                            <path fillRule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clipRule="evenodd"></path>
-                          </svg>
-                          <h5 className="font-medium text-gray-900">Billing Address</h5>
-                        </div>
-                        {selectedCustomer.billing_address ? (
-                          <div className="text-gray-600 text-sm">
-                            {(() => {
-                              const addr = typeof selectedCustomer.billing_address === 'string' 
-                                ? JSON.parse(selectedCustomer.billing_address) 
-                                : selectedCustomer.billing_address;
-                              return (
-                                <div>
-                                  {addr.street && <div>{addr.street}</div>}
-                                  {(addr.city || addr.state || addr.zip) && (
-                                    <div>{[addr.city, addr.state, addr.zip].filter(Boolean).join(', ')}</div>
-                                  )}
-                                  {addr.country && <div>{addr.country}</div>}
-                                </div>
-                              );
-                            })()}
-                          </div>
-                        ) : (
-                          <p className="text-gray-400 text-sm">No billing address provided</p>
-                        )}
+                        <AddressDisplay 
+                          address={selectedCustomer.billing_address}
+                          type="billing"
+                          showLabel={true}
+                        />
                       </div>
                     </div>
                   </div>

@@ -16,7 +16,8 @@ export async function createOrder(req, res) {
       tax_cents = 0, 
       discount_cents = 0,
       payment_method = null,
-      create_razorpay_order = false
+      create_razorpay_order = false,
+      shipping_address = null
     } = req.body || {};
 
     const { data: customer } = await supabaseAdmin
@@ -66,25 +67,81 @@ export async function createOrder(req, res) {
       }
     }
 
-    const { data: order, error: oErr } = await supabaseAdmin
+    // Prepare order data
+    const orderData = {
+      customer_id: customer.id,
+      status: payment_method === 'cod' ? 'confirmed' : 'pending',
+      subtotal_cents: subtotal,
+      tax_cents,
+      shipping_cents,
+      discount_cents,
+      total_cents: total,
+    };
+
+    // Add address information - use the same address for both shipping and billing if type is 'both'
+    if (shipping_address) {
+      console.log('Received shipping address:', JSON.stringify(shipping_address, null, 2));
+      orderData.shipping_address = shipping_address;
+      // If address type is 'both' or not specified, use it for billing too
+      if (!shipping_address.type || shipping_address.type === 'both' || shipping_address.type === 'billing') {
+        orderData.billing_address = shipping_address;
+      }
+    } else {
+      console.log('No shipping address received in request');
+    }
+
+    // Add payment information if columns exist
+    if (payment_method) {
+      orderData.payment_method = payment_method;
+      orderData.payment_status = payment_method === 'cod' ? 'cod_pending' : 'pending';
+    }
+
+    let { data: order, error: oErr } = await supabaseAdmin
       .from('orders')
-      .insert({
-        customer_id: customer.id,
-        status: 'pending',
-        payment_status: 'pending',
-        payment_method: payment_method,
-        razorpay_order_id: razorpayOrder?.id || null,
-        subtotal_cents: subtotal,
-        tax_cents,
-        shipping_cents,
-        discount_cents,
-        total_cents: total,
-      })
+      .insert(orderData)
       .select('*')
       .single();
-    if (oErr) return res.status(400).json({ error: oErr.message });
+    
+    if (oErr) {
+      console.error('Order creation error:', oErr);
+      // If it's a column doesn't exist error, try without the problematic columns
+      if (oErr.message.includes('column') && oErr.message.includes('does not exist')) {
+        console.log('Retrying order creation without address/payment columns...');
+        const basicOrderData = {
+          customer_id: customer.id,
+          status: payment_method === 'cod' ? 'confirmed' : 'pending',
+          subtotal_cents: subtotal,
+          tax_cents,
+          shipping_cents,
+          discount_cents,
+          total_cents: total,
+        };
+        
+        const { data: basicOrder, error: basicErr } = await supabaseAdmin
+          .from('orders')
+          .insert(basicOrderData)
+          .select('*')
+          .single();
+          
+        if (basicErr) {
+          return res.status(400).json({ error: basicErr.message });
+        }
+        
+        // Store address in customer record as fallback
+        if (shipping_address) {
+          await supabaseAdmin
+            .from('customers')
+            .update({ shipping_address: shipping_address })
+            .eq('id', customer.id);
+        }
+        
+        order = basicOrder;
+      } else {
+        return res.status(400).json({ error: oErr.message });
+      }
+    }
 
-    // Create order items but don't reduce stock yet (only after payment success)
+    // Create order items
     for (const it of items) {
       await supabaseAdmin.from('order_items').insert({
         order_id: order.id,
@@ -96,7 +153,128 @@ export async function createOrder(req, res) {
       });
     }
 
-    // Don't convert cart or reduce stock yet - wait for payment confirmation
+    // Update customer address record with the latest address from this order
+    if (shipping_address) {
+      try {
+        // 1. Store/update in the addresses table (normalized approach)
+        let addressId = null;
+        
+        // Check if customer already has an address with the same details
+        const { data: existingAddress, error: searchError } = await supabaseAdmin
+          .from('addresses')
+          .select('id')
+          .eq('customer_id', customer.id)
+          .eq('address_line_1', shipping_address.address_line_1)
+          .eq('city', shipping_address.city)
+          .eq('postal_code', shipping_address.postal_code)
+          .limit(1)
+          .single();
+        
+        if (existingAddress && !searchError) {
+          // Update existing address
+          addressId = existingAddress.id;
+          await supabaseAdmin
+            .from('addresses')
+            .update({
+              full_name: shipping_address.full_name,
+              phone: shipping_address.phone,
+              address_line_1: shipping_address.address_line_1,
+              address_line_2: shipping_address.address_line_2 || null,
+              city: shipping_address.city,
+              state: shipping_address.state,
+              postal_code: shipping_address.postal_code,
+              country: shipping_address.country || 'India',
+              landmark: shipping_address.landmark || null,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', addressId);
+        } else {
+          // Create new address record
+          const { data: newAddress, error: createError } = await supabaseAdmin
+            .from('addresses')
+            .insert({
+              customer_id: customer.id,
+              is_default: true, // Make this the default address
+              full_name: shipping_address.full_name,
+              phone: shipping_address.phone,
+              address_line_1: shipping_address.address_line_1,
+              address_line_2: shipping_address.address_line_2 || null,
+              city: shipping_address.city,
+              state: shipping_address.state,
+              postal_code: shipping_address.postal_code,
+              country: shipping_address.country || 'India',
+              landmark: shipping_address.landmark || null
+            })
+            .select('id')
+            .single();
+          
+          if (!createError && newAddress) {
+            addressId = newAddress.id;
+            
+            // Remove default flag from other addresses for this customer
+            await supabaseAdmin
+              .from('addresses')
+              .update({ is_default: false })
+              .eq('customer_id', customer.id)
+              .neq('id', addressId);
+          }
+        }
+        
+        // 2. Update order with address_id reference if we have one
+        if (addressId) {
+          await supabaseAdmin
+            .from('orders')
+            .update({ 
+              shipping_address_id: addressId,
+              billing_address_id: addressId // Use same address for billing if type is 'both'
+            })
+            .eq('id', order.id);
+        }
+        
+        // 3. Also maintain JSONB fields for backward compatibility
+        const customerUpdateData = {};
+        customerUpdateData.shipping_address = shipping_address;
+        
+        // If address type is 'both' or not specified, use it for billing too
+        if (!shipping_address.type || shipping_address.type === 'both' || shipping_address.type === 'billing') {
+          customerUpdateData.billing_address = shipping_address;
+        }
+        
+        await supabaseAdmin
+          .from('customers')
+          .update(customerUpdateData)
+          .eq('id', customer.id);
+          
+        console.log('Updated customer address in both addresses table and JSONB fields');
+      } catch (addressError) {
+        console.error('Failed to update customer address:', addressError);
+        // Don't fail the order creation if address update fails
+      }
+    }
+
+    // For COD orders, immediately reduce stock and convert cart
+    if (payment_method === 'cod') {
+      // Reduce stock for each item
+      for (const it of items) {
+        const { error: stockError } = await supabaseAdmin
+          .from('products')
+          .update({ 
+            stock_quantity: it.products.stock_quantity - it.quantity,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', it.product_id);
+        
+        if (stockError) {
+          console.error('Failed to reduce stock for product:', it.product_id, stockError);
+        }
+      }
+
+      // Convert cart to inactive
+      await supabaseAdmin
+        .from('carts')
+        .update({ status: 'converted' })
+        .eq('id', cart.id);
+    }
 
     res.status(201).json({
       ...order,
@@ -344,5 +522,88 @@ export async function handleWebhook(req, res) {
   } catch (error) {
     console.error('Webhook handling error:', error);
     res.status(500).json({ error: 'Webhook processing failed' });
+  }
+}
+
+// Confirm COD order - similar to payment confirmation but without payment gateway
+export async function confirmCODOrder(req, res) {
+  try {
+    if (!req.session?.user) return res.status(401).json({ error: 'Login required' });
+    
+    const orderId = req.params.orderId;
+    
+    // Get order details
+    const { data: order, error: fetchError } = await supabaseAdmin
+      .from('orders')
+      .select('*')
+      .eq('id', orderId)
+      .single();
+
+    if (fetchError || !order) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+
+    // Verify order belongs to current user
+    const userId = req.session.user.id;
+    const { data: customer } = await supabaseAdmin
+      .from('customers')
+      .select('id')
+      .eq('auth_user_id', userId)
+      .single();
+
+    if (!customer || order.customer_id !== customer.id) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    // Only allow COD confirmation for COD orders
+    if (order.payment_method !== 'cod') {
+      return res.status(400).json({ error: 'Invalid payment method for COD confirmation' });
+    }
+
+    // Update order status for COD
+    const { data: updatedOrder, error: updateError } = await supabaseAdmin
+      .from('orders')
+      .update({ 
+        payment_status: 'cod_pending',
+        status: 'confirmed',
+        confirmed_at: new Date().toISOString()
+      })
+      .eq('id', orderId)
+      .select('*')
+      .single();
+
+    if (updateError) {
+      return res.status(400).json({ error: updateError.message });
+    }
+
+    // Reduce stock for confirmed COD order
+    const { data: orderItems } = await supabaseAdmin
+      .from('order_items')
+      .select('product_id, quantity')
+      .eq('order_id', orderId);
+
+    for (const item of orderItems || []) {
+      await supabaseAdmin.rpc('reduce_product_stock', {
+        product_id: item.product_id,
+        quantity_to_reduce: item.quantity
+      });
+    }
+
+    // Convert cart to inactive
+    await supabaseAdmin
+      .from('carts')
+      .update({ status: 'converted' })
+      .eq('customer_id', customer.id)
+      .eq('status', 'active');
+
+    res.json({ 
+      success: true,
+      order: updatedOrder,
+      message: 'COD order confirmed successfully' 
+    });
+
+  } catch (error) {
+    console.error('COD confirmation error:', error);
+    res.status(500).json({ error: 'COD confirmation failed' });
   }
 }

@@ -6,6 +6,7 @@ import {
   listAllOrders, 
   updateOrderStatus, 
   confirmPayment, 
+  confirmCODOrder,
   handleWebhook 
 } from '../controllers/orderController.js';
 
@@ -18,6 +19,7 @@ router.patch('/admin/:id/status', requireAdmin, updateOrderStatus);
 
 // Payment routes
 router.post('/confirm-payment', requireAuth, confirmPayment);
+router.post('/:orderId/confirm-cod', requireAuth, confirmCODOrder);
 router.post('/webhook', handleWebhook); // No auth required for webhooks
 
 export default router;
