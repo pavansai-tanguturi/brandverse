@@ -17,7 +17,7 @@ const AdminLogin = () => {
 
     try {
       // Send OTP via backend (consistent with regular users)
-      const response = await fetch('http://localhost:3001/api/auth/login', {
+      const response = await fetch('https://brandverse-46he.vercel.app/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -50,7 +50,7 @@ const AdminLogin = () => {
     setLoading(true);
 
     try {
-      const response = await fetch('http://localhost:3001/api/auth/verify-otp', {
+      const response = await fetch('https://brandverse-46he.vercel.app/api/auth/verify-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',

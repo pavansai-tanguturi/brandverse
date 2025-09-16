@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useReducer, useCallback } from 'react';
+import { API_BASE_URL } from '../utils/api';
 
 const AddressContext = createContext();
 
@@ -89,7 +90,7 @@ export const AddressProvider = ({ children }) => {
   const [state, dispatch] = useReducer(addressReducer, initialState);
 
   // API Base URL
-  const API_BASE = 'http://localhost:3001/api';
+  const API_BASE = `${API_BASE_URL}/api`;
 
   // Fetch addresses for a customer
   const fetchAddresses = useCallback(async (customerId) => {

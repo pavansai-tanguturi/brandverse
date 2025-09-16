@@ -8,7 +8,7 @@ const HealthCheck = () => {
     setLoading(true);
     setStatus('');
     try {
-      const res = await fetch('http://localhost:3001/health');
+      const res = await fetch('https://brandverse-46he.vercel.app/health');
       const data = await res.json();
       if (res.ok && data.ok) {
         setStatus('Backend is reachable!');

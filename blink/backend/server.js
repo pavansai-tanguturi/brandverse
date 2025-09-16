@@ -56,14 +56,12 @@ app.use(
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      sameSite: 'lax',
-      secure: false, // set true behind HTTPS / reverse proxy
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // Important for cross-origin
+      secure: process.env.NODE_ENV === 'production', // true for HTTPS in production
       maxAge: 1000 * 60 * 60 * 24 * 7 // 7 days
     }
   })
 );
-
-app.get('/health', (_req, res) => res.json({ ok: true }));
 
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
@@ -78,5 +76,16 @@ app.use('/api/admin/customers', adminCustomerRoutes);
 app.use('/api/delivery', deliveryRoutes);
 app.use('/api/addresses', addressRoutes);
 
-const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => console.log(`API listening on http://localhost:${PORT}`));
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({ ok: true, timestamp: new Date().toISOString() });
+});
+
+// For local development
+if (process.env.NODE_ENV !== 'production') {
+  const PORT = process.env.PORT || 8080;
+  app.listen(PORT, () => console.log(`API listening on http://localhost:${PORT}`));
+}
+
+// Export for Vercel
+export default app;
