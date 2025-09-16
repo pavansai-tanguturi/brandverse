@@ -6,7 +6,7 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 3000,
-    open: true,
+    open: process.env.NODE_ENV === 'development' && process.env.DISABLE_BROWSER_OPEN !== 'true' ? false : false, // Disable auto-opening browser to avoid xdg-open dependency
     host: true
   },
   build: {

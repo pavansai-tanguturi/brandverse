@@ -26,11 +26,13 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "dev": "vite",
-    "start": "vite",
+    "dev": "DISABLE_BROWSER_OPEN=true vite",
+    "start": "DISABLE_BROWSER_OPEN=true vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "vitest"
+    "test": "vitest",
+    "dev:open": "vite",
+    "start:open": "vite"
   },
   "browserslist": {
     "production": [
