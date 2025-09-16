@@ -61,6 +61,8 @@ export async function getProduct(req, res) {
   res.json({ ...data, product_images: withUrls, image_url });
 }
 
+
+
 export async function createProduct(req, res) {
   if (!req.session?.user || req.session.user.id !== process.env.ADMIN_ID)
     return res.status(403).json({ error: 'Admin only' });
@@ -257,5 +259,129 @@ export async function deleteImage(req, res) {
   } catch (e) {
     console.error('Error deleting image:', e);
     res.status(500).json({ error: e.message });
+  }
+}
+
+export async function searchProducts(req, res) {
+  try {
+    const { q } = req.query;
+    
+    if (!q || q.trim().length === 0) {
+      return res.status(400).json({ error: 'Search query is required' });
+    }
+
+    const searchTerm = q.trim();
+    console.log(`Searching for: "${searchTerm}"`);
+    
+    // First try exact matching with ILIKE
+    const { data, error } = await supabaseAdmin
+      .from('products')
+      .select(`
+        *, 
+        product_images(id, path, is_primary),
+        categories(id, name, slug)
+      `)
+      .eq('is_active', true)
+      .ilike('name', `%${searchTerm}%`)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Search error:', error);
+      return res.status(400).json({ error: error.message });
+    }
+
+    let results = data || [];
+    console.log(`Found ${results.length} exact matches`);
+    
+    // If no exact matches, try fuzzy matching
+    if (results.length === 0) {
+      console.log('No exact matches, trying fuzzy search...');
+      
+      // Try variations for fuzzy matching
+      const fuzzySearches = [];
+      const words = searchTerm.split(' ').filter(word => word.length > 1);
+      
+      for (const word of words) {
+        // Try partial matches
+        if (word.length >= 3) {
+          // Missing first character: "bad" -> "ad"
+          fuzzySearches.push(
+            supabaseAdmin
+              .from('products')
+              .select(`*, product_images(id, path, is_primary), categories(id, name, slug)`)
+              .eq('is_active', true)
+              .ilike('name', `%${word.substring(1)}%`)
+          );
+          
+          // Missing last character: "bad" -> "ba"
+          fuzzySearches.push(
+            supabaseAdmin
+              .from('products')
+              .select(`*, product_images(id, path, is_primary), categories(id, name, slug)`)
+              .eq('is_active', true)
+              .ilike('name', `%${word.substring(0, word.length-1)}%`)
+          );
+        }
+        
+        // Try individual character wildcards: "bad" -> "b_d", "_ad", "ba_"
+        for (let i = 0; i < word.length; i++) {
+          const pattern = word.substring(0, i) + '_' + word.substring(i + 1);
+          fuzzySearches.push(
+            supabaseAdmin
+              .from('products')
+              .select(`*, product_images(id, path, is_primary), categories(id, name, slug)`)
+              .eq('is_active', true)
+              .ilike('name', `%${pattern}%`)
+          );
+        }
+      }
+      
+      // Execute fuzzy searches and combine results
+      if (fuzzySearches.length > 0) {
+        const fuzzyResults = await Promise.all(fuzzySearches);
+        const allFuzzyData = [];
+        
+        for (const result of fuzzyResults) {
+          if (!result.error && result.data) {
+            allFuzzyData.push(...result.data);
+          }
+        }
+        
+        // Remove duplicates by ID
+        const uniqueResults = allFuzzyData.filter((product, index, self) => 
+          index === self.findIndex(p => p.id === product.id)
+        );
+        
+        results = uniqueResults.slice(0, 20); // Limit to 20 results
+        console.log(`Found ${results.length} fuzzy matches`);
+      }
+    }
+
+    // Generate signed URLs for product images
+    const enriched = await Promise.all(results.map(async (product) => {
+      const primary = (product.product_images || []).find(i => i.is_primary) || product.product_images?.[0];
+      let image_url = null;
+      
+      if (primary) {
+        const { data: signed } = await supabaseAdmin.storage
+          .from(process.env.PRODUCT_IMAGES_BUCKET)
+          .createSignedUrl(primary.path, 600);
+        image_url = signed?.signedUrl || null;
+      }
+      
+      return { 
+        ...product, 
+        image_url,
+        price: product.price_cents ? (product.price_cents / 100) : 0,
+        discount: product.discount_percent || 0
+      };
+    }));
+
+    console.log(`Returning ${enriched.length} search results`);
+    res.json(enriched);
+    
+  } catch (error) {
+    console.error('Search error:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 }

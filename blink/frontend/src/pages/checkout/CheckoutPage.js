@@ -3,12 +3,19 @@ import { useNavigate } from 'react-router-dom';
 import Navigation from '../../components/Navigation';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
-import { API_BASE_URL } from '../../utils/api';
 
 const CheckoutPage = () => {
   const { user } = useAuth();
-  const { items, getCartTotal, clearCart } = useCart();
+  const { items, getCartTotal, getCartSubtotal, getTotalDiscount, clearCart } = useCart();
   const navigate = useNavigate();
+
+  // Helper function to calculate discounted price for an item
+  const getItemDiscountedPrice = (item) => {
+    if (item.discount_percent > 0) {
+      return item.price_cents * (1 - item.discount_percent / 100);
+    }
+    return item.price_cents;
+  };
 
   const [step, setStep] = useState(1); // 1: Review, 2: Address, 3: Payment
   const [addresses, setAddresses] = useState([]);
@@ -16,6 +23,7 @@ const CheckoutPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showAddressForm, setShowAddressForm] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState('razorpay'); // 'razorpay' or 'cod'
   const [newAddress, setNewAddress] = useState({
     full_name: user?.full_name || user?.name || '',
     phone: '',
@@ -26,13 +34,15 @@ const CheckoutPage = () => {
     postal_code: '',
     country: 'India',
     landmark: '',
+    type: 'both', // Default to 'both' for shipping and billing
     is_default: true
   });
   // const [orderData, setOrderData] = useState(null);
 
   const fetchAddresses = useCallback(async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/addresses`, {
+      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
+      const response = await fetch(`${API_BASE}/api/addresses`, {
         credentials: 'include'
       });
       if (response.ok) {
@@ -68,7 +78,7 @@ const CheckoutPage = () => {
     e.preventDefault();
     try {
       setLoading(true);
-      const API_BASE = process.env.REACT_APP_API_BASE || 'https://brandverse-46he.vercel.app';
+      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
       
       const response = await fetch(`${API_BASE}/api/addresses`, {
         method: 'POST',
@@ -94,6 +104,7 @@ const CheckoutPage = () => {
           postal_code: '',
           country: 'India',
           landmark: '',
+          type: 'both',
           is_default: true
         });
       } else if (response.status === 401) {
@@ -115,14 +126,176 @@ const CheckoutPage = () => {
     }
   };
 
+  // Sync frontend cart to backend before order creation
+  const syncCartToBackend = async () => {
+    const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
+    
+    // Get existing backend cart and clear items
+    try {
+      const cartResponse = await fetch(`${API_BASE}/api/cart`, {
+        credentials: 'include'
+      });
+      
+      if (cartResponse.ok) {
+        const cartData = await cartResponse.json();
+        // Remove existing items one by one
+        if (cartData.items && cartData.items.length > 0) {
+          for (const item of cartData.items) {
+            try {
+              await fetch(`${API_BASE}/api/cart/items/${item.id}`, {
+                method: 'DELETE',
+                credentials: 'include'
+              });
+            } catch (error) {
+              console.warn(`Could not remove item ${item.id}:`, error);
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.warn('Could not get existing cart:', error);
+    }
+    
+    // Add each item from frontend cart to backend
+    for (const item of items) {
+      try {
+        await fetch(`${API_BASE}/api/cart/items`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify({
+            product_id: item.id,
+            quantity: item.quantity,
+            unit_price_cents: item.price_cents
+          })
+        });
+      } catch (error) {
+        console.error(`Failed to sync item ${item.id}:`, error);
+        throw new Error(`Failed to sync cart item: ${item.title}`);
+      }
+    }
+  };
+
+  const createCODOrder = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      
+      console.log('Selected address for COD order:', selectedAddress);
+      
+      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
+      
+      // First sync the frontend cart to backend
+      await syncCartToBackend();
+      
+      // Create order with COD payment method and shipping address
+      const response = await fetch(`${API_BASE}/api/orders`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          shipping_cents: 0,
+          tax_cents: 0,
+          discount_cents: 0,
+          payment_method: 'cod',
+          create_razorpay_order: false,
+          shipping_address: selectedAddress ? {
+            full_name: selectedAddress.full_name,
+            phone: selectedAddress.phone,
+            address_line_1: selectedAddress.address_line_1,
+            address_line_2: selectedAddress.address_line_2,
+            city: selectedAddress.city,
+            state: selectedAddress.state,
+            postal_code: selectedAddress.postal_code,
+            country: selectedAddress.country,
+            landmark: selectedAddress.landmark,
+            type: selectedAddress.type || 'both'
+          } : null
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        
+        // Handle delivery unavailable error specifically
+        if (errorData.code === 'DELIVERY_UNAVAILABLE') {
+          setError(`${errorData.message || 'Delivery not available to your location'}\n\nPlease contact us or try a different address.`);
+          return;
+        }
+        
+        throw new Error(errorData.error || 'Failed to create order');
+      }
+
+      const order = await response.json();
+
+      // For COD, try to confirm the order, but if endpoint doesn't exist, proceed anyway
+      try {
+        const confirmResponse = await fetch(`${API_BASE}/api/orders/${order.id}/confirm-cod`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include'
+        });
+
+        if (confirmResponse.ok) {
+          const result = await confirmResponse.json();
+          // Clear cart and redirect to success page
+          clearCart();
+          navigate('/order-success', { 
+            state: { 
+              order: result.order || order,
+              message: 'Order placed successfully! You can pay cash on delivery.' 
+            } 
+          });
+        } else {
+          // If confirmation fails, still proceed since order was created
+          console.warn('COD confirmation failed, but order was created');
+          clearCart();
+          navigate('/order-success', { 
+            state: { 
+              order: order,
+              message: 'Order placed successfully! You can pay cash on delivery.' 
+            } 
+          });
+        }
+      } catch (confirmError) {
+        // If COD confirmation endpoint doesn't exist, still proceed
+        console.warn('COD confirmation endpoint not available:', confirmError);
+        clearCart();
+        navigate('/order-success', { 
+          state: { 
+            order: order,
+            message: 'Order placed successfully! You can pay cash on delivery.' 
+          } 
+        });
+      }
+
+    } catch (error) {
+      console.error('COD Order creation error:', error);
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const createOrderAndPayment = async () => {
     try {
       setLoading(true);
       setError('');
       
-      const API_BASE = process.env.REACT_APP_API_BASE || 'https://brandverse-46he.vercel.app';
+      console.log('Selected address for Razorpay order:', selectedAddress);
       
-      // Create order with Razorpay
+      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
+      
+      // First sync the frontend cart to backend
+      await syncCartToBackend();
+      
+      // Create order with Razorpay and shipping address
       const response = await fetch(`${API_BASE}/api/orders`, {
         method: 'POST',
         headers: {
@@ -134,12 +307,31 @@ const CheckoutPage = () => {
           tax_cents: 0,
           discount_cents: 0,
           payment_method: 'razorpay',
-          create_razorpay_order: true
+          create_razorpay_order: true,
+          shipping_address: selectedAddress ? {
+            full_name: selectedAddress.full_name,
+            phone: selectedAddress.phone,
+            address_line_1: selectedAddress.address_line_1,
+            address_line_2: selectedAddress.address_line_2,
+            city: selectedAddress.city,
+            state: selectedAddress.state,
+            postal_code: selectedAddress.postal_code,
+            country: selectedAddress.country,
+            landmark: selectedAddress.landmark,
+            type: selectedAddress.type || 'both'
+          } : null
         })
       });
 
       if (!response.ok) {
         const errorData = await response.json();
+        
+        // Handle delivery unavailable error specifically
+        if (errorData.code === 'DELIVERY_UNAVAILABLE') {
+          setError(`🚫 ${errorData.message || 'Delivery not available to your location'}\n\nPlease contact us or try a different address.`);
+          return;
+        }
+        
         throw new Error(errorData.error || 'Failed to create order');
       }
 
@@ -189,7 +381,7 @@ const CheckoutPage = () => {
 
   const handlePaymentSuccess = async (razorpayResponse, orderId) => {
     try {
-      const API_BASE = process.env.REACT_APP_API_BASE || 'https://brandverse-46he.vercel.app';
+      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
       
       const response = await fetch(`${API_BASE}/api/orders/confirm-payment`, {
         method: 'POST',
@@ -300,10 +492,25 @@ const CheckoutPage = () => {
                       <div className="flex-1">
                         <h3 className="font-medium text-gray-900">{item.title}</h3>
                         <p className="text-gray-500">Quantity: {item.quantity}</p>
-                        <p className="text-gray-500">Price: ₹{(item.price_cents / 100).toFixed(2)} each</p>
+                        {item.discount_percent > 0 ? (
+                          <div className="space-y-1">
+                            <p className="text-gray-500">
+                              Price: ₹{(getItemDiscountedPrice(item) / 100).toFixed(2)} each
+                              <span className="ml-2 text-xs text-gray-400 line-through">₹{(item.price_cents / 100).toFixed(2)}</span>
+                            </p>
+                            <p className="text-green-600 text-sm">
+                              Save ₹{((item.price_cents - getItemDiscountedPrice(item)) / 100).toFixed(2)} ({item.discount_percent}% off)
+                            </p>
+                          </div>
+                        ) : (
+                          <p className="text-gray-500">Price: ₹{(item.price_cents / 100).toFixed(2)} each</p>
+                        )}
                       </div>
                       <div className="text-right">
-                        <p className="font-semibold">₹{((item.price_cents / 100) * item.quantity).toFixed(2)}</p>
+                        <p className="font-semibold">₹{((getItemDiscountedPrice(item) / 100) * item.quantity).toFixed(2)}</p>
+                        {item.discount_percent > 0 && (
+                          <p className="text-xs text-gray-400 line-through">₹{((item.price_cents / 100) * item.quantity).toFixed(2)}</p>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -663,11 +870,25 @@ const CheckoutPage = () => {
             {/* Step 3: Payment */}
             {step === 3 && (
               <div className="bg-white rounded-lg shadow-sm border p-6">
-                <h2 className="text-xl font-semibold mb-4">Payment</h2>
+                <h2 className="text-xl font-semibold mb-4">Payment Method</h2>
                 
-                <div className="mb-6">
-                  <div className="flex items-center justify-between p-4 border border-blue-200 bg-blue-50 rounded-lg">
+                <div className="mb-6 space-y-3">
+                  {/* Razorpay Option */}
+                  <div 
+                    className={`flex items-center justify-between p-4 border rounded-lg cursor-pointer transition-colors ${
+                      paymentMethod === 'razorpay' ? 'border-blue-200 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                    onClick={() => setPaymentMethod('razorpay')}
+                  >
                     <div className="flex items-center space-x-3">
+                      <input
+                        type="radio"
+                        name="paymentMethod"
+                        value="razorpay"
+                        checked={paymentMethod === 'razorpay'}
+                        onChange={() => setPaymentMethod('razorpay')}
+                        className="w-4 h-4 text-blue-600"
+                      />
                       <div className="w-8 h-8 bg-blue-600 rounded flex items-center justify-center">
                         <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
                           <path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z"/>
@@ -675,15 +896,53 @@ const CheckoutPage = () => {
                         </svg>
                       </div>
                       <div>
-                        <p className="font-medium">Razorpay</p>
+                        <p className="font-medium">Online Payment</p>
                         <p className="text-sm text-gray-600">Credit/Debit Card, UPI, Net Banking, Wallets</p>
                       </div>
                     </div>
-                    <div className="text-blue-600">
-                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
-                      </svg>
+                    {paymentMethod === 'razorpay' && (
+                      <div className="text-blue-600">
+                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
+                        </svg>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* COD Option */}
+                  <div 
+                    className={`flex items-center justify-between p-4 border rounded-lg cursor-pointer transition-colors ${
+                      paymentMethod === 'cod' ? 'border-green-200 bg-green-50' : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                    onClick={() => setPaymentMethod('cod')}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <input
+                        type="radio"
+                        name="paymentMethod"
+                        value="cod"
+                        checked={paymentMethod === 'cod'}
+                        onChange={() => setPaymentMethod('cod')}
+                        className="w-4 h-4 text-green-600"
+                      />
+                      <div className="w-8 h-8 bg-green-600 rounded flex items-center justify-center">
+                        <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M4 2a2 2 0 00-2 2v11a2 2 0 002 2h12a2 2 0 002-2V4a2 2 0 00-2-2H4zm0 2h12v11H4V4z" clipRule="evenodd"/>
+                          <path fillRule="evenodd" d="M8 9a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" clipRule="evenodd"/>
+                        </svg>
+                      </div>
+                      <div>
+                        <p className="font-medium">Cash on Delivery</p>
+                        <p className="text-sm text-gray-600">Pay when your order is delivered</p>
+                      </div>
                     </div>
+                    {paymentMethod === 'cod' && (
+                      <div className="text-green-600">
+                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
+                        </svg>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -707,11 +966,18 @@ const CheckoutPage = () => {
                     Back
                   </button>
                   <button
-                    onClick={createOrderAndPayment}
+                    onClick={paymentMethod === 'cod' ? createCODOrder : createOrderAndPayment}
                     disabled={loading || !selectedAddress}
-                    className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className={`px-6 py-3 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                      paymentMethod === 'cod' 
+                        ? 'bg-green-600 hover:bg-green-700' 
+                        : 'bg-blue-600 hover:bg-blue-700'
+                    }`}
                   >
-                    {loading ? 'Processing...' : `Pay ₹${(getCartTotal() / 100).toFixed(2)}`}
+                    {loading ? 'Processing...' : paymentMethod === 'cod' 
+                      ? `Place Order - ₹${(getCartTotal() / 100).toFixed(2)} (COD)`
+                      : `Pay ₹${(getCartTotal() / 100).toFixed(2)}`
+                    }
                   </button>
                 </div>
               </div>
@@ -726,8 +992,14 @@ const CheckoutPage = () => {
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span>Subtotal ({items.length} items):</span>
-                  <span>₹{(getCartTotal() / 100).toFixed(2)}</span>
+                  <span>₹{(getCartSubtotal() / 100).toFixed(2)}</span>
                 </div>
+                {getTotalDiscount() > 0 && (
+                  <div className="flex justify-between text-green-600">
+                    <span>Discount:</span>
+                    <span>-₹{(getTotalDiscount() / 100).toFixed(2)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between">
                   <span>Shipping:</span>
                   <span className="text-green-600">Free</span>
@@ -741,6 +1013,11 @@ const CheckoutPage = () => {
                   <span>Total:</span>
                   <span>₹{(getCartTotal() / 100).toFixed(2)}</span>
                 </div>
+                {getTotalDiscount() > 0 && (
+                  <div className="text-green-600 text-sm text-right">
+                    You saved ₹{(getTotalDiscount() / 100).toFixed(2)}!
+                  </div>
+                )}
               </div>
 
               <div className="mt-6 text-xs text-gray-500">

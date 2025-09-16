@@ -8,10 +8,13 @@ import Auth from './pages/Auth';
 import Login from './pages/Login';
 import SignUp from './pages/SignUp';
 import Home from './pages/Home';
+import Products from './pages/Products';
+import Search from './pages/Search';
 import ProductPage from './pages/ProductPage';
 import CartPage from './pages/CartPage';
 import CheckoutPage from './pages/checkout/CheckoutPage';
 import OrderSuccessPage from './pages/checkout/OrderSuccessPage';
+import OrderHistoryPage from './pages/OrderHistoryPage';
 import HealthCheck from './pages/HealthCheck';
 import CustomerDashboard from './pages/customer/CustomerDashboard';
 import AdminLogin from './pages/admin/AdminLogin';
@@ -35,10 +38,13 @@ function App() {
             {/* Regular User Routes */}
             <Route path="/" element={<Home />} />
             <Route path="/home" element={<Home />} />
+            <Route path="/products" element={<Products />} />
+            <Route path="/search" element={<Search />} />
             <Route path="/product/:id" element={<ProductPage />} />
             <Route path="/cart" element={<CartPage />} />
             <Route path="/checkout" element={<CheckoutPage />} />
             <Route path="/order-success" element={<OrderSuccessPage />} />
+            <Route path="/orders" element={<OrderHistoryPage />} />
             <Route path="/dashboard" element={<CustomerDashboard />} />
             
             {/* Authentication Routes */}

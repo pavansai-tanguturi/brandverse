@@ -3,7 +3,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { apiCall } from '../utils/api';
 import '../styles/Login.css';
 
 const Login = () => {
@@ -21,9 +20,12 @@ const Login = () => {
     setError('');
     setLoading(true);
     try {
+      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
+      
       // Use backend login endpoint for consistent flow
-      const response = await apiCall('/api/auth/login', {
+      const response = await fetch(`${API_BASE}/api/auth/login`, {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email })
       });
 
@@ -47,9 +49,13 @@ const Login = () => {
     setError('');
     setLoading(true);
     try {
+      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
+      
       // Use backend OTP verification for proper session creation
-      const response = await apiCall('/api/auth/verify-otp', {
+      const response = await fetch(`${API_BASE}/api/auth/verify-otp`, {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ 
           email: email, 
           token: otp,

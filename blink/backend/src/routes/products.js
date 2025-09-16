@@ -7,12 +7,14 @@ import {
   updateProduct,
   deleteProduct,
   addImages,
-  deleteImage
+  deleteImage,
+  searchProducts
 } from '../controllers/productController.js';
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
 
+router.get('/search', searchProducts);
 router.get('/', listProducts);
 router.get('/:id', getProduct);
 router.post('/', upload.array('images', 6), createProduct);

@@ -56,7 +56,6 @@ const createAddress = async (req, res) => {
   try {
     const { customer_id } = req.params;
     const {
-      type,
       is_default,
       full_name,
       phone,
@@ -70,19 +69,18 @@ const createAddress = async (req, res) => {
     } = req.body;
 
     // Validate required fields
-    if (!type || !full_name || !address_line_1 || !city || !state || !postal_code) {
+    if (!full_name || !address_line_1 || !city || !state || !postal_code) {
       return res.status(400).json({ 
-        error: 'Required fields: type, full_name, address_line_1, city, state, postal_code' 
+        error: 'Required fields: full_name, address_line_1, city, state, postal_code' 
       });
     }
 
-    // If this is being set as default, unset other defaults for this customer and type
+    // If this is being set as default, unset other defaults for this customer
     if (is_default) {
       const { error: updateError } = await supabaseAdmin
         .from('addresses')
         .update({ is_default: false })
-        .eq('customer_id', customer_id)
-        .eq('type', type);
+        .eq('customer_id', customer_id);
 
       if (updateError) {
         console.error('Error updating default addresses:', updateError);
@@ -91,7 +89,6 @@ const createAddress = async (req, res) => {
 
     const addressData = {
       customer_id,
-      type,
       is_default: is_default || false,
       full_name,
       phone,
@@ -127,7 +124,6 @@ const updateAddress = async (req, res) => {
   try {
     const { id } = req.params;
     const {
-      type,
       is_default,
       full_name,
       phone,
@@ -140,10 +136,10 @@ const updateAddress = async (req, res) => {
       landmark
     } = req.body;
 
-    // Get the existing address to get customer_id
+        // Get the existing address to check if it exists and get customer info
     const { data: existingAddress, error: fetchError } = await supabaseAdmin
       .from('addresses')
-      .select('customer_id, type')
+      .select('customer_id')
       .eq('id', id)
       .single();
 
@@ -151,14 +147,12 @@ const updateAddress = async (req, res) => {
       return res.status(404).json({ error: 'Address not found' });
     }
 
-    // If this is being set as default, unset other defaults for this customer and type
+    // If this is being set as default, unset other defaults for this customer
     if (is_default) {
-      const addressType = type || existingAddress.type;
       const { error: updateError } = await supabaseAdmin
         .from('addresses')
         .update({ is_default: false })
         .eq('customer_id', existingAddress.customer_id)
-        .eq('type', addressType)
         .neq('id', id);
 
       if (updateError) {
@@ -167,7 +161,6 @@ const updateAddress = async (req, res) => {
     }
 
     const updateData = {};
-    if (type !== undefined) updateData.type = type;
     if (is_default !== undefined) updateData.is_default = is_default;
     if (full_name !== undefined) updateData.full_name = full_name;
     if (phone !== undefined) updateData.phone = phone;
@@ -224,11 +217,6 @@ const deleteAddress = async (req, res) => {
 const setDefaultAddress = async (req, res) => {
   try {
     const { id } = req.params;
-    const { type } = req.body;
-
-    if (!type) {
-      return res.status(400).json({ error: 'Address type is required' });
-    }
 
     // Get the address to get customer_id
     const { data: address, error: fetchError } = await supabaseAdmin
@@ -241,12 +229,11 @@ const setDefaultAddress = async (req, res) => {
       return res.status(404).json({ error: 'Address not found' });
     }
 
-    // Unset other defaults for this customer and type
+    // Unset other defaults for this customer
     const { error: updateError } = await supabaseAdmin
       .from('addresses')
       .update({ is_default: false })
-      .eq('customer_id', address.customer_id)
-      .eq('type', type);
+      .eq('customer_id', address.customer_id);
 
     if (updateError) {
       console.error('Error updating default addresses:', updateError);
@@ -255,7 +242,7 @@ const setDefaultAddress = async (req, res) => {
     // Set this address as default
     const { data: updatedAddress, error } = await supabaseAdmin
       .from('addresses')
-      .update({ is_default: true, type })
+      .update({ is_default: true })
       .eq('id', id)
       .select()
       .single();
@@ -328,7 +315,7 @@ const createCurrentUserAddress = async (req, res) => {
     const auth_user_id = req.session.user.id;
     
     // First, get the customer record to find the database customer ID
-    const { data: customer, error: customerError } = await supabaseAdmin
+    let { data: customer, error: customerError } = await supabaseAdmin
       .from('customers')
       .select('id, email')
       .eq('auth_user_id', auth_user_id)
@@ -336,12 +323,39 @@ const createCurrentUserAddress = async (req, res) => {
 
     if (customerError || !customer) {
       console.error('Customer not found for auth_user_id:', auth_user_id, customerError);
-      return res.status(404).json({ error: 'Customer record not found' });
+      
+      // Try to create the customer record if it doesn't exist
+      const userEmail = req.session.user.email;
+      const userName = req.session.user.full_name || req.session.user.name || 'User';
+      
+      console.log('Attempting to create customer record for:', { auth_user_id, userEmail, userName });
+      
+      const { data: newCustomer, error: createError } = await supabaseAdmin
+        .from('customers')
+        .insert({
+          auth_user_id: auth_user_id,
+          email: userEmail,
+          full_name: userName,
+          phone: '',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+
+      if (createError || !newCustomer) {
+        console.error('Failed to create customer record:', createError);
+        return res.status(500).json({ error: 'Failed to create customer record. Please contact support.' });
+      }
+
+      console.log('Successfully created customer record:', newCustomer);
+      customer = newCustomer;
     }
 
     const customer_id = customer.id;
+    console.log('Found customer for address creation:', { auth_user_id, customer_id, customer_email: customer.email });
+    
     const {
-      type = 'home',
       is_default,
       full_name,
       phone,
@@ -361,13 +375,14 @@ const createCurrentUserAddress = async (req, res) => {
       });
     }
 
+
+
     // If this is set as default, unset other default addresses
     if (is_default) {
       const { error: updateError } = await supabaseAdmin
         .from('addresses')
         .update({ is_default: false })
-        .eq('customer_id', customer_id)
-        .eq('type', type);
+        .eq('customer_id', customer_id);
 
       if (updateError) {
         console.error('Error updating default addresses:', updateError);
@@ -376,7 +391,6 @@ const createCurrentUserAddress = async (req, res) => {
 
     const addressData = {
       customer_id,
-      type,
       is_default: is_default || false,
       full_name,
       phone,
@@ -400,6 +414,7 @@ const createCurrentUserAddress = async (req, res) => {
       return res.status(500).json({ error: 'Failed to create address' });
     }
 
+    console.log('Successfully created address:', address);
     res.status(201).json(address);
   } catch (error) {
     console.error('Error in createCurrentUserAddress:', error);

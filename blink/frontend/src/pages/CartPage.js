@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import Navigation from '../components/Navigation';
+import CartIcon from '../components/CartIcon';
 import '../styles/CartPage.css';
 
 const CartPage = () => {
@@ -71,9 +72,7 @@ const CartPage = () => {
           <div className="empty-cart-page">
             <div className="empty-cart-content">
               <div className="empty-cart-icon">
-                <svg width="80" height="80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.5 6M7 13l-1.5 6m0 0h9" />
-                </svg>
+                <CartIcon className="w-20 h-20" strokeColor="currentColor" />
               </div>
               <h2>Your cart is empty</h2>
               <p>Looks like you haven't added any items to your cart yet.</p>

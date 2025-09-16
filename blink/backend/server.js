@@ -20,9 +20,26 @@ dotenv.config();
 
 const app = express();
 
-// Simple CORS configuration - allow all origins for now
+// CORS configuration to support both local and deployed frontend
+const allowedOrigins = [
+  'http://localhost:3000',
+  'https://brandverse-ebon.vercel.app',
+  'https://brandverse-pavansais-projects.vercel.app',
+  process.env.FRONTEND_URL
+].filter(Boolean);
+
 app.use(cors({
-  origin: true, // Allow all origins
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.log('CORS blocked origin:', origin);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']

@@ -189,20 +189,66 @@ export async function getCustomerDetails(req, res) {
 
     if (ordersError) throw ordersError;
 
-    // Get customer addresses (check if customer has address fields)
+    // Get customer addresses from both addresses table and JSONB fields
     const addresses = [];
-    if (customer.shipping_address || customer.billing_address) {
-      if (customer.shipping_address) {
+    
+    // First, try to get addresses from the addresses table (normalized approach)
+    const { data: addressTableData, error: addressError } = await supabaseAdmin
+      .from('addresses')
+      .select('*')
+      .eq('customer_id', id)
+      .order('is_default', { ascending: false }); // Default addresses first
+    
+    if (!addressError && addressTableData && addressTableData.length > 0) {
+      // Use addresses from the addresses table
+      addressTableData.forEach(addr => {
         addresses.push({
-          type: 'shipping',
-          address: customer.shipping_address
+          type: addr.is_default ? 'shipping' : 'additional',
+          address: {
+            full_name: addr.full_name,
+            phone: addr.phone,
+            address_line_1: addr.address_line_1,
+            address_line_2: addr.address_line_2,
+            city: addr.city,
+            state: addr.state,
+            postal_code: addr.postal_code,
+            country: addr.country,
+            landmark: addr.landmark
+          }
         });
+      });
+      
+      // Set the same default address as both shipping and billing for compatibility
+      if (addressTableData.length > 0) {
+        const defaultAddr = addressTableData[0];
+        customer.shipping_address = {
+          full_name: defaultAddr.full_name,
+          phone: defaultAddr.phone,
+          address_line_1: defaultAddr.address_line_1,
+          address_line_2: defaultAddr.address_line_2,
+          city: defaultAddr.city,
+          state: defaultAddr.state,
+          postal_code: defaultAddr.postal_code,
+          country: defaultAddr.country,
+          landmark: defaultAddr.landmark
+        };
+        customer.billing_address = customer.shipping_address;
       }
-      if (customer.billing_address) {
-        addresses.push({
-          type: 'billing', 
-          address: customer.billing_address
-        });
+    } else {
+      // Fallback to JSONB fields (legacy approach)
+      if (customer.shipping_address || customer.billing_address) {
+        if (customer.shipping_address) {
+          addresses.push({
+            type: 'shipping',
+            address: customer.shipping_address
+          });
+        }
+        if (customer.billing_address) {
+          addresses.push({
+            type: 'billing', 
+            address: customer.billing_address
+          });
+        }
       }
     }
 
