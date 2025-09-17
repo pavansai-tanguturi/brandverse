@@ -5,23 +5,18 @@ dotenv.config();
 
 let sessionStore;
 
-// Use database session store in production, memory store in development
-if (process.env.NODE_ENV === 'production') {
-  console.log('[sessionStore] Using Supabase session store for production.');
-  
-  sessionStore = new SupabaseSessionStore({
-    ttl: 24 * 60 * 60, // 24 hours
-    tableName: 'user_sessions'
-  });
+// Temporarily use memory store for all environments until database session store is properly configured
+console.log('[sessionStore] Using in-memory session store (temporary fix for session persistence issues).');
+console.log('[sessionStore] Note: Sessions will be lost on server restart. Database session store will be re-enabled once properly configured.');
 
-  // Clean up expired sessions every hour
-  setInterval(() => {
-    sessionStore.cleanup();
-  }, 60 * 60 * 1000);
-  
-} else {
-  console.log('[sessionStore] Using in-memory session store for development.');
-  sessionStore = new session.MemoryStore();
-}
+sessionStore = new session.MemoryStore();
+
+// TODO: Re-enable database session store once the user_sessions table is created in Supabase
+// if (process.env.NODE_ENV === 'production') {
+//   sessionStore = new SupabaseSessionStore({
+//     ttl: 24 * 60 * 60, // 24 hours
+//     tableName: 'user_sessions'
+//   });
+// }
 
 export { sessionStore };

@@ -17,12 +17,21 @@ class SupabaseSessionStore extends Store {
       .gt('expire', new Date().toISOString())
       .single()
       .then(({ data, error }) => {
-        if (error || !data) {
+        if (error) {
+          console.log(`[SessionStore] GET error for ${sid}:`, error.message);
           return callback(null, null);
         }
+        if (!data) {
+          console.log(`[SessionStore] No session found for ${sid}`);
+          return callback(null, null);
+        }
+        console.log(`[SessionStore] GET success for ${sid}`);
         callback(null, data.sess);
       })
-      .catch(err => callback(err));
+      .catch(err => {
+        console.error(`[SessionStore] GET exception for ${sid}:`, err);
+        callback(err);
+      });
   }
 
   // Set session data
@@ -38,9 +47,17 @@ class SupabaseSessionStore extends Store {
         updated_at: new Date().toISOString()
       })
       .then(({ error }) => {
+        if (error) {
+          console.error(`[SessionStore] SET error for ${sid}:`, error.message);
+        } else {
+          console.log(`[SessionStore] SET success for ${sid}`);
+        }
         callback(error);
       })
-      .catch(err => callback(err));
+      .catch(err => {
+        console.error(`[SessionStore] SET exception for ${sid}:`, err);
+        callback(err);
+      });
   }
 
   // Delete session
