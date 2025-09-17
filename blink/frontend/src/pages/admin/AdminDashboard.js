@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
+import { apiCall } from '../../utils/api';
 import AdminNav from '../../components/admin/AdminNav';
 
 // Constants
@@ -99,58 +100,34 @@ const useApiRequest = () => {
   const [error, setError] = useState(null);
   const [retryCount, setRetryCount] = useState(0);
 
-  const API_BASE = useMemo(() => 
-    import.meta.env.VITE_API_BASE || 'http://localhost:3001', 
-    []
-  );
-
-  const makeRequest = useCallback(async (attempt = 0) => {
+  const makeRequest = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT);
-
-      const response = await fetch(`${API_BASE}/api/admin/analytics/summary`, {
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        signal: controller.signal
-      });
-
-      clearTimeout(timeoutId);
-
-      if (!response.ok) {
-        throw new Error(`API responded with status ${response.status}: ${response.statusText}`);
-      }
-
-      const data = await response.json();
-      console.log('Successfully received analytics data:', data);
-      
       setRetryCount(0);
+
+      const data = await apiCall('/api/admin/analytics/summary', {
+        method: 'GET'
+      }, 2); // Use built-in retry with 2 attempts
+      
+      console.log('Successfully received analytics data:', data);
       return data;
       
     } catch (err) {
       console.error('Error fetching analytics data:', err);
       
-      setError(getErrorMessage(err));
-      
-      // Auto-retry logic
-      if (attempt < MAX_RETRY_ATTEMPTS) {
-        setTimeout(() => {
-          setRetryCount(prev => prev + 1);
-          makeRequest(attempt + 1);
-        }, RETRY_DELAYS[attempt]);
+      // Handle specific auth errors
+      if (err.message.includes('401') || err.message.includes('403') || err.message.includes('Unauthorized')) {
+        setError('Authentication failed. Please log in again.');
+      } else {
+        setError(getErrorMessage(err));
       }
       
       return null;
     } finally {
       setLoading(false);
     }
-  }, [API_BASE]);
+  }, []);
 
   return { makeRequest, loading, error, retryCount };
 };

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { apiCall } from '../../utils/api';
 import AdminNav from '../../components/admin/AdminNav';
 
 const AdminProducts = () => {
@@ -30,31 +31,25 @@ const AdminProducts = () => {
 
   const fetchCategories = async () => {
     try {
-      const API_BASE = import.meta.env.VITE_API_BASE;
-      const res = await fetch(`${API_BASE}/api/categories`, {
-        credentials: 'include'
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setCategories(data);
-      }
+      const data = await apiCall('/api/categories');
+      setCategories(data);
     } catch (err) {
       console.error('Failed to fetch categories:', err);
+      if (err.message.includes('401') || err.message.includes('Unauthorized')) {
+        setError('Authentication failed. Please log in again.');
+      }
     }
   };
 
   const fetchProducts = async () => {
     try {
-      const API_BASE = import.meta.env.VITE_API_BASE;
-      const res = await fetch(`${API_BASE}/api/products`, {
-        credentials: 'include'
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setProducts(data);
-      }
+      const data = await apiCall('/api/products');
+      setProducts(data);
     } catch (err) {
       console.error('Failed to fetch products:', err);
+      if (err.message.includes('401') || err.message.includes('Unauthorized')) {
+        setError('Authentication failed. Please log in again.');
+      }
     }
     setLoadingProducts(false);
   };

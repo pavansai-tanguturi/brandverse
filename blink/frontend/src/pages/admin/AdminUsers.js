@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { apiCall } from '../../utils/api';
 import AdminNav from '../../components/admin/AdminNav';
 import AddressDisplay from '../../components/admin/AddressDisplay';
 
@@ -15,20 +16,15 @@ const AdminUsers = () => {
 
   const fetchCustomers = async () => {
     try {
-      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
-      
-      const res = await fetch(`${API_BASE}/api/admin/customers`, {
-        credentials: 'include'
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        setCustomers(data);
+      const data = await apiCall('/api/admin/customers');
+      setCustomers(data);
+    } catch (err) {
+      console.error('Failed to fetch customers:', err);
+      if (err.message.includes('401') || err.message.includes('Unauthorized')) {
+        setError('Authentication failed. Please log in again.');
       } else {
         setError('Failed to fetch customers');
       }
-    } catch (err) {
-      setError(err.message || 'Failed to fetch customers');
     }
   };
 

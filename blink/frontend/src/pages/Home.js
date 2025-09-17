@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { apiCall } from '../utils/api';
 import Navigation from '../components/Navigation';
 import Footer from '../components/Footer';
 import '../styles/App.css';
@@ -115,35 +116,31 @@ function Home() {
   // Fetch categories from backend
   const fetchCategories = async () => {
     try {
-      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
-      const response = await fetch(`${API_BASE}/api/categories`);
-      if (response.ok) {
-        const data = await response.json();
-        // Filter out 'All Products' category for home page display
-        const filteredCategories = data.filter(cat => cat.slug !== 'all');
-        setCategories(filteredCategories);
-      } else {
-        console.error('Failed to fetch categories');
-      }
+      const data = await apiCall('/api/categories');
+      // Filter out 'All Products' category for home page display
+      const filteredCategories = data.filter(cat => cat.slug !== 'all');
+      setCategories(filteredCategories);
     } catch (error) {
       console.error('Error fetching categories:', error);
+      // Handle auth errors by redirecting to login if needed
+      if (error.message.includes('401') || error.message.includes('Unauthorized')) {
+        console.log('Categories fetch failed due to auth - user may need to login');
+      }
     }
   };
 
   // Fetch products from admin panel
   const fetchProducts = async () => {
     try {
-      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
-      const response = await fetch(`${API_BASE}/api/products`);
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Fetched products:', data); // Debug log
-        setProducts(data.slice(0, 12)); // Show first 12 products on home page
-      } else {
-        console.error('Failed to fetch products');
-      }
+      const data = await apiCall('/api/products');
+      console.log('Fetched products:', data); // Debug log
+      setProducts(data.slice(0, 12)); // Show first 12 products on home page
     } catch (error) {
       console.error('Error fetching products:', error);
+      // Handle auth errors
+      if (error.message.includes('401') || error.message.includes('Unauthorized')) {
+        console.log('Products fetch failed due to auth - user may need to login');
+      }
     } finally {
       setLoading(false);
     }
@@ -158,26 +155,17 @@ function Home() {
     }
 
     try {
-      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
-      
       // Build query parameters
       const params = new URLSearchParams({ country });
       if (region && region !== 'Unknown region') params.append('region', region);
       if (city && city !== 'Unknown city') params.append('city', city);
       
-      const response = await fetch(`${API_BASE}/api/delivery/check?${params.toString()}`);
+      const data = await apiCall(`/api/delivery/check?${params.toString()}`);
+      setDeliveryAvailable(data.available);
       
-      if (response.ok) {
-        const data = await response.json();
-        setDeliveryAvailable(data.available);
-        
-        // Store the delivery message for display
-        if (data.message) {
-          setDeliveryMessage(data.message);
-        }
-      } else {
-        console.log('Delivery check failed, defaulting to unavailable');
-        setDeliveryAvailable(false);
+      // Store the delivery message for display
+      if (data.message) {
+        setDeliveryMessage(data.message);
       }
     } catch (error) {
       console.log('Error checking delivery availability:', error);

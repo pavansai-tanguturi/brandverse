@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { apiCall } from '../../utils/api';
 
 const AdminLogin = () => {
   const [email, setEmail] = useState('');
@@ -17,16 +18,12 @@ const AdminLogin = () => {
 
     try {
       // Send OTP via backend (consistent with regular users)
-      const response = await fetch('https://brandverse-46he.vercel.app/api/auth/login', {
+      const data = await apiCall('/api/auth/login', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
         body: JSON.stringify({ email: email })
       });
-
-      const data = await response.json();
       
-      if (response.ok) {
+      if (data) {
         if (data.isAdmin) {
           setMessage('Admin OTP sent to your email. Please check and enter the verification code.');
         } else {
@@ -50,20 +47,16 @@ const AdminLogin = () => {
     setLoading(true);
 
     try {
-      const response = await fetch('https://brandverse-46he.vercel.app/api/auth/verify-otp', {
+      const data = await apiCall('/api/auth/verify-otp', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
         body: JSON.stringify({ 
           email: email, 
           token: otp,
           type: 'magiclink'
         })
       });
-
-      const data = await response.json();
       
-      if (response.ok) {
+      if (data) {
         if (data.admin) {
           setMessage('Admin authentication successful');
           navigate('/admin/dashboard');

@@ -72,17 +72,27 @@ app.use(express.urlencoded({ extended: true }));
 app.use(
   session({
     store: sessionStore,
-    secret: process.env.SESSION_SECRET,
+    secret: process.env.SESSION_SECRET || 'fallback_secret_key',
     resave: false,
     saveUninitialized: false,
+    name: 'brandverse.sid', // Custom session name
     cookie: {
       httpOnly: true,
       sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // Important for cross-origin
       secure: process.env.NODE_ENV === 'production', // true for HTTPS in production
-      maxAge: 1000 * 60 * 60 * 24 * 7 // 7 days
+      maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+      domain: process.env.NODE_ENV === 'production' ? undefined : undefined // Let browser handle domain
     }
   })
 );
+
+// Debug middleware to log session info
+app.use((req, res, next) => {
+  if (req.path.includes('/api/')) {
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.path} - Session ID: ${req.sessionID || 'none'} - User: ${req.session?.user?.email || 'none'}`);
+  }
+  next();
+});
 
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);

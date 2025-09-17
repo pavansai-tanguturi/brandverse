@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { apiCall } from '../../utils/api';
 import AdminNav from '../../components/admin/AdminNav';
 import AddressDisplay from '../../components/admin/AddressDisplay';
 
@@ -53,31 +54,23 @@ const AdminOrders = () => {
 
   const fetchOrders = async () => {
     try {
-      const API_BASE = import.meta.env.VITE_API_BASE;
-      const res = await fetch(`${API_BASE}/api/orders/admin`, {
-        credentials: 'include'
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setOrders(data);
-      } else {
-        throw new Error('Failed to fetch orders');
-      }
+      const data = await apiCall('/api/orders/admin');
+      setOrders(data);
     } catch (err) {
-      setError('Failed to fetch orders: ' + err.message);
+      console.error('Failed to fetch orders:', err);
+      if (err.message.includes('401') || err.message.includes('Unauthorized')) {
+        setError('Authentication failed. Please log in again.');
+      } else {
+        setError('Failed to fetch orders: ' + err.message);
+      }
     }
     setLoading(false);
   };
 
   const fetchDeliveryLocations = async () => {
     try {
-      const API_BASE = import.meta.env.VITE_API_BASE;
-      const res = await fetch(`${API_BASE}/api/delivery/locations`);
-      
-      if (res.ok) {
-        const data = await res.json();
-        setDeliveryLocations(data.deliveryLocations || []);
-      }
+      const data = await apiCall('/api/delivery/locations');
+      setDeliveryLocations(data.deliveryLocations || []);
     } catch (err) {
       console.error('Failed to fetch delivery locations:', err);
     }

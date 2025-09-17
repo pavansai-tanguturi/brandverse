@@ -16,6 +16,7 @@ import {
 } from 'recharts';
 import { useReactToPrint } from 'react-to-print';
 import { format, subDays } from 'date-fns';
+import { apiCall } from '../../utils/api';
 import AdminNav from '../../components/admin/AdminNav';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D'];
@@ -60,27 +61,21 @@ const AnalyticsDashboard = () => {
     setError('');
     setIsRefreshing(true);
     try {
-      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
-      
-      const res = await fetch(`${API_BASE}/api/admin/analytics/summary?startDate=${dateRange.start}&endDate=${dateRange.end}`, {
-        credentials: 'include'
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        const timeBasedData = generateTimeBasedData(data.dailyRevenue || []);
-        setAnalytics(prevData => ({
-          ...prevData,
-          ...data,
-          monthlyRevenue: timeBasedData.monthly,
-          yearlyRevenue: timeBasedData.yearly
-        }));
-      } else {
-        const errorData = await res.json().catch(() => ({ error: 'Failed to fetch analytics' }));
-        setError(errorData.error || 'Failed to fetch analytics');
-      }
+      const data = await apiCall(`/api/admin/analytics/summary?startDate=${dateRange.start}&endDate=${dateRange.end}`);
+      const timeBasedData = generateTimeBasedData(data.dailyRevenue || []);
+      setAnalytics(prevData => ({
+        ...prevData,
+        ...data,
+        monthlyRevenue: timeBasedData.monthly,
+        yearlyRevenue: timeBasedData.yearly
+      }));
     } catch (err) {
-      setError(err.message || 'Failed to fetch analytics');
+      console.error('Failed to fetch analytics:', err);
+      if (err.message.includes('401') || err.message.includes('Unauthorized')) {
+        setError('Authentication failed. Please log in again.');
+      } else {
+        setError(err.message || 'Failed to fetch analytics');
+      }
     } finally {
       setIsRefreshing(false);
     }

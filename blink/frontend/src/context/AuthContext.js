@@ -40,18 +40,8 @@ export const AuthProvider = ({ children }) => {
 
     const checkUserSession = useCallback(async () => {
     try {
-      // First check localStorage for backed up user data
-      const cachedUser = localStorage.getItem('user');
-      if (cachedUser) {
-        try {
-          const userData = JSON.parse(cachedUser);
-          setUser(userData);
-        } catch (e) {
-          console.error('Failed to parse cached user data:', e);
-          localStorage.removeItem('user');
-        }
-      }
-
+      setLoading(true);
+      
       const response = await apiCall('/api/auth/user', {
         method: 'GET',
       });
@@ -60,17 +50,32 @@ export const AuthProvider = ({ children }) => {
         setUser(response.user);
         // Update localStorage with fresh data
         localStorage.setItem('user', JSON.stringify(response.user));
+        console.log('Session check successful:', response.user.email);
       } else {
         // If session check fails, clear everything
+        console.log('Session check failed - no user in response');
         setUser(null);
         localStorage.removeItem('user');
       }
     } catch (error) {
       console.error('Session check failed:', error);
-      // Keep cached user if available, otherwise clear
+      
+      // Try to use cached user data if server is unreachable
       const cachedUser = localStorage.getItem('user');
-      if (!cachedUser) {
+      if (cachedUser && error.message.includes('Network')) {
+        try {
+          const userData = JSON.parse(cachedUser);
+          setUser(userData);
+          console.log('Using cached user data due to network error');
+        } catch (e) {
+          console.error('Failed to parse cached user data:', e);
+          localStorage.removeItem('user');
+          setUser(null);
+        }
+      } else {
+        // Clear user data for other types of errors
         setUser(null);
+        localStorage.removeItem('user');
       }
     } finally {
       setLoading(false);
