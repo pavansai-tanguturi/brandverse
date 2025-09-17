@@ -38,7 +38,6 @@ const app = express();
 //  - Localhost dev
 function buildAllowedOrigins() {
   const list = new Set([
-    'http://localhost:3000',
     process.env.FRONTEND_URL,
   ]);
   if (process.env.ADDITIONAL_ORIGINS) {
