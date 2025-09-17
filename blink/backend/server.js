@@ -31,25 +31,39 @@ dotenv.config();
 
 const app = express();
 
-// CORS configuration to support both local and deployed frontend
-const allowedOrigins = [
-  'http://localhost:3000',
-  'https://brandverse-ebon.vercel.app',
-  'https://brandverse-pavansais-projects.vercel.app',
-  process.env.FRONTEND_URL
-].filter(Boolean);
+// CORS configuration – now supports:
+//  - Exact origins from FRONTEND_URL, ADDITIONAL_ORIGINS (comma separated)
+//  - Netlify deploy previews (*.netlify.app) when ALLOW_NETLIFY_PREVIEWS=true
+//  - Vercel domains (*.vercel.app) when ALLOW_VERCEL=true
+//  - Localhost dev
+function buildAllowedOrigins() {
+  const list = new Set([
+    'http://localhost:3000',
+    process.env.FRONTEND_URL,
+  ]);
+  if (process.env.ADDITIONAL_ORIGINS) {
+    process.env.ADDITIONAL_ORIGINS.split(',').map(s => s.trim()).forEach(o => list.add(o));
+  }
+  return Array.from([...list].filter(Boolean));
+}
+
+const EXACT_ALLOWED = buildAllowedOrigins();
+const allowNetlifyPreviews = process.env.ALLOW_NETLIFY_PREVIEWS === 'true';
+const allowVercel = process.env.ALLOW_VERCEL === 'true';
+
+function originMatchesPatterns(origin) {
+  if (!origin) return true; // non-browser clients
+  if (EXACT_ALLOWED.includes(origin)) return true;
+  if (allowNetlifyPreviews && /https:\/\/[a-z0-9-]+--[a-z0-9-]+\.netlify\.app$/i.test(origin)) return true;
+  if (allowVercel && /https:\/\/[a-z0-9-]+\.vercel\.app$/i.test(origin)) return true;
+  return false;
+}
 
 app.use(cors({
-  origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    
-    if (allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      console.log('CORS blocked origin:', origin);
-      callback(new Error('Not allowed by CORS'));
-    }
+  origin: function(origin, callback) {
+    if (originMatchesPatterns(origin)) return callback(null, true);
+    console.log('CORS blocked origin:', origin, 'Allowed list:', EXACT_ALLOWED, 'Flags:', { allowNetlifyPreviews, allowVercel });
+    return callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
@@ -151,12 +165,16 @@ if (process.env.NODE_ENV === 'production' && process.env.NETLIFY) {
   performBuildTasks();
   
 } else {
-  // ✅ Runtime server for development/production deployment
+  // ✅ Runtime server for development OR production (non-Netlify build environment)
   const PORT = process.env.PORT || 8080;
-  
-  if (process.env.NODE_ENV !== 'production') {
-    // For local development
-    app.listen(PORT, () => console.log(`🚀 API listening on http://localhost:${PORT}`));
+  const shouldListen = !process.env.NETLIFY; // any normal server environment
+  if (shouldListen) {
+    app.listen(PORT, () => {
+      console.log(`🚀 API server started on port ${PORT}`);
+      console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+    });
+  } else {
+    console.log('Skipping listen because NETLIFY build env detected.');
   }
 }
 

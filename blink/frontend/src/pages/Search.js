@@ -28,7 +28,8 @@ const Search = () => {
     setHasSearched(true);
     
     try {
-      const response = await fetch(`http://localhost:3001/api/products/search?q=${encodeURIComponent(query)}`);
+      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
+      const response = await fetch(`${API_BASE}/api/products/search?q=${encodeURIComponent(query)}`);
       if (response.ok) {
         const data = await response.json();
         setProducts(data);

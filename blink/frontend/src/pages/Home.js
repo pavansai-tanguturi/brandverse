@@ -114,7 +114,8 @@ function Home() {
   // Fetch categories from backend
   const fetchCategories = async () => {
     try {
-      const response = await fetch('http://localhost:3001/api/categories');
+      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
+      const response = await fetch(`${API_BASE}/api/categories`);
       if (response.ok) {
         const data = await response.json();
         // Filter out 'All Products' category for home page display
@@ -131,7 +132,7 @@ function Home() {
   // Fetch products from admin panel
   const fetchProducts = async () => {
     try {
-      const response = await fetch('http://localhost:3001/api/products');
+      const response = await fetch(`${API_BASE}/api/products`);
       if (response.ok) {
         const data = await response.json();
         console.log('Fetched products:', data); // Debug log

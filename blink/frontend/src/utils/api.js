@@ -1,10 +1,5 @@
 // Centralized API utility for handling environment-specific URLs
-const API_BASE_URL = (
-  import.meta.env.MODE === 'production' || 
-  window.location.hostname !== 'localhost'
-) 
-  ? 'https://brandverse-46he.vercel.app'
-  : 'http://localhost:3001';
+const API_BASE_URL = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
 
 export const apiCall = async (endpoint, options = {}) => {
   const url = `${API_BASE_URL}${endpoint}`;
