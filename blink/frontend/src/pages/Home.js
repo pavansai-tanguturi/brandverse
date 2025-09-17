@@ -9,10 +9,11 @@ import '../styles/App.css';
 function Home() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [locationName, setLocationName] = useState('Fetching location...');
+  const [locationName, setLocationName] = useState('Click to detect location');
   const [deliveryAvailable, setDeliveryAvailable] = useState(true);
-  const [checkingDelivery, setCheckingDelivery] = useState(true);
+  const [checkingDelivery, setCheckingDelivery] = useState(false);
   const [userLocation, setUserLocation] = useState(null);
+  const [locationRequested, setLocationRequested] = useState(false);
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -222,11 +223,13 @@ function Home() {
     }
   }, [categories]);
 
-  useEffect(() => {
-    fetchCategories();
-    fetchProducts();
-    
-    if (navigator.geolocation) {
+  // Request location on user action
+  const requestLocation = () => {
+    if (navigator.geolocation && !locationRequested) {
+      setLocationRequested(true);
+      setCheckingDelivery(true);
+      setLocationName('Fetching location...');
+      
       navigator.geolocation.getCurrentPosition(async (position) => {
         const { latitude, longitude } = position.coords;
         try {
@@ -268,10 +271,15 @@ function Home() {
         setLocationName('Location permission denied');
         setCheckingDelivery(false);
       });
-    } else {
+    } else if (!navigator.geolocation) {
       setLocationName('Geolocation not supported');
       setCheckingDelivery(false);
     }
+  };
+
+  useEffect(() => {
+    fetchCategories();
+    fetchProducts();
   }, []);
 
   return (
@@ -303,7 +311,14 @@ function Home() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
-                <span className="text-sm font-medium text-gray-700">
+                <span 
+                  className={`text-sm font-medium ${
+                    locationName === 'Click to detect location' 
+                      ? 'text-blue-600 cursor-pointer hover:text-blue-800 underline' 
+                      : 'text-gray-700'
+                  }`}
+                  onClick={locationName === 'Click to detect location' ? requestLocation : undefined}
+                >
                   Current location: {locationName}
                 </span>
               </div>
