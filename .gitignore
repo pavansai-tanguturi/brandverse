@@ -1,0 +1,3 @@
+# Environment files
+blink/backend/.env
+blink/frontend/.env
