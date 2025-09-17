@@ -51,6 +51,13 @@ const EXACT_ALLOWED = buildAllowedOrigins();
 const allowNetlifyPreviews = process.env.ALLOW_NETLIFY_PREVIEWS === 'true';
 const allowVercel = process.env.ALLOW_VERCEL === 'true';
 
+// Debug logging for environment variables
+console.log('🔧 Environment Variables:');
+console.log('FRONTEND_URL:', process.env.FRONTEND_URL);
+console.log('ALLOW_NETLIFY_PREVIEWS:', process.env.ALLOW_NETLIFY_PREVIEWS);
+console.log('EXACT_ALLOWED:', EXACT_ALLOWED);
+console.log('allowNetlifyPreviews:', allowNetlifyPreviews);
+
 function originMatchesPatterns(origin) {
   if (!origin) return true; // non-browser clients
   if (EXACT_ALLOWED.includes(origin)) return true;
