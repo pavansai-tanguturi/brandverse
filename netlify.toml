@@ -1,16 +1,20 @@
+# Root Netlify configuration - deploy frontend only
 [build]
-  publish = "build"
+  base = "blink/frontend"
   command = "npm run build"
-  base = "/blink/frontend"
+  publish = "build"
 
 [build.environment]
   NODE_VERSION = "20"
+  NODE_ENV = "production"
 
+# SPA routing
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
 
+# Security & caching headers
 [[headers]]
   for = "/static/*"
   [headers.values]
@@ -25,3 +29,5 @@
   for = "/*.css"
   [headers.values]
     Content-Type = "text/css"
+
+# (Optional) Add API proxy later if backend hosted elsewhere

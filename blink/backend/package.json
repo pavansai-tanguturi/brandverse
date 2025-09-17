@@ -10,7 +10,6 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",
-    "@vendia/serverless-express": "^4.12.6",
     "cors": "^2.8.5",
     "dayjs": "^1.11.11",
     "dotenv": "^16.4.5",
