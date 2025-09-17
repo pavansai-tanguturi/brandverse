@@ -149,7 +149,6 @@ export async function deleteProduct(req, res) {
 }
 
 export async function addImages(req, res) {
-  console.log('[addImages] called', { params: req.params, query: req.query, files: req.files?.length });
   if (!req.session?.user || req.session.user.id !== process.env.ADMIN_ID)
     return res.status(403).json({ error: 'Admin only' });
 
@@ -158,24 +157,20 @@ export async function addImages(req, res) {
   
   // If replace=true, delete existing images first
   if (replace === 'true') {
-    console.log('[addImages] replace=true, deleting existing images for product', id);
     const { data: existingImages } = await supabaseAdmin
       .from('product_images')
       .select('path')
       .eq('product_id', id);
-    console.log('[addImages] found existing images:', existingImages?.length);
     if (existingImages?.length) {
       // Delete from storage
-      const storageRes = await supabaseAdmin.storage
+      await supabaseAdmin.storage
         .from(process.env.PRODUCT_IMAGES_BUCKET)
         .remove(existingImages.map(img => img.path));
-      console.log('[addImages] storage delete result:', storageRes);
       // Delete from database
-      const dbRes = await supabaseAdmin
+      await supabaseAdmin
         .from('product_images')
         .delete()
         .eq('product_id', id);
-      console.log('[addImages] db delete result:', dbRes);
     }
   }
 
@@ -183,7 +178,6 @@ export async function addImages(req, res) {
   for (const [idx, file] of (req.files || []).entries()) {
     const ext = (file.originalname.split('.').pop() || 'jpg').toLowerCase();
     const path = `${id}/${nanoid(8)}.${ext}`;
-    console.log('[addImages] uploading image', { idx, path });
     const { error: uErr } = await supabaseAdmin.storage
       .from(process.env.PRODUCT_IMAGES_BUCKET)
       .upload(path, file.buffer, { contentType: file.mimetype, upsert: false });
@@ -193,7 +187,6 @@ export async function addImages(req, res) {
     }
     rows.push({ product_id: id, path, is_primary: idx === 0 }); // first image is primary
   }
-  console.log('[addImages] inserting product_images rows:', rows.length);
   if (rows.length) await supabaseAdmin.from('product_images').insert(rows);
   res.json({ uploaded: rows.length, replaced: replace === 'true' });
 }
@@ -271,7 +264,6 @@ export async function searchProducts(req, res) {
     }
 
     const searchTerm = q.trim();
-    console.log(`Searching for: "${searchTerm}"`);
     
     // First try exact matching with ILIKE
     const { data, error } = await supabaseAdmin
@@ -291,11 +283,9 @@ export async function searchProducts(req, res) {
     }
 
     let results = data || [];
-    console.log(`Found ${results.length} exact matches`);
     
     // If no exact matches, try fuzzy matching
     if (results.length === 0) {
-      console.log('No exact matches, trying fuzzy search...');
       
       // Try variations for fuzzy matching
       const fuzzySearches = [];
@@ -353,7 +343,6 @@ export async function searchProducts(req, res) {
         );
         
         results = uniqueResults.slice(0, 20); // Limit to 20 results
-        console.log(`Found ${results.length} fuzzy matches`);
       }
     }
 
@@ -377,7 +366,6 @@ export async function searchProducts(req, res) {
       };
     }));
 
-    console.log(`Returning ${enriched.length} search results`);
     res.json(enriched);
     
   } catch (error) {

@@ -26,7 +26,6 @@ export const apiCall = async (endpoint, options = {}, retries = 1) => {
         
         // Retry other errors
         if (attempt < retries) {
-          console.log(`API call failed for ${endpoint}, retrying... (attempt ${attempt + 1}/${retries + 1})`);
           await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1))); // Exponential backoff
           continue;
         }
@@ -38,12 +37,10 @@ export const apiCall = async (endpoint, options = {}, retries = 1) => {
       return data;
     } catch (error) {
       if (attempt < retries && !error.message.includes('401') && !error.message.includes('403')) {
-        console.log(`API call failed for ${endpoint}, retrying... (attempt ${attempt + 1}/${retries + 1})`);
         await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1))); // Exponential backoff
         continue;
       }
       
-      console.error(`API call failed for ${endpoint}:`, error);
       throw error;
     }
   }
