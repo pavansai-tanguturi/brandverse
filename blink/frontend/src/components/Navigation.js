@@ -9,10 +9,10 @@ import locationIcon from '../assets/location.png';
 const Navigation = ({ showSearch = true }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [locationName, setLocationName] = useState('Click to get location');
+  const [locationName, setLocationName] = useState('Detecting location...');
   const [locationRequested, setLocationRequested] = useState(false);
 
-  // Get location on user request
+  // Auto-detect location on component mount
   const requestLocation = () => {
     if (navigator.geolocation && !locationRequested) {
       setLocationRequested(true);
@@ -38,7 +38,10 @@ const Navigation = ({ showSearch = true }) => {
     }
   };
 
-
+  // Auto-detect location when component mounts
+  useEffect(() => {
+    requestLocation();
+  }, []);
 
   return (
     <header className="bg-gradient-to-r from-slate-900 via-purple-900 to-slate-900 shadow-2xl sticky top-0 z-50">
@@ -73,7 +76,7 @@ const Navigation = ({ showSearch = true }) => {
           )}
 
           {/* Location Display - Hidden on small screens */}
-          <div className="hidden lg:flex items-center space-x-2 bg-white/10 backdrop-blur-lg rounded-xl px-3 py-2 cursor-pointer hover:bg-white/20 transition-all" onClick={locationName === 'Click to get location' ? requestLocation : () => navigate('/delivery-locations')}>
+          <div className="hidden lg:flex items-center space-x-2 bg-white/10 backdrop-blur-lg rounded-xl px-3 py-2 cursor-pointer hover:bg-white/20 transition-all" onClick={() => navigate('/delivery-locations')}>
             <img src={locationIcon} className="h-4 w-4" alt="location" />
             <div className="flex flex-col">
               <span className="text-gray-300 text-xs uppercase tracking-wide">Deliver to</span>

@@ -9,7 +9,7 @@ import '../styles/App.css';
 function Home() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [locationName, setLocationName] = useState('Click to detect location');
+  const [locationName, setLocationName] = useState('Detecting location...');
   const [deliveryAvailable, setDeliveryAvailable] = useState(true);
   const [checkingDelivery, setCheckingDelivery] = useState(false);
   const [userLocation, setUserLocation] = useState(null);
@@ -280,6 +280,7 @@ function Home() {
   useEffect(() => {
     fetchCategories();
     fetchProducts();
+    requestLocation(); // Auto-detect location on component mount
   }, []);
 
   return (
@@ -311,14 +312,7 @@ function Home() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
-                <span 
-                  className={`text-sm font-medium ${
-                    locationName === 'Click to detect location' 
-                      ? 'text-blue-600 cursor-pointer hover:text-blue-800 underline' 
-                      : 'text-gray-700'
-                  }`}
-                  onClick={locationName === 'Click to detect location' ? requestLocation : undefined}
-                >
+                <span className="text-sm font-medium text-gray-700">
                   Current location: {locationName}
                 </span>
               </div>
