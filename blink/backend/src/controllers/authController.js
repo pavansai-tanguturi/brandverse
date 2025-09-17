@@ -75,12 +75,13 @@ export async function login(req, res) {
 
 export async function verifyOtp(req, res) {
   try {
-    const { email, token, type = 'magiclink' } = req.body;
+    const { email, token, type } = req.body;
+    const otpType = type || 'email';
 
     const { data, error } = await supabaseAnon.auth.verifyOtp({
       email,
       token,
-      type
+      type: otpType
     });
 
     if (error) return res.status(400).json({ error: error.message });
