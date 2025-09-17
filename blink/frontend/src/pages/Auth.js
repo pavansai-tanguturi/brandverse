@@ -35,8 +35,9 @@ function Auth() {
     try {
       const endpoint = isSignup ? '/api/auth/signup' : '/api/auth/login';
       const payload = { email: formData.email, name: formData.name };
+      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
 
-      const response = await fetch(`https://brandverse-46he.vercel.app${endpoint}`, {
+      const response = await fetch(`${API_BASE}${endpoint}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -78,7 +79,8 @@ function Auth() {
     setError('');
 
     try {
-      const response = await fetch('https://brandverse-46he.vercel.app/api/auth/verify-otp', {
+      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
+      const response = await fetch(`${API_BASE}/api/auth/verify-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -117,7 +119,8 @@ function Auth() {
     setMessage('');
 
     try {
-      const response = await fetch('https://brandverse-46he.vercel.app/resend-otp', {
+      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
+      const response = await fetch(`${API_BASE}/resend-otp`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
