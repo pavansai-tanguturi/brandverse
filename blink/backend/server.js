@@ -106,6 +106,19 @@ app.get('/health', (req, res) => {
   res.json({ ok: true, timestamp: new Date().toISOString() });
 });
 
+// Temporary debug endpoint to check environment variables
+app.get('/debug-env', (req, res) => {
+  const debugInfo = {
+    FRONTEND_URL: process.env.FRONTEND_URL || 'NOT_SET',
+    ALLOW_NETLIFY_PREVIEWS: process.env.ALLOW_NETLIFY_PREVIEWS || 'NOT_SET',
+    SESSION_SECRET: process.env.SESSION_SECRET ? 'SET' : 'NOT_SET',
+    NODE_ENV: process.env.NODE_ENV || 'NOT_SET',
+    VERCEL: process.env.VERCEL || 'NOT_SET',
+    timestamp: new Date().toISOString()
+  };
+  res.json(debugInfo);
+});
+
 // ✅ Build-time vs Runtime Logic Separation
 if (process.env.NODE_ENV === 'production' && process.env.NETLIFY) {
   // ✅ Build-time operations for Netlify
