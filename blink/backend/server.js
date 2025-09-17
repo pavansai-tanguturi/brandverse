@@ -31,11 +31,6 @@ dotenv.config();
 
 const app = express();
 
-// CORS configuration – now supports:
-//  - Exact origins from FRONTEND_URL, ADDITIONAL_ORIGINS (comma separated)
-//  - Netlify deploy previews (*.netlify.app) when ALLOW_NETLIFY_PREVIEWS=true
-//  - Vercel domains (*.vercel.app) when ALLOW_VERCEL=true
-//  - Localhost dev
 function buildAllowedOrigins() {
   const list = new Set([
     process.env.FRONTEND_URL,
@@ -50,7 +45,7 @@ const EXACT_ALLOWED = buildAllowedOrigins();
 const allowNetlifyPreviews = process.env.ALLOW_NETLIFY_PREVIEWS === 'true';
 const allowVercel = process.env.ALLOW_VERCEL === 'true';
 
-// CORS configuration is now environment-driven
+// CORS configuration is now environment-driven - updated with Vercel env vars
 
 function originMatchesPatterns(origin) {
   if (!origin) return true; // non-browser clients
