@@ -133,7 +133,6 @@ function Home() {
   const fetchProducts = async () => {
     try {
       const data = await apiCall('/api/products');
-      console.log('Fetched products:', data); // Debug log
       setProducts(data.slice(0, 12)); // Show first 12 products on home page
     } catch (error) {
       console.error('Error fetching products:', error);

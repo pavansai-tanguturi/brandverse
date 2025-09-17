@@ -74,13 +74,20 @@ const Login = () => {
         } else {
           setMessage('Login successful! Refreshing user session...');
           
-          // Refresh the AuthContext to get the new user session
-          await refreshUser();
-          
-          setMessage('Login successful! Redirecting to home...');
-          setTimeout(() => {
-            navigate('/home');
-          }, 1200);
+          try {
+            // Refresh the AuthContext to get the new user session
+            await refreshUser();
+            setMessage('Login successful! Redirecting to home...');
+            setTimeout(() => {
+              navigate('/home');
+            }, 1200);
+          } catch (refreshError) {
+            console.error('Failed to refresh user session:', refreshError);
+            setMessage('Login successful! Redirecting to home...');
+            setTimeout(() => {
+              navigate('/home');
+            }, 1200);
+          }
         }
       } else {
         setError(data.error || 'OTP verification failed');

@@ -16,6 +16,7 @@ import CheckoutPage from './pages/checkout/CheckoutPage';
 import OrderSuccessPage from './pages/checkout/OrderSuccessPage';
 import OrderHistoryPage from './pages/OrderHistoryPage';
 import HealthCheck from './pages/HealthCheck';
+import DebugPage from './pages/DebugPage';
 import CustomerDashboard from './pages/customer/CustomerDashboard';
 import AdminLogin from './pages/admin/AdminLogin';
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -53,7 +54,7 @@ function App() {
             <Route path="/signup" element={<SignUp />} />
             <Route path="/401" element={<UnauthorizedPage />} />
             <Route path="/health" element={<HealthCheck />} />
-            <Route path="/401" element={<UnauthorizedPage />} />
+            <Route path="/debug" element={<DebugPage />} />
             <Route path="/logout" element={<Logout />} />
             
             {/* Admin Routes */}
