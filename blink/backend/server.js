@@ -51,12 +51,7 @@ const EXACT_ALLOWED = buildAllowedOrigins();
 const allowNetlifyPreviews = process.env.ALLOW_NETLIFY_PREVIEWS === 'true';
 const allowVercel = process.env.ALLOW_VERCEL === 'true';
 
-// Debug logging for environment variables
-console.log('🔧 Environment Variables:');
-console.log('FRONTEND_URL:', process.env.FRONTEND_URL);
-console.log('ALLOW_NETLIFY_PREVIEWS:', process.env.ALLOW_NETLIFY_PREVIEWS);
-console.log('EXACT_ALLOWED:', EXACT_ALLOWED);
-console.log('allowNetlifyPreviews:', allowNetlifyPreviews);
+// CORS configuration is now environment-driven
 
 function originMatchesPatterns(origin) {
   if (!origin) return true; // non-browser clients
@@ -114,17 +109,7 @@ app.get('/health', (req, res) => {
 });
 
 // Temporary debug endpoint to check environment variables
-app.get('/debug-env', (req, res) => {
-  const debugInfo = {
-    FRONTEND_URL: process.env.FRONTEND_URL || 'NOT_SET',
-    ALLOW_NETLIFY_PREVIEWS: process.env.ALLOW_NETLIFY_PREVIEWS || 'NOT_SET',
-    SESSION_SECRET: process.env.SESSION_SECRET ? 'SET' : 'NOT_SET',
-    NODE_ENV: process.env.NODE_ENV || 'NOT_SET',
-    VERCEL: process.env.VERCEL || 'NOT_SET',
-    timestamp: new Date().toISOString()
-  };
-  res.json(debugInfo);
-});
+
 
 // ✅ Build-time vs Runtime Logic Separation
 if (process.env.NODE_ENV === 'production' && process.env.NETLIFY) {
