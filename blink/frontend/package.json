@@ -22,6 +22,7 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
+    "prebuild": "node -e \"try{require.resolve('vite');console.log('✅ vite located');}catch(e){console.error('❌ vite not installed');process.exit(1)}\"",
     "dev": "DISABLE_BROWSER_OPEN=true vite",
     "start": "DISABLE_BROWSER_OPEN=true vite",
     "build": "vite build",

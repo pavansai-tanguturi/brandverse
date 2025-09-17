@@ -6,7 +6,9 @@
 
 [build.environment]
   NODE_VERSION = "20"
-  NODE_ENV = "production"
+  # Ensure devDependencies (like vite) are installed
+  NPM_CONFIG_PRODUCTION = "false"
+  # You can still rely on process.env.NODE_ENV defaulting to 'production' during build
 
 # SPA routing
 [[redirects]]
