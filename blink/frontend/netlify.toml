@@ -1,9 +1,10 @@
 [build]
   publish = "build"
   command = "npm run build"
+  base = "/blink/frontend"
 
 [build.environment]
-  NODE_VERSION = "18"
+  NODE_VERSION = "20"
 
 [[redirects]]
   from = "/*"
