@@ -2,10 +2,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+
 import { CartIcon, CustomerIcon } from '../components/icons';
 import logo from '../assets/logos.png';
 import locationIcon from '../assets/location.png';
 import Footer from '../components/Footer';
+import { apiCall } from '../utils/api';
 
 function Products() {
   const navigate = useNavigate();
@@ -51,14 +53,9 @@ function Products() {
   // Fetch products
   const fetchProducts = async () => {
     try {
-      const response = await fetch(`${API_BASE}/api/products`);
-      if (response.ok) {
-        const data = await response.json();
-        setProducts(data);
-        setFilteredProducts(data);
-      } else {
-        console.error('Failed to fetch products');
-      }
+      const data = await apiCall('/api/products');
+      setProducts(data);
+      setFilteredProducts(data);
     } catch (error) {
       console.error('Error fetching products:', error);
     } finally {
