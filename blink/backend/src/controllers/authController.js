@@ -51,6 +51,7 @@ export async function signup(req, res) {
 export async function login(req, res) {
   try {
     const { email } = req.body;
+    console.log('[authController] login called for email:', email);
 
     // Send OTP for all users (including admin)
     const { error } = await supabaseAnon.auth.signInWithOtp({
@@ -59,8 +60,10 @@ export async function login(req, res) {
         emailRedirectTo: `${process.env.FRONTEND_URL || 'http://localhost:3002'}/auth/callback`
       }
     });
-    
-    if (error) return res.status(400).json({ error: error.message });
+    if (error) {
+      console.error('[authController] Error sending OTP:', error);
+      return res.status(400).json({ error: error.message });
+    }
 
     // Check if this is admin email for frontend UI purposes
     const adminEmail = process.env.ADMIN_EMAIL || process.env.AUTH_U;
@@ -70,7 +73,10 @@ export async function login(req, res) {
       message: 'OTP sent to your email. Please verify to login.',
       isAdmin: isAdminEmail
     });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) {
+    console.error('[authController] login exception:', e);
+    res.status(500).json({ error: e.message });
+  }
 }
 
 export async function verifyOtp(req, res) {

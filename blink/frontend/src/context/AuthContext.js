@@ -113,11 +113,12 @@ export const AuthProvider = ({ children }) => {
     try {
       if (!otp) {
         // Step 1: Send OTP
+        console.log('[AuthContext] Sending login request to backend for email:', email);
         const response = await apiCall('/api/auth/login', {
           method: 'POST',
           body: JSON.stringify({ email }),
         });
-        
+        console.log('[AuthContext] Login response:', response);
         if (response.message) {
           return { success: true, message: response.message };
         } else {
@@ -125,11 +126,12 @@ export const AuthProvider = ({ children }) => {
         }
       } else {
         // Step 2: Verify OTP and login
+        console.log('[AuthContext] Sending OTP verification for email:', email, 'otp:', otp);
         const response = await apiCall('/api/auth/verify-otp', {
           method: 'POST',
           body: JSON.stringify({ email, token: otp }),
         });
-        
+        console.log('[AuthContext] OTP verification response:', response);
         if (response.user) {
           // Session is now stored server-side, update user state and localStorage
           setUser(response.user);
@@ -141,7 +143,7 @@ export const AuthProvider = ({ children }) => {
       }
     } catch (error) {
       console.error('Login error:', error);
-      return { success: false, error: 'Network error' };
+      throw error;
     }
   };
 
