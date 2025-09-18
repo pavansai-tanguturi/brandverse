@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import '../styles/Signup.css';
+import App from '../App';
 function SignUp() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
@@ -63,6 +64,7 @@ function SignUp() {
     try {
       // Use backend verify-otp endpoint for consistency
       const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
+      console.log('[SignUp] API Base URL:', API_BASE);
       const response = await fetch(`${API_BASE}/api/auth/verify-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

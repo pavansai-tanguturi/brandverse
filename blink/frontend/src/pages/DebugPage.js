@@ -19,11 +19,32 @@ const DebugPage = () => {
       }
     };
 
-    // Test session endpoint
+    // Test session endpoint with additional debugging
     const testSession = async () => {
       try {
-        const result = await apiCall('/api/auth/user');
-        setSessionTest({ loading: false, result: result.user ? `✅ Session Working - User: ${result.user.email}` : '⚠️ Session Valid but No User', error: null });
+        console.log('[DebugPage] Testing session...');
+        
+        // First test the session-test endpoint
+        const testResult = await apiCall('/api/auth/session-test');
+        console.log('[DebugPage] Session test result:', testResult);
+        
+        // Then test the regular user endpoint
+        const userResult = await apiCall('/api/auth/user');
+        console.log('[DebugPage] User endpoint result:', userResult);
+        
+        if (userResult.user) {
+          setSessionTest({ 
+            loading: false, 
+            result: `✅ Session Working - User: ${userResult.user.email}`, 
+            error: null 
+          });
+        } else {
+          setSessionTest({ 
+            loading: false, 
+            result: `⚠️ Session Valid but No User. Session test data: ${JSON.stringify(testResult.data)}`, 
+            error: null 
+          });
+        }
       } catch (error) {
         setSessionTest({ loading: false, result: null, error: `❌ Session Error: ${error.message}` });
       }

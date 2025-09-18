@@ -41,19 +41,46 @@ export const AuthProvider = ({ children }) => {
     const checkUserSession = useCallback(async () => {
     try {
       setLoading(true);
+      console.log('[AuthContext] Checking user session...');
       
       const response = await apiCall('/api/auth/user', {
         method: 'GET',
       });
 
+      console.log('[AuthContext] Session response:', response);
+
       if (response.user) {
         setUser(response.user);
         // Update localStorage with fresh data
         localStorage.setItem('user', JSON.stringify(response.user));
-        console.log('Session check successful:', response.user.email);
+        console.log('[AuthContext] Session check successful:', response.user.email);
       } else {
-        // If session check fails, clear everything
-        console.log('Session check failed - no user in response');
+        // If session check fails, try session test for debugging
+        console.log('[AuthContext] No user in response, testing session functionality...');
+        
+        try {
+          const testResponse = await apiCall('/api/auth/session-test', {
+            method: 'GET',
+          });
+          console.log('[AuthContext] Session test result:', testResponse);
+        } catch (testError) {
+          console.log('[AuthContext] Session test failed:', testError.message);
+        }
+        
+        // Try to use cached user data if available
+        const cachedUser = localStorage.getItem('user');
+        if (cachedUser) {
+          try {
+            const userData = JSON.parse(cachedUser);
+            console.log('[AuthContext] Using cached user data:', userData.email);
+            setUser(userData);
+            return; // Exit early, don't clear localStorage
+          } catch (e) {
+            console.error('[AuthContext] Failed to parse cached user data:', e);
+          }
+        }
+        
+        console.log('[AuthContext] Clearing user data - no session found');
         setUser(null);
         localStorage.removeItem('user');
       }

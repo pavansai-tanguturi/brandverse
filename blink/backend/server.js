@@ -78,13 +78,32 @@ app.use(
     name: 'brandverse.sid', // Custom session name
     cookie: {
       httpOnly: true,
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // Important for cross-origin
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // 'none' required for cross-domain
       secure: process.env.NODE_ENV === 'production', // true for HTTPS in production
       maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
-      domain: process.env.NODE_ENV === 'production' ? undefined : undefined // Let browser handle domain
+      domain: undefined // Let browser handle domain - important for cross-domain
     }
   })
 );
+
+console.log('[Session Config] Environment:', process.env.NODE_ENV);
+console.log('[Session Config] Cookie settings:', {
+  sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+  secure: process.env.NODE_ENV === 'production',
+  httpOnly: true
+});
+
+// Additional debug logging for session issues
+app.use((req, res, next) => {
+  if (req.path === '/api/auth/user') {
+    console.log('[Session Debug] /api/auth/user endpoint called');
+    console.log('[Session Debug] Session ID:', req.sessionID);
+    console.log('[Session Debug] Session exists:', !!req.session);
+    console.log('[Session Debug] Session user:', req.session?.user);
+    console.log('[Session Debug] Cookie header:', req.headers.cookie);
+  }
+  next();
+});
 
 // Debug middleware to log session info
 app.use((req, res, next) => {

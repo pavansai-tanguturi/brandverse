@@ -99,6 +99,9 @@ export async function verifyOtp(req, res) {
         isAdmin: true 
       };
       
+      console.log('[verifyOtp] Admin session created:', req.session.user);
+      console.log('[verifyOtp] Session ID:', req.sessionID);
+      
       // Ensure there is a customers row for the admin as well
       try {
         await ensureCustomer({ id: adminId, email: adminEmail });
@@ -114,6 +117,10 @@ export async function verifyOtp(req, res) {
     } else {
       // Regular user
       req.session.user = { id: data.user.id, email: data.user.email };
+      
+      console.log('[verifyOtp] User session created:', req.session.user);
+      console.log('[verifyOtp] Session ID:', req.sessionID);
+      
       await ensureCustomer(data.user);
 
       res.json({ 
@@ -146,12 +153,56 @@ export async function sessionFromEmail(req, res) {
 }
 
 export async function me(req, res) {
+  console.log('[me] === Session Debug Info ===');
+  console.log('[me] Session ID:', req.sessionID);
+  console.log('[me] Session exists:', !!req.session);
+  console.log('[me] Session user:', req.session?.user);
+  console.log('[me] Cookie header:', req.headers.cookie);
+  console.log('[me] Origin:', req.headers.origin);
+  console.log('[me] User-Agent:', req.headers['user-agent']?.substring(0, 50));
+  
   const user = req.session?.user || null;
   const adminId = process.env.ADMIN_ID || 'admin';
   const isAdmin = !!user && (user.isAdmin === true || user.id === adminId);
+  
+  console.log('[me] Final result - User:', user ? `${user.email} (${user.id})` : 'null');
+  console.log('[me] Final result - Admin:', isAdmin);
+  console.log('[me] ========================');
+  
   res.json({ user, admin: isAdmin });
 }
 
 export async function logout(req, res) {
   req.session.destroy(() => res.json({ message: 'Logged out' }));
+}
+
+// Debug endpoint to test session functionality
+export async function sessionTest(req, res) {
+  console.log('[sessionTest] Testing session functionality...');
+  
+  const sessionData = {
+    sessionID: req.sessionID,
+    hasSession: !!req.session,
+    sessionUser: req.session?.user || null,
+    cookies: req.headers.cookie || 'No cookies',
+    origin: req.headers.origin || 'No origin',
+    userAgent: req.headers['user-agent']?.substring(0, 100) || 'No user agent'
+  };
+  
+  // If no session user, create a test session
+  if (!req.session?.user) {
+    req.session.testUser = {
+      id: 'test-123',
+      email: 'test@example.com',
+      created: new Date().toISOString()
+    };
+    sessionData.testSessionCreated = true;
+  }
+  
+  console.log('[sessionTest] Session data:', sessionData);
+  res.json({
+    message: 'Session test completed',
+    data: sessionData,
+    timestamp: new Date().toISOString()
+  });
 }
