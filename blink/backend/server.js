@@ -19,13 +19,10 @@ import addressRoutes from './src/routes/addresses.js';
 dotenv.config();
 
 const app = express();
-const cors = require('cors');
 
 // CORS configuration to support both local and deployed frontend
 const allowedOrigins = [
   'http://localhost:3000',
-  'https://brandverse-ebon.vercel.app',
-  'https://brandverse-pavansais-projects.vercel.app',
   process.env.FRONTEND_URL
 ].filter(Boolean);
 
