@@ -70,7 +70,7 @@ function SignUp() {
         body: JSON.stringify({ 
           email: formData.email, 
           token: formData.otp,
-          type: 'magiclink'
+          type: 'email'
         })
       });
 
