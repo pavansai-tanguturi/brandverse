@@ -19,6 +19,7 @@ import addressRoutes from './src/routes/addresses.js';
 dotenv.config();
 
 const app = express();
+const cors = require('cors');
 
 // CORS configuration to support both local and deployed frontend
 const allowedOrigins = [
@@ -56,8 +57,8 @@ app.use(
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      sameSite: 'lax',
-      secure: false, // set true behind HTTPS / reverse proxy
+      sameSite: 'None',
+      secure: true,
       maxAge: 1000 * 60 * 60 * 24 * 7 // 7 days
     }
   })
