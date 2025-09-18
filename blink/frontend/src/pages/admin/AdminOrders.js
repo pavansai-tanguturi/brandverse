@@ -53,7 +53,7 @@ const AdminOrders = () => {
 
   const fetchOrders = async () => {
     try {
-      const API_BASE = import.meta.env.VITE_API_BASE;
+      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
       const res = await fetch(`${API_BASE}/api/orders/admin`, {
         credentials: 'include'
       });
@@ -71,7 +71,7 @@ const AdminOrders = () => {
 
   const fetchDeliveryLocations = async () => {
     try {
-      const API_BASE = import.meta.env.VITE_API_BASE;
+      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
       const res = await fetch(`${API_BASE}/api/delivery/locations`);
       
       if (res.ok) {
@@ -101,7 +101,7 @@ const AdminOrders = () => {
     setError('');
     
     try {
-      const API_BASE = import.meta.env.VITE_API_BASE;
+      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
       
       const res = await fetch(`${API_BASE}/api/orders/admin/${orderId}/status`, {
         method: 'PATCH',

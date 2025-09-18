@@ -35,7 +35,8 @@ function Products() {
   // Fetch categories
   const fetchCategories = async () => {
     try {
-      const response = await fetch('http://localhost:3001/api/categories');
+      const API_BASE_URL = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
+      const response = await fetch(`${API_BASE_URL}/api/categories`);
       if (response.ok) {
         const data = await response.json();
         setCategories(data);
@@ -50,7 +51,8 @@ function Products() {
   // Fetch products
   const fetchProducts = async () => {
     try {
-      const response = await fetch('http://localhost:3001/api/products');
+      const API_BASE_URL = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
+      const response = await fetch(`${API_BASE_URL}/api/products`);
       if (response.ok) {
         const data = await response.json();
         setProducts(data);

@@ -17,7 +17,8 @@ const AdminLogin = () => {
 
     try {
       // Send OTP via backend (consistent with regular users)
-      const response = await fetch('http://localhost:3001/api/auth/login', {
+      const API_BASE_URL = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
+      const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -50,7 +51,8 @@ const AdminLogin = () => {
     setLoading(true);
 
     try {
-      const response = await fetch('http://localhost:3001/api/auth/verify-otp', {
+      const API_BASE_URL = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
+      const response = await fetch(`${API_BASE_URL}/api/auth/verify-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',

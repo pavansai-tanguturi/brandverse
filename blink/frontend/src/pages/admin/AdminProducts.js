@@ -30,7 +30,7 @@ const AdminProducts = () => {
 
   const fetchCategories = async () => {
     try {
-      const API_BASE = import.meta.env.VITE_API_BASE;
+      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
       const res = await fetch(`${API_BASE}/api/categories`, {
         credentials: 'include'
       });
@@ -45,7 +45,7 @@ const AdminProducts = () => {
 
   const fetchProducts = async () => {
     try {
-      const API_BASE = import.meta.env.VITE_API_BASE;
+      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
       const res = await fetch(`${API_BASE}/api/products`, {
         credentials: 'include'
       });
@@ -89,7 +89,7 @@ const AdminProducts = () => {
 
     // Then fetch additional details (like product images) in the background
     try {
-      const API_BASE = import.meta.env.VITE_API_BASE;
+      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
       const res = await fetch(`${API_BASE}/api/products/${product.id}`, { credentials: 'include' });
       if (res.ok) {
         const data = await res.json();
@@ -119,7 +119,7 @@ const AdminProducts = () => {
     setMessage('');
     setDeletingProduct(productId);
     try {
-      const API_BASE = import.meta.env.VITE_API_BASE;
+      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
       const token = localStorage.getItem('adminToken') || '';
 
       const res = await fetch(`${API_BASE}/api/products/${productId}`, {
@@ -157,7 +157,7 @@ const AdminProducts = () => {
     
     setDeletingImageId(imageId);
     try {
-      const API_BASE = import.meta.env.VITE_API_BASE;
+      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
       const token = localStorage.getItem('adminToken') || '';
 
       console.log('DELETE request to:', `${API_BASE}/api/products/${editingProduct.id}/images/${imageId}`); // Debug log
@@ -194,7 +194,7 @@ const AdminProducts = () => {
     setMessage('');
     setLoading(true);
     try {
-      const API_BASE = import.meta.env.VITE_API_BASE;
+      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
       const token = localStorage.getItem('adminToken') || '';
       
       // Generate slug from title

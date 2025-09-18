@@ -35,8 +35,8 @@ function Auth() {
     try {
       const endpoint = isSignup ? '/api/auth/signup' : '/api/auth/login';
       const payload = { email: formData.email, name: formData.name };
-
-      const response = await fetch(`http://localhost:3001${endpoint}`, {
+      const API_BASE_URL = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -78,7 +78,8 @@ function Auth() {
     setError('');
 
     try {
-      const response = await fetch('http://localhost:3001/api/auth/verify-otp', {
+      const API_BASE_URL = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
+      const response = await fetch(`${API_BASE_URL}/api/auth/verify-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -117,7 +118,8 @@ function Auth() {
     setMessage('');
 
     try {
-      const response = await fetch('http://localhost:3001/resend-otp', {
+      const API_BASE_URL = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
+      const response = await fetch(`${API_BASE_URL}/resend-otp`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

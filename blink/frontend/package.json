@@ -1,6 +1,7 @@
 {
   "name": "blink",
   "version": "0.1.0",
+  "type": "module",
   "private": true,
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -29,6 +30,7 @@
     "dev": "vite",
     "start": "vite",
     "build": "vite build",
+    "vercel-build": "vite build",
     "preview": "vite preview",
     "test": "vitest"
   },

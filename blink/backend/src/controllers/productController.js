@@ -282,7 +282,7 @@ export async function searchProducts(req, res) {
         categories(id, name, slug)
       `)
       .eq('is_active', true)
-      .ilike('name', `%${searchTerm}%`)
+      .ilike('title', `%${searchTerm}%`)
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -296,11 +296,9 @@ export async function searchProducts(req, res) {
     // If no exact matches, try fuzzy matching
     if (results.length === 0) {
       console.log('No exact matches, trying fuzzy search...');
-      
       // Try variations for fuzzy matching
       const fuzzySearches = [];
       const words = searchTerm.split(' ').filter(word => word.length > 1);
-      
       for (const word of words) {
         // Try partial matches
         if (word.length >= 3) {
@@ -310,19 +308,17 @@ export async function searchProducts(req, res) {
               .from('products')
               .select(`*, product_images(id, path, is_primary), categories(id, name, slug)`)
               .eq('is_active', true)
-              .ilike('name', `%${word.substring(1)}%`)
+              .ilike('title', `%${word.substring(1)}%`)
           );
-          
           // Missing last character: "bad" -> "ba"
           fuzzySearches.push(
             supabaseAdmin
               .from('products')
               .select(`*, product_images(id, path, is_primary), categories(id, name, slug)`)
               .eq('is_active', true)
-              .ilike('name', `%${word.substring(0, word.length-1)}%`)
+              .ilike('title', `%${word.substring(0, word.length-1)}%`)
           );
         }
-        
         // Try individual character wildcards: "bad" -> "b_d", "_ad", "ba_"
         for (let i = 0; i < word.length; i++) {
           const pattern = word.substring(0, i) + '_' + word.substring(i + 1);
@@ -331,11 +327,10 @@ export async function searchProducts(req, res) {
               .from('products')
               .select(`*, product_images(id, path, is_primary), categories(id, name, slug)`)
               .eq('is_active', true)
-              .ilike('name', `%${pattern}%`)
+              .ilike('title', `%${pattern}%`)
           );
         }
       }
-      
       // Execute fuzzy searches and combine results
       if (fuzzySearches.length > 0) {
         const fuzzyResults = await Promise.all(fuzzySearches);

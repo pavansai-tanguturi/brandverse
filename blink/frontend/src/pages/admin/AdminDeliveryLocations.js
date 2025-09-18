@@ -22,7 +22,7 @@ const AdminDeliveryLocations = () => {
     setLoading(true);
     setError('');
     try {
-      const API_BASE = import.meta.env.VITE_API_BASE;
+      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
       const res = await fetch(`${API_BASE}/api/admin/delivery-locations`, {
         credentials: 'include'
       });
@@ -51,7 +51,7 @@ const AdminDeliveryLocations = () => {
     }
 
     try {
-      const API_BASE = import.meta.env.VITE_API_BASE;
+      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
       const url = editingLocation 
         ? `${API_BASE}/api/admin/delivery-locations/${editingLocation.id}`
         : `${API_BASE}/api/admin/delivery-locations`;
@@ -87,7 +87,7 @@ const AdminDeliveryLocations = () => {
 
   const handleToggleStatus = async (location) => {
     try {
-      const API_BASE = import.meta.env.VITE_API_BASE;
+      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
       const res = await fetch(`${API_BASE}/api/admin/delivery-locations/${location.id}/toggle`, {
         method: 'PATCH',
         credentials: 'include'
@@ -112,7 +112,7 @@ const AdminDeliveryLocations = () => {
     }
 
     try {
-      const API_BASE = import.meta.env.VITE_API_BASE;
+      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
       const res = await fetch(`${API_BASE}/api/admin/delivery-locations/${location.id}`, {
         method: 'DELETE',
         credentials: 'include'

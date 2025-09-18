@@ -20,6 +20,7 @@ function Home() {
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
   const [deliveryMessage, setDeliveryMessage] = useState('');
+  const [showDeliveryMessage, setShowDeliveryMessage] = useState(true);
   const categoriesRef = useRef(null);
 
   // Get category image based on slug
@@ -114,7 +115,8 @@ function Home() {
   // Fetch categories from backend
   const fetchCategories = async () => {
     try {
-      const response = await fetch('http://localhost:3001/api/categories');
+      const API_BASE_URL = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
+      const response = await fetch(`${API_BASE_URL}/api/categories`);
       if (response.ok) {
         const data = await response.json();
         // Filter out 'All Products' category for home page display
@@ -131,7 +133,8 @@ function Home() {
   // Fetch products from admin panel
   const fetchProducts = async () => {
     try {
-      const response = await fetch('http://localhost:3001/api/products');
+      const API_BASE_URL = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
+      const response = await fetch(`${API_BASE_URL}/api/products`);
       if (response.ok) {
         const data = await response.json();
         console.log('Fetched products:', data); // Debug log
@@ -156,21 +159,24 @@ function Home() {
 
     try {
       const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
-      
       // Build query parameters
       const params = new URLSearchParams({ country });
       if (region && region !== 'Unknown region') params.append('region', region);
       if (city && city !== 'Unknown city') params.append('city', city);
-      
+
       const response = await fetch(`${API_BASE}/api/delivery/check?${params.toString()}`);
-      
+
       if (response.ok) {
         const data = await response.json();
         setDeliveryAvailable(data.available);
-        
         // Store the delivery message for display
         if (data.message) {
           setDeliveryMessage(data.message);
+          setShowDeliveryMessage(true);
+          // Hide the message after 1 second if delivery is available
+          if (data.available) {
+            setTimeout(() => setShowDeliveryMessage(false), 3000);
+          }
         }
       } else {
         console.log('Delivery check failed, defaulting to unavailable');
@@ -180,7 +186,6 @@ function Home() {
       console.log('Error checking delivery availability:', error);
       setDeliveryAvailable(false);
     }
-    
     setCheckingDelivery(false);
   };
 
@@ -277,7 +282,7 @@ function Home() {
       <Navigation showSearch={true} />
 
       {/* Enhanced Delivery Status Banner */}
-      {!checkingDelivery && (
+      {!checkingDelivery && showDeliveryMessage && (
         <div className={`border-l-4 p-4 mx-4 my-4 rounded-lg ${
           deliveryAvailable 
             ? 'bg-green-50 border-green-400' 
@@ -308,10 +313,7 @@ function Home() {
               <p className={`text-sm font-medium ${
                 deliveryAvailable ? 'text-green-800' : 'text-red-800'
               }`}>
-                {deliveryMessage || (deliveryAvailable 
-                  ? `Great! We deliver to your location.` 
-                  : `We're sorry, but we currently don't deliver to your area.`
-                )}
+                {deliveryMessage}
               </p>
               {!deliveryAvailable && (
                 <p className="text-sm text-red-600 mt-1">

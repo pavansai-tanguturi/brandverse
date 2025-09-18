@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Navigation from '../components/Navigation';
 import Footer from '../components/Footer';
@@ -9,6 +9,7 @@ const Search = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
+  const loadingTimeout = useRef(null);
   const [hasSearched, setHasSearched] = useState(false);
 
   // Get initial search query from URL params
@@ -21,35 +22,70 @@ const Search = () => {
     }
   }, [location.search]);
 
+  // Only allow letters, numbers, spaces, and basic punctuation
+  const isValidQuery = (q) => /^[a-zA-Z0-9\s.,'-]+$/.test(q);
+
+  // Debounce API calls to avoid firing on every keystroke
+  const searchDebounce = useRef(null);
   const performSearch = async (query = searchQuery) => {
-    if (!query.trim()) return;
-    
-    setLoading(true);
+    if (!query.trim() || !isValidQuery(query)) {
+      setProducts([]);
+      setHasSearched(true);
+      setLoading(false);
+      return;
+    }
+
+    // Show loading spinner after 50ms if search is slow
+    if (loadingTimeout.current) clearTimeout(loadingTimeout.current);
+    loadingTimeout.current = setTimeout(() => setLoading(true), 50);
     setHasSearched(true);
-    
+
     try {
-      const response = await fetch(`http://localhost:3001/api/products/search?q=${encodeURIComponent(query)}`);
-      if (response.ok) {
-        const data = await response.json();
-        setProducts(data);
-      } else {
-        console.error('Search failed');
+      const API_BASE_URL = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
+      const response = await fetch(`${API_BASE_URL}/api/products/search?q=${encodeURIComponent(query)}`);
+
+      if (!response.ok) {
+        const errorData = await response.text();
+        console.error('Search failed:', response.status, errorData);
         setProducts([]);
+        setLoading(false);
+        return;
       }
+
+      let data = await response.json();
+      // Filter products to only those whose title starts with the query (case-insensitive)
+      if (query.length === 1) {
+        data = data.filter(product => product.title && product.title.toLowerCase().startsWith(query.toLowerCase()));
+      }
+      setProducts(data);
     } catch (error) {
       console.error('Error searching products:', error);
       setProducts([]);
     } finally {
+      if (loadingTimeout.current) clearTimeout(loadingTimeout.current);
       setLoading(false);
     }
   };
 
+  // Dynamic search on input change with debounce
+  useEffect(() => {
+    if (searchDebounce.current) clearTimeout(searchDebounce.current);
+    if (searchQuery.trim()) {
+      searchDebounce.current = setTimeout(() => {
+        performSearch(searchQuery);
+      }, 120); // Debounce API call by 120ms
+    } else {
+      setProducts([]);
+      setHasSearched(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchQuery]);
+
   const handleSearch = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      // Update URL with search query
       navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
-      performSearch();
+      // performSearch(); // No need, already handled by useEffect
     }
   };
 
@@ -107,7 +143,9 @@ const Search = () => {
             <>
               <div className="mb-6">
                 <h2 className="text-xl font-semibold text-gray-900">
-                  {products.length > 0 
+                  {!isValidQuery(searchQuery) ? (
+                    <>Please enter a valid search (letters, numbers, spaces only).</>
+                  ) : products.length > 0 
                     ? `Found ${products.length} result${products.length !== 1 ? 's' : ''} for "${searchQuery}"`
                     : `No results found for "${searchQuery}"`
                   }
@@ -116,55 +154,62 @@ const Search = () => {
 
               {products.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                  {products.map((product) => (
-                    <div
-                      key={product.id}
-                      onClick={() => handleProductClick(product.id)}
-                      className="bg-white/80 backdrop-blur-lg rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 cursor-pointer transform hover:-translate-y-1 border border-white/20"
-                    >
-                      <div className="relative overflow-hidden rounded-t-2xl">
-                        <img
-                          src={product.image_url || 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?auto=format&fit=crop&w=600&q=80'}
-                          alt={product.name}
-                          className="w-full h-48 object-cover"
-                        />
-                        {product.discount > 0 && (
-                          <div className="absolute top-3 left-3 bg-red-500 text-white px-2 py-1 rounded-lg text-sm font-bold">
-                            -{product.discount}%
-                          </div>
-                        )}
-                      </div>
-                      
-                      <div className="p-4">
-                        <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2">
-                          {product.name}
-                        </h3>
+                  {products.map((product) => {
+                    // Calculate pricing based on actual database structure
+                    const originalPrice = (product.price_cents || 0) / 100;
+                    const discountPercent = product.discount_percent || 0;
+                    const finalPrice = originalPrice * (1 - discountPercent / 100);
+                    
+                    return (
+                      <div
+                        key={product.id}
+                        onClick={() => handleProductClick(product.id)}
+                        className="bg-white/80 backdrop-blur-lg rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 cursor-pointer transform hover:-translate-y-1 border border-white/20"
+                      >
+                        <div className="relative overflow-hidden rounded-t-2xl">
+                          <img
+                            src={product.image_url || 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?auto=format&fit=crop&w=600&q=80'}
+                            alt={product.title}
+                            className="w-full h-48 object-cover"
+                          />
+                          {discountPercent > 0 && (
+                            <div className="absolute top-3 left-3 bg-red-500 text-white px-2 py-1 rounded-lg text-sm font-bold">
+                              -{discountPercent}%
+                            </div>
+                          )}
+                        </div>
                         
-                        <div className="flex items-center justify-between">
-                          <div className="flex flex-col">
-                            {product.discount > 0 ? (
-                              <>
-                                <span className="text-lg font-bold text-gray-900">
-                                  ₹{(product.price * (1 - product.discount / 100)).toFixed(2)}
-                                </span>
-                                <span className="text-sm text-gray-500 line-through">
-                                  ₹{product.price}
-                                </span>
-                              </>
-                            ) : (
-                              <span className="text-lg font-bold text-gray-900">
-                                ₹{product.price}
-                              </span>
-                            )}
-                          </div>
+                        <div className="p-4">
+                          <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2">
+                            {product.title}
+                          </h3>
                           
-                          <button className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-4 py-2 rounded-xl transition-all shadow-lg text-sm">
-                            View
-                          </button>
+                          <div className="flex items-center justify-between">
+                            <div className="flex flex-col">
+                              {discountPercent > 0 ? (
+                                <>
+                                  <span className="text-lg font-bold text-gray-900">
+                                    ₹{finalPrice.toFixed(2)}
+                                  </span>
+                                  <span className="text-sm text-gray-500 line-through">
+                                    ₹{originalPrice.toFixed(2)}
+                                  </span>
+                                </>
+                              ) : (
+                                <span className="text-lg font-bold text-gray-900">
+                                  ₹{originalPrice.toFixed(2)}
+                                </span>
+                              )}
+                            </div>
+                            
+                            <button className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-4 py-2 rounded-xl transition-all shadow-lg text-sm">
+                              View
+                            </button>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : hasSearched && (
                 <div className="text-center py-12">

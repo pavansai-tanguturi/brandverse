@@ -89,7 +89,8 @@ export const AddressProvider = ({ children }) => {
   const [state, dispatch] = useReducer(addressReducer, initialState);
 
   // API Base URL
-  const API_BASE = 'http://localhost:3001/api';
+  const API_BASE_URL = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
+  const API_BASE = `${API_BASE_URL}/api`;
 
   // Fetch addresses for a customer
   const fetchAddresses = useCallback(async (customerId) => {
