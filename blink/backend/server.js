@@ -2,7 +2,6 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import session from 'express-session';
-import { sessionStore } from './src/config/sessionStore.js';
 import authRoutes from './src/routes/auth.js';
 import productRoutes from './src/routes/products.js';
 import cartRoutes from './src/routes/cart.js';
@@ -48,14 +47,14 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use(
   session({
-    store: sessionStore,
-    secret: process.env.SESSION_SECRET,
+    secret: process.env.SESSION_SECRET || 'your-session-secret-key',
     resave: false,
+    store: new session.MemoryStore(),
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      sameSite: 'None',
-      secure: true,
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      secure: process.env.NODE_ENV === 'production',
       maxAge: 1000 * 60 * 60 * 24 * 7 // 7 days
     }
   })

@@ -4,6 +4,8 @@ import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
 import { WishlistProvider } from './context/WishlistContext';
 import { AddressProvider } from './context/AddressContext';
+import CookieConsent from './components/CookieConsent';
+import CookiePolicy from './components/CookiePolicy';
 import Auth from './pages/Auth';
 import Login from './pages/Login';
 import SignUp from './pages/SignUp';
@@ -47,6 +49,9 @@ function App() {
             <Route path="/orders" element={<OrderHistoryPage />} />
             <Route path="/dashboard" element={<CustomerDashboard />} />
             
+            {/* Cookie Policy */}
+            <Route path="/cookie-policy" element={<CookiePolicy />} />
+            
             {/* Authentication Routes */}
             <Route path="/auth" element={<Auth />} />
             <Route path="/login" element={<Login />} />
@@ -66,6 +71,9 @@ function App() {
             <Route path="/admin/analytics" element={<AnalyticsDashboard />} />
             <Route path="/admin/logout" element={<Logout />} />
           </Routes>
+              
+              {/* Cookie Consent Banner - appears on all pages */}
+              <CookieConsent />
             </Router>
           </AddressProvider>
         </WishlistProvider>

@@ -25,7 +25,7 @@ export async function signup(req, res) {
       email,
       options: { 
         data: { full_name: userName },
-        emailRedirectTo: `${process.env.FRONTEND_URL || 'http://localhost:3002'}/auth/callback`
+        emailRedirectTo: `${process.env.FRONTEND_URL || 'http://localhost:3001'}/auth/callback`
       }
     });
     

@@ -1,10 +1,24 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import '../styles/Footer.css'; // CSS code provided below
 
 function Footer() {
   const usefulLinks = [
-    "Blog", "Privacy", "Terms", "FAQs", "Security", "Contact", "Partner", "Franchise", 
-    "Seller", "Warehouse", "Deliver", "Resources", "Recipes", "Bistro"
+    { name: "Blog", path: "/blog" },
+    { name: "Privacy", path: "/privacy" },
+    { name: "Cookie Policy", path: "/cookie-policy" },
+    { name: "Terms", path: "/terms" },
+    { name: "FAQs", path: "/faqs" },
+    { name: "Security", path: "/security" },
+    { name: "Contact", path: "/contact" },
+    { name: "Partner", path: "/partner" },
+    { name: "Franchise", path: "/franchise" },
+    { name: "Seller", path: "/seller" },
+    { name: "Warehouse", path: "/warehouse" },
+    { name: "Deliver", path: "/deliver" },
+    { name: "Resources", path: "/resources" },
+    { name: "Recipes", path: "/recipes" },
+    { name: "Bistro", path: "/bistro" }
   ];
 
   const categories = [
@@ -22,7 +36,11 @@ function Footer() {
           <h4>Useful Links</h4>
           <ul>
             {usefulLinks.map((link, index) => (
-              <li key={index}>{link}</li>
+              <li key={index}>
+                <Link to={link.path} className="footer-link">
+                  {link.name}
+                </Link>
+              </li>
             ))}
           </ul>
         </div>

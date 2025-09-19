@@ -12,66 +12,27 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(() => {
-    // Try to get user from localStorage on initial load
-    try {
-      const savedUser = localStorage.getItem('user');
-      return savedUser ? JSON.parse(savedUser) : null;
-    } catch (error) {
-      console.error('Error loading user from localStorage:', error);
-      return null;
-    }
-  });
+  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-
-  // Save user to localStorage whenever user state changes
-  useEffect(() => {
-    if (user) {
-      localStorage.setItem('user', JSON.stringify(user));
-    } else {
-      localStorage.removeItem('user');
-    }
-  }, [user]);
 
   // Check if user is logged in on app start
   useEffect(() => {
     checkUserSession();
   }, []);
 
-    const checkUserSession = useCallback(async () => {
+  const checkUserSession = useCallback(async () => {
     try {
-      // First check localStorage for backed up user data
-      const cachedUser = localStorage.getItem('user');
-      if (cachedUser) {
-        try {
-          const userData = JSON.parse(cachedUser);
-          setUser(userData);
-        } catch (e) {
-          console.error('Failed to parse cached user data:', e);
-          localStorage.removeItem('user');
-        }
-      }
-
-      const response = await apiCall('/api/auth/user', {
-        method: 'GET',
-      });
-
+      // Check if user has active session on server
+      const response = await apiCall('/api/auth/me');
+      
       if (response.user) {
         setUser(response.user);
-        // Update localStorage with fresh data
-        localStorage.setItem('user', JSON.stringify(response.user));
       } else {
-        // If session check fails, clear everything
         setUser(null);
-        localStorage.removeItem('user');
       }
     } catch (error) {
       console.error('Session check failed:', error);
-      // Keep cached user if available, otherwise clear
-      const cachedUser = localStorage.getItem('user');
-      if (!cachedUser) {
-        setUser(null);
-      }
+      setUser(null);
     } finally {
       setLoading(false);
     }
@@ -99,9 +60,8 @@ export const AuthProvider = ({ children }) => {
         });
         
         if (response.user) {
-          // Session is now stored server-side, update user state and localStorage
+          // Session is now stored server-side, just update user state
           setUser(response.user);
-          localStorage.setItem('user', JSON.stringify(response.user));
           return { success: true, message: response.message || 'Login successful' };
         } else {
           return { success: false, error: response.error || 'OTP verification failed' };
@@ -115,18 +75,15 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     try {
-      // Call logout endpoint to clear session
+      // Call logout endpoint to destroy session
       await apiCall('/api/auth/logout', {
         method: 'POST'
       });
-      
-      setUser(null);
-      localStorage.removeItem('user');
     } catch (error) {
       console.error('Logout error:', error);
-      // Still clear user state even if server request fails
+    } finally {
+      // Clear user state
       setUser(null);
-      localStorage.removeItem('user');
     }
   };
 

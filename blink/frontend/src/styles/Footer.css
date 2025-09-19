@@ -18,6 +18,17 @@
   margin: 10px;
 }
 
+.footer-link {
+  color: #666;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.footer-link:hover {
+  color: #007bff;
+  text-decoration: underline;
+}
+
 .footer-section h4 {
   font-size: 18px;
   margin-bottom: 15px;
