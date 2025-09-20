@@ -102,6 +102,10 @@ app.use(cors({
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true }));
 
+
+// Trust proxy for correct secure cookie handling behind Render/Netlify
+app.set('trust proxy', 1);
+
 // --- Session configuration for cross-origin cookies (Netlify + Render) ---
 app.use(
   session({
@@ -114,8 +118,8 @@ app.use(
       httpOnly: true, // prevents JavaScript access
       secure: process.env.NODE_ENV === 'production',   // 🔑 only require HTTPS in production
       sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // 🔑 allows cross-site cookie sending in production
-      maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
-      domain: process.env.NODE_ENV === 'production' ? undefined : undefined // Let browser handle domain
+      maxAge: 1000 * 60 * 60 * 24 * 7 // 7 days
+      // domain intentionally omitted for cross-origin
     }
   })
 );
