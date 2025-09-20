@@ -61,11 +61,12 @@ export async function getProduct(req, res) {
   res.json({ ...data, product_images: withUrls, image_url });
 }
 
-
-
 export async function createProduct(req, res) {
-  if (!req.session?.user || !req.session.user.isAdmin)
-    return res.status(403).json({ error: 'Admin only' });
+  // Check JWT authentication - user should be set by middleware
+  if (!req.user || !req.user.isAdmin) {
+    return res.status(403).json({ error: 'Admin access required' });
+  }
+
   try {
     const { 
       title, 
@@ -109,18 +110,24 @@ export async function createProduct(req, res) {
     if (rows.length) await supabaseAdmin.from('product_images').insert(rows);
 
     res.status(201).json(product);
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { 
+    console.error('Create product error:', e);
+    res.status(500).json({ error: e.message }); 
+  }
 }
 
 export async function updateProduct(req, res) {
-  if (!req.session?.user || !req.session.user.isAdmin)
-    return res.status(403).json({ error: 'Admin only' });
+  // Check JWT authentication - user should be set by middleware
+  if (!req.user || !req.user.isAdmin) {
+    return res.status(403).json({ error: 'Admin access required' });
+  }
 
   const { id } = req.params;
   const patch = req.body;
   if ('price_cents' in patch) patch.price_cents = Number(patch.price_cents);
   if ('stock_quantity' in patch) patch.stock_quantity = Number(patch.stock_quantity);
   if ('discount_percent' in patch) patch.discount_percent = Number(patch.discount_percent);
+  
   const { data, error } = await supabaseAdmin
     .from('products')
     .update(patch)
@@ -132,8 +139,10 @@ export async function updateProduct(req, res) {
 }
 
 export async function deleteProduct(req, res) {
-  if (!req.session?.user || !req.session.user.isAdmin)
-    return res.status(403).json({ error: 'Admin only' });
+  // Check JWT authentication - user should be set by middleware
+  if (!req.user || !req.user.isAdmin) {
+    return res.status(403).json({ error: 'Admin access required' });
+  }
 
   const { id } = req.params;
   const { data: imgs } = await supabaseAdmin
@@ -149,8 +158,10 @@ export async function deleteProduct(req, res) {
 }
 
 export async function addImages(req, res) {
-  if (!req.session?.user || !req.session.user.isAdmin)
-    return res.status(403).json({ error: 'Admin only' });
+  // Check JWT authentication - user should be set by middleware
+  if (!req.user || !req.user.isAdmin) {
+    return res.status(403).json({ error: 'Admin access required' });
+  }
 
   const { id } = req.params;
   const { replace } = req.query; // check if we should replace existing images
@@ -198,8 +209,10 @@ export async function addImages(req, res) {
 }
 
 export async function deleteImage(req, res) {
-  if (!req.session?.user || !req.session.user.isAdmin)
-    return res.status(403).json({ error: 'Admin only' });
+  // Check JWT authentication - user should be set by middleware
+  if (!req.user || !req.user.isAdmin) {
+    return res.status(403).json({ error: 'Admin access required' });
+  }
 
   const { productId, imageId } = req.params;
   

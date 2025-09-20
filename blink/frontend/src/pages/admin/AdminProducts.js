@@ -22,6 +22,12 @@ const AdminProducts = () => {
   const [deletingProduct, setDeletingProduct] = useState(null);
   const [existingImageUrl, setExistingImageUrl] = useState(null);
 
+  // Helper function to get auth headers
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem('adminToken') || '';
+    return token ? { 'Authorization': `Bearer ${token}` } : {};
+  };
+
   // Fetch products and categories on component mount
   useEffect(() => {
     fetchProducts();
@@ -90,7 +96,10 @@ const AdminProducts = () => {
     // Then fetch additional details (like product images) in the background
     try {
       const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
-      const res = await fetch(`${API_BASE}/api/products/${product.id}`, { credentials: 'include' });
+      const res = await fetch(`${API_BASE}/api/products/${product.id}`, { 
+        credentials: 'include',
+        headers: getAuthHeaders()
+      });
       if (res.ok) {
         const data = await res.json();
         // Update with fresh data and images
@@ -120,11 +129,10 @@ const AdminProducts = () => {
     setDeletingProduct(productId);
     try {
       const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
-      const token = localStorage.getItem('adminToken') || '';
 
       const res = await fetch(`${API_BASE}/api/products/${productId}`, {
         method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` },
+        headers: getAuthHeaders(),
         credentials: 'include'
       });
 
@@ -158,12 +166,11 @@ const AdminProducts = () => {
     setDeletingImageId(imageId);
     try {
       const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
-      const token = localStorage.getItem('adminToken') || '';
 
       console.log('DELETE request to:', `${API_BASE}/api/products/${editingProduct.id}/images/${imageId}`); // Debug log
       const res = await fetch(`${API_BASE}/api/products/${editingProduct.id}/images/${imageId}`, {
         method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` },
+        headers: getAuthHeaders(),
         credentials: 'include'
       });
 
@@ -195,7 +202,6 @@ const AdminProducts = () => {
     setLoading(true);
     try {
       const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
-      const token = localStorage.getItem('adminToken') || '';
       
       // Generate slug from title
       const slug = title.toLowerCase()
@@ -204,10 +210,21 @@ const AdminProducts = () => {
         .replace(/-+/g, '-') // Replace multiple hyphens with single
         .trim('-'); // Remove leading/trailing hyphens
       
+      // Convert price to cents with proper precision handling
+      const convertToCents = (priceStr) => {
+        if (!priceStr || priceStr === '') return 0;
+        // Use string manipulation to avoid floating point errors
+        const cleanPrice = priceStr.toString().trim();
+        const [wholePart, decimalPart = ''] = cleanPrice.split('.');
+        const wholePartCents = parseInt(wholePart || '0', 10) * 100;
+        const decimalPartCents = parseInt((decimalPart + '00').substring(0, 2), 10);
+        return wholePartCents + decimalPartCents;
+      };
+      
       const body = { 
         title, 
         slug, 
-        price_cents: Math.round(Number((parseFloat(price) || 0).toFixed(2)) * 100), // Convert price to cents with precision fix
+        price_cents: convertToCents(price),
         stock_quantity: parseInt(stock, 10), 
         description,
         category_id: categoryId || null,
@@ -223,11 +240,14 @@ const AdminProducts = () => {
 
       const isEditing = editingProduct !== null;
       const url = isEditing ? `${API_BASE}/api/products/${editingProduct.id}` : `${API_BASE}/api/products`;
-  const method = isEditing ? 'PATCH' : 'POST';
+      const method = isEditing ? 'PATCH' : 'POST';
 
       const res = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        headers: { 
+          'Content-Type': 'application/json', 
+          ...getAuthHeaders()
+        },
         credentials: 'include',
         body: JSON.stringify(body)
       });
@@ -247,7 +267,7 @@ const AdminProducts = () => {
         console.log('Uploading images:', { productId, replaceParam, imageCount: imageFiles.length });
         const imgRes = await fetch(`${API_BASE}/api/products/${productId}/images${replaceParam}`, {
           method: 'POST',
-          headers: { 'Authorization': `Bearer ${token}` },
+          headers: getAuthHeaders(),
           credentials: 'include',
           body: form
         });
@@ -504,204 +524,204 @@ const AdminProducts = () => {
             </div>
           )}
 
-        {/* Products List */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-          <div className="p-6 border-b border-gray-200">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <h3 className="text-xl font-semibold text-gray-900">Product Inventory</h3>
-              <div className="flex items-center space-x-3">
-                <span className="text-sm text-gray-600">Total: {products.length} products</span>
+          {/* Products List */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <h3 className="text-xl font-semibold text-gray-900">Product Inventory</h3>
+                <div className="flex items-center space-x-3">
+                  <span className="text-sm text-gray-600">Total: {products.length} products</span>
+                  <button
+                    onClick={() => showAddForm ? resetForm() : setShowAddForm(true)}
+                    className={`flex items-center px-4 py-2 font-medium rounded-lg transition-colors shadow-sm ${
+                      showAddForm 
+                        ? 'bg-gray-100 hover:bg-gray-200 text-gray-700' 
+                        : 'bg-blue-600 hover:bg-blue-700 text-white'
+                    }`}
+                  >
+                    {showAddForm ? (
+                      <>
+                        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                        Cancel
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                        </svg>
+                        Add Product
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            {loadingProducts ? (
+              <div className="flex justify-center py-12">
+                <div className="flex items-center space-x-3">
+                  <svg className="w-6 h-6 animate-spin text-blue-600" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <span className="text-gray-600">Loading products...</span>
+                </div>
+              </div>
+            ) : products.length === 0 ? (
+              <div className="text-center py-12">
+                <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M9 9l3-3 3 3"></path>
+                </svg>
+                <h4 className="text-lg font-medium text-gray-900 mb-2">No products yet</h4>
+                <p className="text-gray-600 mb-6">Get started by adding your first product to the inventory</p>
                 <button
-                  onClick={() => showAddForm ? resetForm() : setShowAddForm(true)}
-                  className={`flex items-center px-4 py-2 font-medium rounded-lg transition-colors shadow-sm ${
-                    showAddForm 
-                      ? 'bg-gray-100 hover:bg-gray-200 text-gray-700' 
-                      : 'bg-blue-600 hover:bg-blue-700 text-white'
-                  }`}
+                  onClick={() => setShowAddForm(true)}
+                  className="inline-flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors shadow-sm"
                 >
-                  {showAddForm ? (
-                    <>
-                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
-                      </svg>
-                      Cancel
-                    </>
-                  ) : (
-                    <>
-                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                      </svg>
-                      Add Product
-                    </>
-                  )}
+                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                  </svg>
+                  Add First Product
                 </button>
               </div>
-            </div>
-          </div>
-          
-          {loadingProducts ? (
-            <div className="flex justify-center py-12">
-              <div className="flex items-center space-x-3">
-                <svg className="w-6 h-6 animate-spin text-blue-600" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                <span className="text-gray-600">Loading products...</span>
-              </div>
-            </div>
-          ) : products.length === 0 ? (
-            <div className="text-center py-12">
-              <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M9 9l3-3 3 3"></path>
-              </svg>
-              <h4 className="text-lg font-medium text-gray-900 mb-2">No products yet</h4>
-              <p className="text-gray-600 mb-6">Get started by adding your first product to the inventory</p>
-              <button
-                onClick={() => setShowAddForm(true)}
-                className="inline-flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors shadow-sm"
-              >
-                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                </svg>
-                Add First Product
-              </button>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Product</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Category</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Pricing</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Stock</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Created</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {products.map((product) => (
-                    <tr key={product.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4">
-                        <div className="flex items-center space-x-4">
-                          <div className="flex-shrink-0 w-12 h-12">
-                            {product.image_url ? (
-                              <img 
-                                src={product.image_url} 
-                                alt={product.title} 
-                                className="w-12 h-12 object-cover rounded-lg border border-gray-200" 
-                              />
-                            ) : (
-                              <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center border border-gray-200">
-                                <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                                </svg>
-                              </div>
-                            )}
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Product</th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Category</th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Pricing</th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Stock</th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Created</th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {products.map((product) => (
+                      <tr key={product.id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-6 py-4">
+                          <div className="flex items-center space-x-4">
+                            <div className="flex-shrink-0 w-12 h-12">
+                              {product.image_url ? (
+                                <img 
+                                  src={product.image_url} 
+                                  alt={product.title} 
+                                  className="w-12 h-12 object-cover rounded-lg border border-gray-200" 
+                                />
+                              ) : (
+                                <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center border border-gray-200">
+                                  <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                  </svg>
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h4 className="text-sm font-medium text-gray-900 truncate">{product.title}</h4>
+                              <p className="text-sm text-gray-500 truncate">{product.description || 'No description'}</p>
+                            </div>
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <h4 className="text-sm font-medium text-gray-900 truncate">{product.title}</h4>
-                            <p className="text-sm text-gray-500 truncate">{product.description || 'No description'}</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                          {product.categories?.name || 'Uncategorized'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="space-y-1">
-                          {(() => {
-                            const originalPrice = product.price_cents / 100;
-                            const discountPercent = product.discount_percent || 0;
-                            const finalPrice = originalPrice * (1 - discountPercent / 100);
-                            
-                            return (
-                              <>
-                                <div className="flex items-center space-x-2">
-                                  <span className="text-sm font-semibold text-gray-900">
-                                    ₹{finalPrice.toFixed(2)}
-                                  </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            {product.categories?.name || 'Uncategorized'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="space-y-1">
+                            {(() => {
+                              const originalPrice = product.price_cents / 100;
+                              const discountPercent = product.discount_percent || 0;
+                              const finalPrice = originalPrice * (1 - discountPercent / 100);
+                              
+                              return (
+                                <>
+                                  <div className="flex items-center space-x-2">
+                                    <span className="text-sm font-semibold text-gray-900">
+                                      ₹{finalPrice.toFixed(2)}
+                                    </span>
+                                    {discountPercent > 0 && (
+                                      <span className="text-xs text-gray-500 line-through">
+                                        ₹{originalPrice.toFixed(2)}
+                                      </span>
+                                    )}
+                                  </div>
                                   {discountPercent > 0 && (
-                                    <span className="text-xs text-gray-500 line-through">
-                                      ₹{originalPrice.toFixed(2)}
+                                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                                      {discountPercent}% OFF
                                     </span>
                                   )}
-                                </div>
-                                {discountPercent > 0 && (
-                                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
-                                    {discountPercent}% OFF
-                                  </span>
-                                )}
-                              </>
-                            );
-                          })()}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
-                          product.stock_quantity > 10 
-                            ? 'bg-green-100 text-green-800' 
-                            : product.stock_quantity > 0 
-                            ? 'bg-yellow-100 text-yellow-800' 
-                            : 'bg-red-100 text-red-800'
-                        }`}>
-                          {product.stock_quantity} in stock
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-500">
-                        {new Date(product.created_at).toLocaleDateString('en-US', {
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric'
-                        })}
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center space-x-3">
-                          <button
-                            onClick={() => handleEdit(product)}
-                            className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg border border-blue-200 transition-colors"
-                            title="Edit product"
-                          >
-                            <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                            </svg>
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => handleDelete(product.id)}
-                            disabled={deletingProduct === product.id}
-                            className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-red-700 bg-red-50 hover:bg-red-100 rounded-lg border border-red-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                            title="Delete product"
-                          >
-                            {deletingProduct === product.id ? (
-                              <>
-                                <svg className="w-3 h-3 mr-1 animate-spin" fill="none" viewBox="0 0 24 24">
-                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                </svg>
-                                Deleting...
-                              </>
-                            ) : (
-                              <>
-                                <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                                </svg>
-                                Delete
-                              </>
-                            )}
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+                                </>
+                              );
+                            })()}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
+                            product.stock_quantity > 10 
+                              ? 'bg-green-100 text-green-800' 
+                              : product.stock_quantity > 0 
+                              ? 'bg-yellow-100 text-yellow-800' 
+                              : 'bg-red-100 text-red-800'
+                          }`}>
+                            {product.stock_quantity} in stock
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-500">
+                          {new Date(product.created_at).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric'
+                          })}
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center space-x-3">
+                            <button
+                              onClick={() => handleEdit(product)}
+                              className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg border border-blue-200 transition-colors"
+                              title="Edit product"
+                            >
+                              <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                              </svg>
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => handleDelete(product.id)}
+                              disabled={deletingProduct === product.id}
+                              className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-red-700 bg-red-50 hover:bg-red-100 rounded-lg border border-red-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              title="Delete product"
+                            >
+                              {deletingProduct === product.id ? (
+                                <>
+                                  <svg className="w-3 h-3 mr-1 animate-spin" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                  </svg>
+                                  Deleting...
+                                </>
+                              ) : (
+                                <>
+                                  <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                  </svg>
+                                  Delete
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
       </div>
     </>
   );

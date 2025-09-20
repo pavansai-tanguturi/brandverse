@@ -27,10 +27,15 @@ const allowedOrigins = [
   process.env.FRONTEND_URL,
 ].filter(Boolean);
 
+console.log('Allowed origins:', allowedOrigins);
+console.log('FRONTEND_URL from env:', process.env.FRONTEND_URL);
+
 app.use(cors({
   origin: function (origin, callback) {
+    console.log('CORS request from origin:', origin);
     if (!origin) return callback(null, true);
     if (allowedOrigins.includes(origin)) {
+      console.log('CORS allowed for origin:', origin);
       callback(null, true);
     } else {
       console.log('CORS blocked origin:', origin);

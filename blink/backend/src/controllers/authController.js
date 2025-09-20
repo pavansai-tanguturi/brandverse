@@ -133,6 +133,9 @@ export async function verifyOtp(req, res) {
       sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
       maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
     };
+    
+    console.log('[verifyOtp] Cookie options:', cookieOptions);
+    console.log('[verifyOtp] NODE_ENV:', process.env.NODE_ENV);
     res.cookie('auth_token', jwtToken, cookieOptions);
     const responseData = { 
       message: isAdmin ? 'Admin OTP verified successfully' : 'OTP verified successfully', 
@@ -206,6 +209,10 @@ export async function logout(req, res) {
 
 // JWT Authentication Middleware
 export const authenticateJWT = (req, res, next) => {
+  console.log('[AUTH_MIDDLEWARE] Request URL:', req.url);
+  console.log('[AUTH_MIDDLEWARE] Cookies:', req.cookies);
+  console.log('[AUTH_MIDDLEWARE] Authorization header:', req.headers.authorization);
+  
   let token = req.cookies?.auth_token;
   if (!token && req.headers.authorization) {
     const authHeader = req.headers.authorization;
@@ -213,15 +220,21 @@ export const authenticateJWT = (req, res, next) => {
       token = authHeader.substring(7);
     }
   }
+  
   if (!token) {
     console.warn('[AUTH_MIDDLEWARE WARN] No token provided');
+    console.log('[AUTH_MIDDLEWARE] NODE_ENV:', process.env.NODE_ENV);
     return res.status(401).json({ error: 'Authentication required' });
   }
+  
+  console.log('[AUTH_MIDDLEWARE] Token found, verifying...');
   const decoded = verifyToken(token);
   if (!decoded) {
     console.warn('[AUTH_MIDDLEWARE WARN] Invalid or expired token');
     return res.status(401).json({ error: 'Invalid or expired token' });
   }
+  
+  console.log('[AUTH_MIDDLEWARE] Token verified successfully for:', decoded.email);
   req.user = {
     id: decoded.userId,
     email: decoded.email,
