@@ -2,6 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import session from 'express-session';
+import RedisStore from 'connect-redis';
+import { createClient } from 'redis';
 import authRoutes from './src/routes/auth.js';
 import productRoutes from './src/routes/products.js';
 import cartRoutes from './src/routes/cart.js';
@@ -19,11 +21,68 @@ dotenv.config();
 
 const app = express();
 
+// --- Redis Setup for Session Storage ---
+let redisClient;
+let sessionStore = new session.MemoryStore(); // Default fallback
+
+// Initialize Redis asynchronously
+const initializeRedis = async () => {
+  try {
+    if (process.env.NODE_ENV === 'production' && (process.env.UPSTASH_REDIS_URL || process.env.REDIS_URL)) {
+      // Production: Use Upstash Redis
+      const redisUrl = process.env.REDIS_URL || process.env.UPSTASH_REDIS_URL;
+      console.log('🔄 Attempting to connect to Redis:', redisUrl.replace(/\/\/.*@/, '//***@')); // Hide credentials in logs
+      
+      redisClient = createClient({
+        url: redisUrl,
+        socket: {
+          tls: true,
+          rejectUnauthorized: false
+        }
+      });
+
+      redisClient.on('error', (err) => {
+        console.error('❌ Redis Client Error:', err.message);
+      });
+
+      redisClient.on('connect', () => {
+        console.log('✅ Redis connected successfully');
+      });
+
+      redisClient.on('ready', () => {
+        console.log('✅ Redis ready for operations');
+      });
+
+      await redisClient.connect();
+      
+      // Test the connection
+      await redisClient.ping();
+      console.log('✅ Redis ping successful');
+      
+      sessionStore = new RedisStore({ client: redisClient });
+      console.log('✅ Redis session store configured');
+    } else {
+      // Development: Use memory store
+      console.log('⚠️  Using memory store for sessions (development only)');
+      console.log('   NODE_ENV:', process.env.NODE_ENV);
+      console.log('   REDIS_URL available:', !!process.env.REDIS_URL);
+      console.log('   UPSTASH_REDIS_URL available:', !!process.env.UPSTASH_REDIS_URL);
+    }
+  } catch (error) {
+    console.error('❌ Redis connection failed, falling back to memory store:', error.message);
+    sessionStore = new session.MemoryStore();
+  }
+};
+
+// Initialize Redis connection
+initializeRedis();
+
 
 // --- CORS configuration for cross-origin cookies (Netlify + Render) ---
 const allowedOrigins = [
   'http://localhost:3000',
-  process.env.FRONTEND_URL, // Netlify frontend
+  'https://heartfelt-lily-3bb33d.netlify.app', // Your Netlify frontend
+  process.env.FRONTEND_URL, // Additional frontend URL if set
 ].filter(Boolean);
 
 app.use(cors({
@@ -48,32 +107,43 @@ app.use(
   session({
     secret: process.env.SESSION_SECRET || 'your-session-secret-key',
     resave: false,
-    store: new session.MemoryStore(),
+    store: sessionStore, // Use Redis store in production, memory store in development
     saveUninitialized: false,
     name: 'brandverse.sid',
     cookie: {
       httpOnly: true, // prevents JavaScript access
       secure: process.env.NODE_ENV === 'production',   // 🔑 only require HTTPS in production
       sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // 🔑 allows cross-site cookie sending in production
-      maxAge: 1000 * 60 * 60 * 24 * 7 // 7 days
+      maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+      domain: process.env.NODE_ENV === 'production' ? undefined : undefined // Let browser handle domain
     }
   })
 );
 
 // Session debugging middleware
 app.use((req, res, next) => {
-  if (req.path.includes('/admin/analytics')) {
+  if (req.path.includes('/admin') || req.path.includes('/auth')) {
     console.log(`[Session Debug] ${req.method} ${req.path}`, {
       sessionId: req.sessionID,
       sessionExists: !!req.session,
       user: req.session?.user,
-      cookies: req.headers.cookie
+      cookies: req.headers.cookie?.substring(0, 100) + '...', // Truncate for readability
+      origin: req.headers.origin,
+      userAgent: req.headers['user-agent']?.substring(0, 50) + '...'
     });
   }
   next();
 });
 
-app.get('/health', (_req, res) => res.json({ ok: true }));
+app.get('/health', (_req, res) => {
+  const isRedisConnected = redisClient && redisClient.isReady;
+  res.json({ 
+    ok: true, 
+    redis: isRedisConnected ? 'connected' : 'not connected',
+    sessionStore: sessionStore instanceof RedisStore ? 'redis' : 'memory',
+    nodeEnv: process.env.NODE_ENV
+  });
+});
 
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
