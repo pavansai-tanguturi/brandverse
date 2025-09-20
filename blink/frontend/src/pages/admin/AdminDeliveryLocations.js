@@ -8,6 +8,8 @@ const AdminDeliveryLocations = () => {
   const [message, setMessage] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingLocation, setEditingLocation] = useState(null);
+  const [selectedLocations, setSelectedLocations] = useState([]);
+  const [bulkAction, setBulkAction] = useState('');
   const [formData, setFormData] = useState({
     country: '',
     region: '',
@@ -147,6 +149,159 @@ const AdminDeliveryLocations = () => {
     setShowAddForm(false);
   };
 
+  const handleBulkAction = async (action) => {
+    if (!selectedLocations.length) {
+      setError('Please select locations first');
+      return;
+    }
+
+    if (!window.confirm(`Are you sure you want to ${action} ${selectedLocations.length} locations?`)) {
+      return;
+    }
+
+    try {
+      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
+      let url;
+      let body;
+
+      switch (action) {
+        case 'delete':
+          url = `${API_BASE}/api/admin/delivery-locations/bulk-delete`;
+          body = { ids: selectedLocations };
+          break;
+        case 'enable':
+        case 'disable':
+          url = `${API_BASE}/api/admin/delivery-locations/bulk-toggle`;
+          body = { 
+            ids: selectedLocations,
+            is_active: action === 'enable'
+          };
+          break;
+        default:
+          throw new Error('Invalid bulk action');
+      }
+
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(body)
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to perform bulk action');
+      }
+
+      const data = await res.json();
+      setMessage(data.message);
+      setSelectedLocations([]);
+      setBulkAction('');
+      await fetchDeliveryLocations();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const handleBulkImport = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          const text = e.target.result;
+          let locations;
+
+          if (file.type === 'application/json') {
+            locations = JSON.parse(text);
+          } else if (file.type === 'text/csv') {
+            // Simple CSV parsing
+            locations = text.split('\\n').slice(1) // Skip header
+              .filter(line => line.trim())
+              .map(line => {
+                const [country, region, city] = line.split(',').map(val => val.trim().replace(/^"(.*)"$/, '$1'));
+                return { country, region, city };
+              });
+          } else {
+            throw new Error('Unsupported file format. Please use CSV or JSON.');
+          }
+
+          const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
+          const res = await fetch(`${API_BASE}/api/admin/delivery-locations/bulk-add`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ locations })
+          });
+
+          if (!res.ok) {
+            const errorData = await res.json();
+            throw new Error(errorData.error || 'Failed to import locations');
+          }
+
+          const data = await res.json();
+          setMessage(`Successfully imported ${data.count} locations`);
+          await fetchDeliveryLocations();
+        } catch (err) {
+          setError(err.message);
+        }
+      };
+
+      reader.readAsText(file);
+    } catch (err) {
+      setError('Error reading file: ' + err.message);
+    }
+
+    // Reset file input
+    event.target.value = '';
+  };
+
+  const handleExport = async (format = 'csv') => {
+    try {
+      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
+      const res = await fetch(`${API_BASE}/api/admin/delivery-locations/export?format=${format}`, {
+        credentials: 'include'
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to export locations');
+      }
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `delivery-locations.${format}`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const handleSelectAll = (event) => {
+    if (event.target.checked) {
+      setSelectedLocations(locations.map(loc => loc.id));
+    } else {
+      setSelectedLocations([]);
+    }
+  };
+
+  const handleSelectLocation = (locationId) => {
+    setSelectedLocations(prev => {
+      if (prev.includes(locationId)) {
+        return prev.filter(id => id !== locationId);
+      } else {
+        return [...prev, locationId];
+      }
+    });
+  };
+
   const getLocationDisplay = (location) => {
     const parts = [location.country];
     if (location.region) parts.push(location.region);
@@ -166,15 +321,46 @@ const AdminDeliveryLocations = () => {
                 <p className="text-gray-600 mt-1">Manage where you deliver your products</p>
               </div>
               
-              <button
-                onClick={() => setShowAddForm(!showAddForm)}
-                className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-200 text-white rounded-lg font-medium transition-all duration-200 shadow-sm"
-              >
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                </svg>
-                Add Location
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowAddForm(!showAddForm)}
+                  className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-200 text-white rounded-lg font-medium transition-all duration-200 shadow-sm"
+                >
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                  </svg>
+                  Add Location
+                </button>
+
+                <div className="relative">
+                  <input
+                    type="file"
+                    accept=".csv,.json"
+                    onChange={handleBulkImport}
+                    className="hidden"
+                    id="file-upload"
+                  />
+                  <label
+                    htmlFor="file-upload"
+                    className="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 focus:ring-4 focus:ring-green-200 text-white rounded-lg font-medium transition-all duration-200 shadow-sm cursor-pointer"
+                  >
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
+                    </svg>
+                    Import
+                  </label>
+                </div>
+
+                <button
+                  onClick={() => handleExport('csv')}
+                  className="inline-flex items-center px-4 py-2 bg-gray-600 hover:bg-gray-700 focus:ring-4 focus:ring-gray-200 text-white rounded-lg font-medium transition-all duration-200 shadow-sm"
+                >
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                  </svg>
+                  Export
+                </button>
+              </div>
             </div>
 
             {/* Add/Edit Form */}
@@ -306,9 +492,47 @@ const AdminDeliveryLocations = () => {
           ) : (
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
+                {selectedLocations.length > 0 && (
+                <div className="mb-4 p-4 bg-gray-50 rounded-lg border flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-gray-700">
+                      {selectedLocations.length} locations selected
+                    </span>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleBulkAction('enable')}
+                      className="px-3 py-1 text-sm bg-green-100 text-green-700 hover:bg-green-200 rounded transition-colors"
+                    >
+                      Enable All
+                    </button>
+                    <button
+                      onClick={() => handleBulkAction('disable')}
+                      className="px-3 py-1 text-sm bg-yellow-100 text-yellow-700 hover:bg-yellow-200 rounded transition-colors"
+                    >
+                      Disable All
+                    </button>
+                    <button
+                      onClick={() => handleBulkAction('delete')}
+                      className="px-3 py-1 text-sm bg-red-100 text-red-700 hover:bg-red-200 rounded transition-colors"
+                    >
+                      Delete All
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                        <input
+                          type="checkbox"
+                          checked={selectedLocations.length === locations.length}
+                          onChange={handleSelectAll}
+                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                      </th>
                       <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Location</th>
                       <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Country</th>
                       <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Region</th>
@@ -320,6 +544,14 @@ const AdminDeliveryLocations = () => {
                   <tbody className="bg-white divide-y divide-gray-200">
                     {locations.map((location) => (
                       <tr key={location.id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-6 py-4">
+                          <input
+                            type="checkbox"
+                            checked={selectedLocations.includes(location.id)}
+                            onChange={() => handleSelectLocation(location.id)}
+                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          />
+                        </td>
                         <td className="px-6 py-4">
                           <div className="text-sm font-medium text-gray-900">
                             {getLocationDisplay(location)}

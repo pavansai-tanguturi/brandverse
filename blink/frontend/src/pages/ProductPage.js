@@ -186,7 +186,16 @@ const ProductPage = () => {
             <div className="product-details-info">
               <div className="detail-item">
                 <span className="detail-label">Category:</span>
-                <span className="detail-value">{product.category || 'General'}</span>
+                <span className="detail-value">{product.category ? (
+                <Link 
+                  to={`/products?category=${product.category.slug}`}
+                  className="text-blue-600 hover:text-blue-800 hover:underline"
+                >
+                  {product.category.name}
+                </Link>
+              ) : (
+                'General'
+              )}</span>
               </div>
               <div className="detail-item">
                 <span className="detail-label">Stock:</span>

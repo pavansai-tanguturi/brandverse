@@ -83,10 +83,10 @@ export async function login(req, res) {
       return res.status(400).json({ error: error.message });
     }
     const adminEmail = process.env.ADMIN_EMAIL || process.env.AUTH_U;
-    const isAdminEmail = email === adminEmail;
+    const isAdmin = email === adminEmail;
     res.json({ 
       message: 'OTP sent to your email. Please verify to login.',
-      isAdmin: isAdminEmail
+      isAdmin
     });
   } catch (e) {
     console.error('[LOGIN ERROR]', e);
@@ -115,7 +115,7 @@ export async function verifyOtp(req, res) {
     const payload = {
       userId: data.user.id,
       email: data.user.email,
-      isAdmin: isAdmin
+      isAdmin
     };
     // Generate JWT token
     const jwtToken = generateToken(payload);

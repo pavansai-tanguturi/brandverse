@@ -1,6 +1,6 @@
 import express from 'express';
 import multer from 'multer';
-import { requireAuth, requireAdmin } from '../middleware/auth.js';
+// ...existing code...
 import { adminAuth, authenticateJWT } from '../controllers/authController.js';
 import {
   listProducts,

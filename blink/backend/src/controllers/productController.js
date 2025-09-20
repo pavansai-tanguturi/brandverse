@@ -2,63 +2,247 @@ import { supabaseAdmin } from '../config/supabaseClient.js';
 import { nanoid } from 'nanoid';
 
 export async function listProducts(_req, res) {
-  const { data, error } = await supabaseAdmin
-    .from('products')
-    .select(`
-      *, 
-      product_images(id, path, is_primary),
-      categories(id, name, slug)
-    `)
-    .eq('is_active', true)
-    .order('created_at', { ascending: false });
-  if (error) return res.status(400).json({ error: error.message });
+  console.log('listProducts: Starting product fetch...');
+  
+  try {
+    // Get products without relations first - much more reliable
+    const { data: products, error: productsError } = await supabaseAdmin
+      .from('products')
+      .select('*')
+      .eq('is_active', true)
+      .order('created_at', { ascending: false });
 
-  const enriched = await Promise.all((data || []).map(async (p) => {
-    const primary = (p.product_images || []).find(i => i.is_primary) || p.product_images?.[0];
-    let image_url = null;
-    if (primary) {
-      const { data: signed } = await supabaseAdmin.storage
-        .from(process.env.PRODUCT_IMAGES_BUCKET)
-        .createSignedUrl(primary.path, 600);
-      image_url = signed?.signedUrl || null;
+    if (productsError) {
+      console.error('listProducts: Error fetching products:', productsError);
+      return res.status(500).json({ 
+        error: 'Failed to fetch products',
+        details: productsError.message,
+        code: productsError.code
+      });
     }
-    return { ...p, image_url };
-  }));
-  res.json(enriched);
+
+    if (!products || !Array.isArray(products)) {
+      console.log('listProducts: No products found');
+      return res.json([]);
+    }
+
+    console.log(`listProducts: Successfully fetched ${products.length} products`);
+
+    // Get all product images in one query
+    const productIds = products.map(p => p.id);
+    const { data: allImages, error: imagesError } = await supabaseAdmin
+      .from('product_images')
+      .select('id, product_id, path, is_primary')
+      .in('product_id', productIds);
+
+    if (imagesError) {
+      console.error('listProducts: Error fetching images:', imagesError);
+    }
+
+    // Get all categories in one query
+    const categoryIds = [...new Set(products.map(p => p.category_id).filter(Boolean))];
+    let allCategories = [];
+    if (categoryIds.length > 0) {
+      const { data: categories, error: categoriesError } = await supabaseAdmin
+        .from('categories')
+        .select('id, name, slug')
+        .in('id', categoryIds);
+
+      if (categoriesError) {
+        console.error('listProducts: Error fetching categories:', categoriesError);
+      } else {
+        allCategories = categories || [];
+      }
+    }
+
+    // Create lookup maps for better performance
+    const imagesByProductId = {};
+    (allImages || []).forEach(img => {
+      if (!imagesByProductId[img.product_id]) {
+        imagesByProductId[img.product_id] = [];
+      }
+      imagesByProductId[img.product_id].push(img);
+    });
+
+    const categoriesById = {};
+    allCategories.forEach(cat => {
+      categoriesById[cat.id] = cat;
+    });
+
+    // Process all products
+    const enriched = await Promise.all(products.map(async (product) => {
+      try {
+        const productImages = imagesByProductId[product.id] || [];
+        const category = categoriesById[product.category_id] || null;
+
+        // Basic product data
+        const productData = {
+          ...product,
+          product_images: productImages,
+          price: product.price_cents ? (product.price_cents / 100) : 0,
+          formatted_price: product.price_cents ? `₹${(product.price_cents / 100).toFixed(2)}` : '₹0.00',
+          category: category,
+          categories: category, // For backward compatibility
+          is_active: product.is_active ?? true,
+          image_url: null
+        };
+
+        // Get signed URL for primary image
+        const primary = productImages.find(i => i.is_primary) || productImages[0];
+        if (primary?.path && process.env.PRODUCT_IMAGES_BUCKET) {
+          try {
+            const { data: signed, error: signedError } = await supabaseAdmin.storage
+              .from(process.env.PRODUCT_IMAGES_BUCKET)
+              .createSignedUrl(primary.path, 600);
+
+            if (!signedError && signed?.signedUrl) {
+              productData.image_url = signed.signedUrl;
+            }
+          } catch (signedUrlError) {
+            console.error(`listProducts: Error getting signed URL for product ${product.id}:`, signedUrlError);
+          }
+        }
+
+        return productData;
+      } catch (productError) {
+        console.error(`listProducts: Error processing product ${product.id}:`, productError);
+        // Return basic product data without image on error
+        return {
+          ...product,
+          image_url: null,
+          product_images: [],
+          price: product.price_cents ? (product.price_cents / 100) : 0,
+          formatted_price: product.price_cents ? `₹${(product.price_cents / 100).toFixed(2)}` : '₹0.00',
+          category: null,
+          categories: null,
+          is_active: product.is_active ?? true
+        };
+      }
+    }));
+
+    console.log(`listProducts: Successfully processed ${enriched.length} products`);
+    res.json(enriched);
+    
+  } catch (error) {
+    console.error('listProducts: Unhandled error:', error);
+    return res.status(500).json({ 
+      error: 'Internal server error',
+      details: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
 }
 
 export async function getProduct(req, res) {
   const { id } = req.params;
-  const { data, error } = await supabaseAdmin
-    .from('products')
-    .select(`
-      *, 
-      product_images(id, path, is_primary),
-      categories(id, name, slug)
-    `)
-    .eq('id', id)
-    .single();
-  if (error) return res.status(404).json({ error: error.message });
   
-  // Generate signed URLs for all product images
-  const withUrls = await Promise.all((data.product_images || []).map(async (img) => {
-    const { data: signed } = await supabaseAdmin.storage
-      .from(process.env.PRODUCT_IMAGES_BUCKET)
-      .createSignedUrl(img.path, 600);
-    return { ...img, url: signed?.signedUrl || null };
-  }));
-  
-  // Find primary image and create image_url field (same as listProducts)
-  const primary = (data.product_images || []).find(i => i.is_primary) || data.product_images?.[0];
-  let image_url = null;
-  if (primary) {
-    const { data: signed } = await supabaseAdmin.storage
-      .from(process.env.PRODUCT_IMAGES_BUCKET)
-      .createSignedUrl(primary.path, 600);
-    image_url = signed?.signedUrl || null;
+  try {
+    console.log(`getProduct: Fetching product with ID: ${id}`);
+    
+    // First, get the product without relations
+    const { data: product, error: productError } = await supabaseAdmin
+      .from('products')
+      .select('*')
+      .eq('id', id)
+      .single();
+    
+    if (productError) {
+      console.error(`getProduct: Error fetching product ${id}:`, productError);
+      return res.status(404).json({ 
+        error: 'Product not found', 
+        details: productError.message 
+      });
+    }
+
+    if (!product) {
+      console.log(`getProduct: No product found with ID: ${id}`);
+      return res.status(404).json({ error: 'Product not found' });
+    }
+
+    console.log(`getProduct: Successfully found product: ${product.title}`);
+    
+    // Separately fetch product images
+    const { data: images, error: imagesError } = await supabaseAdmin
+      .from('product_images')
+      .select('id, path, is_primary')
+      .eq('product_id', id);
+
+    if (imagesError) {
+      console.error(`getProduct: Error fetching images for product ${id}:`, imagesError);
+      // Continue without images rather than failing
+    }
+
+    // Separately fetch category
+    let category = null;
+    if (product.category_id) {
+      const { data: categoryData, error: categoryError } = await supabaseAdmin
+        .from('categories')
+        .select('id, name, slug')
+        .eq('id', product.category_id)
+        .single();
+      
+      if (categoryError) {
+        console.error(`getProduct: Error fetching category for product ${id}:`, categoryError);
+        // Continue without category rather than failing
+      } else {
+        category = categoryData;
+      }
+    }
+    
+    // Generate signed URLs for all product images
+    const withUrls = await Promise.all((images || []).map(async (img) => {
+      try {
+        if (!process.env.PRODUCT_IMAGES_BUCKET) {
+          console.warn('getProduct: PRODUCT_IMAGES_BUCKET not set');
+          return { ...img, url: null };
+        }
+
+        const { data: signed, error: signedError } = await supabaseAdmin.storage
+          .from(process.env.PRODUCT_IMAGES_BUCKET)
+          .createSignedUrl(img.path, 600);
+        
+        if (signedError) {
+          console.error(`getProduct: Error generating signed URL for image ${img.id}:`, signedError);
+          return { ...img, url: null };
+        }
+        
+        return { ...img, url: signed?.signedUrl || null };
+      } catch (urlError) {
+        console.error(`getProduct: Exception generating signed URL for image ${img.id}:`, urlError);
+        return { ...img, url: null };
+      }
+    }));
+    
+    // Find primary image and create image_url field
+    const primary = (withUrls || []).find(i => i.is_primary) || withUrls?.[0];
+    let image_url = null;
+    
+    if (primary && primary.url) {
+      image_url = primary.url;
+    }
+    
+    const enrichedProduct = {
+      ...product,
+      product_images: withUrls || [],
+      image_url,
+      price: product.price_cents ? (product.price_cents / 100) : 0,
+      formatted_price: product.price_cents ? `₹${(product.price_cents / 100).toFixed(2)}` : '₹0.00',
+      category: category,
+      categories: category, // For backward compatibility
+      is_active: product.is_active ?? true
+    };
+    
+    console.log(`getProduct: Successfully enriched product data`);
+    res.json(enrichedProduct);
+    
+  } catch (error) {
+    console.error(`getProduct: Unhandled error for product ${id}:`, error);
+    return res.status(500).json({ 
+      error: 'Internal server error',
+      details: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
-  
-  res.json({ ...data, product_images: withUrls, image_url });
 }
 
 export async function createProduct(req, res) {
@@ -145,16 +329,73 @@ export async function deleteProduct(req, res) {
   }
 
   const { id } = req.params;
-  const { data: imgs } = await supabaseAdmin
-    .from('product_images')
-    .select('path')
-    .eq('product_id', id);
-  if (imgs?.length) await supabaseAdmin.storage
-    .from(process.env.PRODUCT_IMAGES_BUCKET)
-    .remove(imgs.map(i => i.path));
-  const { error } = await supabaseAdmin.from('products').delete().eq('id', id);
-  if (error) return res.status(400).json({ error: error.message });
-  res.json({ deleted: true });
+  const { force } = req.query; // Optional force parameter to remove from carts
+
+  try {
+    // First check if the product is in any carts
+    const { data: cartItems, error: cartError } = await supabaseAdmin
+      .from('cart_items')
+      .select('id, cart_id')
+      .eq('product_id', id);
+
+    if (cartError) {
+      return res.status(500).json({ error: 'Error checking cart items' });
+    }
+
+    if (cartItems && cartItems.length > 0) {
+      if (!force) {
+        // If product is in carts and force is false, return error with count
+        return res.status(400).json({ 
+          error: 'Product is in active carts',
+          message: `This product is in ${cartItems.length} active cart(s). Remove it from carts first or use force=true to automatically remove it.`,
+          cartCount: cartItems.length
+        });
+      }
+
+      // If force is true, remove from all carts first
+      const { error: removeError } = await supabaseAdmin
+        .from('cart_items')
+        .delete()
+        .eq('product_id', id);
+
+      if (removeError) {
+        return res.status(500).json({ 
+          error: 'Failed to remove product from carts',
+          details: removeError.message 
+        });
+      }
+    }
+
+    // Delete product images from storage
+    const { data: imgs } = await supabaseAdmin
+      .from('product_images')
+      .select('path')
+      .eq('product_id', id);
+
+    if (imgs?.length) {
+      await supabaseAdmin.storage
+        .from(process.env.PRODUCT_IMAGES_BUCKET)
+        .remove(imgs.map(i => i.path));
+    }
+
+    // Finally delete the product
+    const { error } = await supabaseAdmin
+      .from('products')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      return res.status(400).json({ error: error.message });
+    }
+
+    res.json({ 
+      message: 'Product deleted successfully',
+      removedFromCarts: cartItems?.length || 0
+    });
+  } catch (error) {
+    console.error('Error in deleteProduct:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 }
 
 export async function addImages(req, res) {

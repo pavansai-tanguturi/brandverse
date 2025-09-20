@@ -1,5 +1,5 @@
 import express from 'express';
-import { requireAuth, requireAdmin } from '../middleware/auth.js';
+// ...existing code...
 import { adminAuth, authenticateJWT } from '../controllers/authController.js';
 import { 
   createOrder, 

@@ -5,7 +5,11 @@ import {
   adminAddDeliveryLocation, 
   adminUpdateDeliveryLocation, 
   adminDeleteDeliveryLocation, 
-  adminToggleDeliveryLocation 
+  adminToggleDeliveryLocation, 
+  adminBulkAddDeliveryLocations, 
+  adminBulkDeleteDeliveryLocations, 
+  adminBulkToggleDeliveryLocations, 
+  adminExportDeliveryLocations
 } from '../controllers/deliveryController.js';
 import { adminAuth, authenticateJWT } from '../controllers/authController.js';
 
@@ -23,4 +27,10 @@ router.post('/delivery-locations', adminAddDeliveryLocation);
 router.put('/delivery-locations/:id', adminUpdateDeliveryLocation);
 router.delete('/delivery-locations/:id', adminDeleteDeliveryLocation);
 router.patch('/delivery-locations/:id/toggle', adminToggleDeliveryLocation);
+
+// Bulk operations
+router.post('/delivery-locations/bulk', adminBulkAddDeliveryLocations);
+router.delete('/delivery-locations/bulk', adminBulkDeleteDeliveryLocations);
+router.patch('/delivery-locations/bulk-toggle', adminBulkToggleDeliveryLocations);
+router.get('/delivery-locations/export', adminExportDeliveryLocations);
 export default router;

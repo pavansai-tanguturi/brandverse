@@ -1,5 +1,5 @@
 import express from 'express';
-import { requireAuth } from '../middleware/auth.js';
+// ...existing code...
 import { 
   getCustomerAddresses, 
   getAddress, 
@@ -14,10 +14,12 @@ import {
 const router = express.Router();
 
 // Get all addresses for current authenticated user
-router.get('/', requireAuth, getCurrentUserAddresses);
+import { authenticateJWT } from '../controllers/authController.js';
+// ...existing code...
+router.get('/', authenticateJWT, getCurrentUserAddresses);
 
 // Create address for current authenticated user
-router.post('/', requireAuth, createCurrentUserAddress);
+router.post('/', authenticateJWT, createCurrentUserAddress);
 
 // Get all addresses for a customer
 router.get('/customer/:customer_id', getCustomerAddresses);
@@ -29,12 +31,12 @@ router.get('/:id', getAddress);
 router.post('/customer/:customer_id', createAddress);
 
 // Update an address
-router.put('/:id', requireAuth, updateAddress);
+router.put('/:id', authenticateJWT, updateAddress);
 
 // Delete an address
-router.delete('/:id', requireAuth, deleteAddress);
+router.delete('/:id', authenticateJWT, deleteAddress);
 
 // Set an address as default
-router.patch('/:id/default', requireAuth, setDefaultAddress);
+router.patch('/:id/default', authenticateJWT, setDefaultAddress);
 
 export default router;

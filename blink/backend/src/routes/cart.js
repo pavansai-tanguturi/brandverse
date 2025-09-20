@@ -1,11 +1,13 @@
 import express from 'express';
-import { requireAuth } from '../middleware/auth.js';
+// ...existing code...
 import { getCart, addItem, updateItemQty, removeItem } from '../controllers/cartController.js';
 
 const router = express.Router();
-router.get('/', requireAuth, getCart);
-router.post('/items', requireAuth, addItem);
-router.patch('/items/:id', requireAuth, updateItemQty);
-router.delete('/items/:id', requireAuth, removeItem);
+import { authenticateJWT } from '../controllers/authController.js';
+// ...existing code...
+router.get('/', authenticateJWT, getCart);
+router.post('/items', authenticateJWT, addItem);
+router.patch('/items/:id', authenticateJWT, updateItemQty);
+router.delete('/items/:id', authenticateJWT, removeItem);
 
 export default router;

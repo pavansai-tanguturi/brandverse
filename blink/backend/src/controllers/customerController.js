@@ -1,20 +1,17 @@
 import { supabaseAdmin } from '../config/supabaseClient.js';
 import { nanoid } from 'nanoid';
 
+
 // 🔐 GET /api/customers/me
 export async function getMe(req, res) {
-  if (!req.session?.user) return res.status(401).json({ error: 'Login required' });
-
-  const userId = req.session.user.id;
-
+  if (!req.user) return res.status(401).json({ error: 'Login required' });
+  const userId = req.user.id;
   const { data, error } = await supabaseAdmin
     .from('customers')
     .select('*')
     .eq('auth_user_id', userId)
     .single();
-
   if (error) return res.status(404).json({ error: 'Customer record not found' });
-
   try {
     const bucket = process.env.PRODUCT_IMAGES_BUCKET;
     if (data?.avatar_url && !data.avatar_url.startsWith('http') && bucket) {
@@ -24,93 +21,71 @@ export async function getMe(req, res) {
         .createSignedUrl(data.avatar_url, 60 * 60);
       data.avatar_url = signed?.signedUrl || null;
     }
-  } catch (e) {
-    // skip if signed URL fails
-  }
-
+  } catch (e) {}
   res.json(data);
 }
 
 // 📝 PUT /api/customers/me
 export async function updateMe(req, res) {
-  if (!req.session?.user) return res.status(401).json({ error: 'Login required' });
-
-  const userId = req.session.user.id;
+  if (!req.user) return res.status(401).json({ error: 'Login required' });
+  const userId = req.user.id;
   const patch = req.body || {};
-
   delete patch.auth_user_id;
   delete patch.email;
-
   const { data, error } = await supabaseAdmin
     .from('customers')
     .update(patch)
     .eq('auth_user_id', userId)
     .select('*')
     .single();
-
   if (error) return res.status(400).json({ error: error.message });
-
   res.json(data);
 }
 
 // 🖼️ POST /api/customers/me/avatar
 export async function uploadAvatar(req, res) {
-  if (!req.session?.user) return res.status(401).json({ error: 'Login required' });
-
-  const userId = req.session.user.id;
-
+  if (!req.user) return res.status(401).json({ error: 'Login required' });
+  const userId = req.user.id;
   if (!req.files || req.files.length === 0)
     return res.status(400).json({ error: 'No file uploaded' });
-
   const file = req.files[0];
   const ext = (file.originalname.split('.').pop() || 'png').toLowerCase();
   const filename = `${userId}/${nanoid(8)}.${ext}`;
   const bucket = process.env.PRODUCT_IMAGES_BUCKET;
-
   const { error: uErr } = await supabaseAdmin.storage
     .from(bucket)
     .upload(filename, file.buffer, {
       contentType: file.mimetype,
       upsert: false
     });
-
   if (uErr) return res.status(400).json({ error: uErr.message });
-
   await supabaseAdmin
     .from('customers')
     .update({ avatar_url: filename })
     .eq('auth_user_id', userId);
-
   const { data: signed } = await supabaseAdmin
     .storage
     .from(bucket)
     .createSignedUrl(filename, 60 * 60);
-
   res.json({ avatar_url: signed?.signedUrl || null, path: filename });
 }
 
 // ❌ DELETE /api/customers/me
 export async function deleteMe(req, res) {
-  if (!req.session?.user) return res.status(401).json({ error: 'Login required' });
-
-  const userId = req.session.user.id;
+  if (!req.user) return res.status(401).json({ error: 'Login required' });
+  const userId = req.user.id;
   const anonEmail = `deleted+${userId}@example.invalid`;
-
   try {
     const { data: customer } = await supabaseAdmin
       .from('customers')
       .select('avatar_url')
       .eq('auth_user_id', userId)
       .single();
-
     const bucket = process.env.PRODUCT_IMAGES_BUCKET;
     if (customer?.avatar_url && bucket && !customer.avatar_url.startsWith('http')) {
       await supabaseAdmin.storage.from(bucket).remove([customer.avatar_url]);
     }
-  } catch (e) {
-    // ignore
-  }
-
+  } catch (e) {}
   const { data, error } = await supabaseAdmin
     .from('customers')
     .update({
@@ -125,10 +100,7 @@ export async function deleteMe(req, res) {
     .eq('auth_user_id', userId)
     .select('*')
     .single();
-
   if (error) return res.status(400).json({ error: error.message });
-
-  req.session.destroy(() => {});
   res.json({ deleted: true });
 }
 

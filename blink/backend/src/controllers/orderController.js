@@ -11,8 +11,8 @@ const razorpay = new Razorpay({
 
 export async function createOrder(req, res) {
   try {
-    if (!req.session?.user) return res.status(401).json({ error: 'Login required' });
-    const userId = req.session.user.id;
+    if (!req.user) return res.status(401).json({ error: 'Login required' });
+    const userId = req.user.id;
     const { 
       shipping_cents = 0, 
       tax_cents = 0, 
@@ -447,8 +447,8 @@ export async function createOrder(req, res) {
 }
 
 export async function listMyOrders(req, res) {
-  if (!req.session?.user) return res.status(401).json({ error: 'Login required' });
-  const userId = req.session.user.id;
+  if (!req.user) return res.status(401).json({ error: 'Login required' });
+  const userId = req.user.id;
   const { data: customer } = await supabaseAdmin
     .from('customers')
     .select('id')
@@ -507,8 +507,7 @@ export async function confirmPayment(req, res) {
       razorpay_signature,
       order_id 
     } = req.body;
-
-    if (!req.session?.user) return res.status(401).json({ error: 'Login required' });
+    if (!req.user) return res.status(401).json({ error: 'Login required' });
 
     // Verify payment signature
     const crypto = await import('crypto');
@@ -690,38 +689,31 @@ export async function handleWebhook(req, res) {
 // Confirm COD order - similar to payment confirmation but without payment gateway
 export async function confirmCODOrder(req, res) {
   try {
-    if (!req.session?.user) return res.status(401).json({ error: 'Login required' });
-    
+    if (!req.user) return res.status(401).json({ error: 'Login required' });
     const orderId = req.params.orderId;
-    
     // Get order details
     const { data: order, error: fetchError } = await supabaseAdmin
       .from('orders')
       .select('*')
       .eq('id', orderId)
       .single();
-
     if (fetchError || !order) {
       return res.status(404).json({ error: 'Order not found' });
     }
-
     // Verify order belongs to current user
-    const userId = req.session.user.id;
+    const userId = req.user.id;
     const { data: customer } = await supabaseAdmin
       .from('customers')
       .select('id')
       .eq('auth_user_id', userId)
       .single();
-
     if (!customer || order.customer_id !== customer.id) {
       return res.status(403).json({ error: 'Access denied' });
     }
-
     // Only allow COD confirmation for COD orders
     if (order.payment_method !== 'cod') {
       return res.status(400).json({ error: 'Invalid payment method for COD confirmation' });
     }
-
     // Update order status for COD
     const { data: updatedOrder, error: updateError } = await supabaseAdmin
       .from('orders')
@@ -733,37 +725,31 @@ export async function confirmCODOrder(req, res) {
       .eq('id', orderId)
       .select('*')
       .single();
-
     if (updateError) {
       return res.status(400).json({ error: updateError.message });
     }
-
     // Reduce stock for confirmed COD order
     const { data: orderItems } = await supabaseAdmin
       .from('order_items')
       .select('product_id, quantity')
       .eq('order_id', orderId);
-
     for (const item of orderItems || []) {
       await supabaseAdmin.rpc('reduce_product_stock', {
         product_id: item.product_id,
         quantity_to_reduce: item.quantity
       });
     }
-
     // Convert cart to inactive
     await supabaseAdmin
       .from('carts')
       .update({ status: 'converted' })
       .eq('customer_id', customer.id)
       .eq('status', 'active');
-
     res.json({ 
       success: true,
       order: updatedOrder,
       message: 'COD order confirmed successfully' 
     });
-
   } catch (error) {
     console.error('COD confirmation error:', error);
     res.status(500).json({ error: 'COD confirmation failed' });
