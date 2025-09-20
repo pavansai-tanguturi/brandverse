@@ -172,8 +172,9 @@ export async function getDashboardAnalytics(req, res) {
 }
 
 export async function exportAnalytics(req, res) {
-  if (!req.session?.user || !req.session.user.isAdmin)
-    return res.status(403).json({ error: 'Admin only' });
+  if (!req.user || !req.user.isAdmin) {
+    return res.status(403).json({ error: 'Admin access required' });
+  }
 
   try {
     const { format = 'json', startDate, endDate } = req.query;

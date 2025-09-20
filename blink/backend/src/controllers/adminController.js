@@ -2,6 +2,11 @@ import dayjs from 'dayjs';
 import { supabaseAdmin } from '../config/supabaseClient.js';
 
 export async function summary(req, res) {
+  // JWT authentication check - middleware should have set req.user
+  if (!req.user || !req.user.isAdmin) {
+    return res.status(403).json({ error: 'Admin access required' });
+  }
+
   try {
     const startDate = req.query.startDate || dayjs().subtract(30, 'day').format('YYYY-MM-DD');
     const endDate = req.query.endDate || dayjs().format('YYYY-MM-DD');
@@ -134,6 +139,11 @@ export async function summary(req, res) {
 }
 
 export async function exportAnalytics(req, res) {
+  // JWT authentication check
+  if (!req.user || !req.user.isAdmin) {
+    return res.status(403).json({ error: 'Admin access required' });
+  }
+
   try {
     const format = req.query.format || 'json';
     const startDate = req.query.startDate || dayjs().subtract(30, 'day').format('YYYY-MM-DD');

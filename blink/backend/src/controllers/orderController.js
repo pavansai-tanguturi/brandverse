@@ -1,8 +1,6 @@
 import { supabaseAdmin } from '../config/supabaseClient.js';
 import Razorpay from 'razorpay';
 
-
-
 // Initialize Razorpay
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID || 'rzp_test_your_key_id',
@@ -11,8 +9,12 @@ const razorpay = new Razorpay({
 
 export async function createOrder(req, res) {
   try {
-    if (!req.session?.user) return res.status(401).json({ error: 'Login required' });
-    const userId = req.session.user.id;
+    // JWT authentication check
+    if (!req.user) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    const userId = req.user.id;
     const { 
       shipping_cents = 0, 
       tax_cents = 0, 
@@ -80,17 +82,17 @@ export async function createOrder(req, res) {
       total_cents: total,
     };
 
-    // Add address information - use the same address for both shipping and billing if type is 'both'
+    // Add address information
     if (shipping_address) {
       console.log('Received shipping address:', JSON.stringify(shipping_address, null, 2));
       
-      // 🚨 HIERARCHICAL DELIVERY CHECK: Check from specific to general (same logic as delivery API)
+      // Hierarchical delivery check
       try {
         const city = shipping_address.city;
         const region = shipping_address.state;
         const country = shipping_address.country || 'India';
         
-        console.log(`🔍 Checking if delivery is available to: ${city}, ${region}, ${country}`);
+        console.log(`Checking if delivery is available to: ${city}, ${region}, ${country}`);
         
         let isDeliveryAvailable = false;
         let matchType = 'none';
@@ -108,7 +110,7 @@ export async function createOrder(req, res) {
           if (!exactError && exactMatch && exactMatch.length > 0) {
             isDeliveryAvailable = true;
             matchType = 'exact';
-            console.log(`✅ Exact location match found`);
+            console.log('Exact location match found');
           }
         }
 
@@ -125,11 +127,11 @@ export async function createOrder(req, res) {
           if (!regionError && regionMatch && regionMatch.length > 0) {
             isDeliveryAvailable = true;
             matchType = 'region';
-            console.log(`✅ Region-wide delivery found`);
+            console.log('Region-wide delivery found');
           }
         }
 
-        // 3. 🇮🇳 Check for COUNTRY-WIDE delivery if no region match
+        // 3. Check for country-wide delivery if no region match
         if (!isDeliveryAvailable) {
           const { data: countryMatch, error: countryError } = await supabaseAdmin
             .from('delivery_locations')
@@ -142,7 +144,7 @@ export async function createOrder(req, res) {
           if (!countryError && countryMatch && countryMatch.length > 0) {
             isDeliveryAvailable = true;
             matchType = 'country';
-            console.log(`✅ Country-wide delivery found for ${country}`);
+            console.log(`Country-wide delivery found for ${country}`);
           }
         }
 
@@ -151,7 +153,7 @@ export async function createOrder(req, res) {
             .filter(Boolean)
             .join(', ');
           
-          console.log(`❌ BLOCKING ORDER: Delivery not available to ${locationName}`);
+          console.log(`BLOCKING ORDER: Delivery not available to ${locationName}`);
           
           return res.status(400).json({ 
             error: 'Delivery not available',
@@ -160,11 +162,10 @@ export async function createOrder(req, res) {
           });
         }
 
-        console.log(`✅ Delivery confirmed available to: ${shipping_address.city}, ${shipping_address.state}, ${shipping_address.country}`);
+        console.log(`Delivery confirmed available to: ${shipping_address.city}, ${shipping_address.state}, ${shipping_address.country}`);
         
       } catch (deliveryCheckError) {
-        console.error('❌ Error checking delivery availability:', deliveryCheckError);
-        // STRICT MODE: Block order if we can't verify delivery
+        console.error('Error checking delivery availability:', deliveryCheckError);
         return res.status(500).json({ 
           error: 'Delivery verification failed',
           message: 'Unable to verify delivery availability. Please try again later.',
@@ -173,7 +174,6 @@ export async function createOrder(req, res) {
       }
 
       orderData.shipping_address = shipping_address;
-      // If address type is 'both' or not specified, use it for billing too
       if (!shipping_address.type || shipping_address.type === 'both' || shipping_address.type === 'billing') {
         orderData.billing_address = shipping_address;
       }
@@ -244,15 +244,14 @@ export async function createOrder(req, res) {
       });
     }
 
-    // 🔄 STOCK MANAGEMENT: For COD orders, immediately reduce stock after order creation
+    // Stock management for COD orders
     let stockReduced = false;
     const reducedItems = [];
     
     if (payment_method === 'cod') {
       try {
-        console.log(' Reducing stock for COD order...');
+        console.log('Reducing stock for COD order...');
         
-        // Reduce stock for each item
         for (const it of items) {
           const { error: stockError } = await supabaseAdmin
             .from('products')
@@ -263,10 +262,10 @@ export async function createOrder(req, res) {
             .eq('id', it.product_id);
           
           if (stockError) {
-            console.error(' Failed to reduce stock for product:', it.product_id, stockError);
+            console.error('Failed to reduce stock for product:', it.product_id, stockError);
             
-            // 🔄 ROLLBACK: Restore stock for previously reduced items
-            console.log(' Rolling back stock reductions...');
+            // Rollback stock reductions
+            console.log('Rolling back stock reductions...');
             for (const reducedItem of reducedItems) {
               await supabaseAdmin
                 .from('products')
@@ -290,7 +289,6 @@ export async function createOrder(req, res) {
             });
           }
           
-          // Track successfully reduced items for potential rollback
           reducedItems.push({
             product_id: it.product_id,
             original_quantity: it.products.stock_quantity,
@@ -299,12 +297,12 @@ export async function createOrder(req, res) {
         }
         
         stockReduced = true;
-        console.log(' Stock reduced successfully for all items');
+        console.log('Stock reduced successfully for all items');
         
       } catch (stockError) {
-        console.error(' Stock reduction failed:', stockError);
+        console.error('Stock reduction failed:', stockError);
         
-        // 🔄 ROLLBACK: Restore stock for any reduced items
+        // Rollback stock for any reduced items
         for (const reducedItem of reducedItems) {
           await supabaseAdmin
             .from('products')
@@ -329,13 +327,11 @@ export async function createOrder(req, res) {
       }
     }
 
-    // Update customer address record with the latest address from this order
+    // Update customer address record
     if (shipping_address) {
       try {
-        // 1. Store/update in the addresses table (normalized approach)
         let addressId = null;
         
-        // Check if customer already has an address with the same details
         const { data: existingAddress, error: searchError } = await supabaseAdmin
           .from('addresses')
           .select('id')
@@ -370,7 +366,7 @@ export async function createOrder(req, res) {
             .from('addresses')
             .insert({
               customer_id: customer.id,
-              is_default: true, // Make this the default address
+              is_default: true,
               full_name: shipping_address.full_name,
               phone: shipping_address.phone,
               address_line_1: shipping_address.address_line_1,
@@ -387,7 +383,7 @@ export async function createOrder(req, res) {
           if (!createError && newAddress) {
             addressId = newAddress.id;
             
-            // Remove default flag from other addresses for this customer
+            // Remove default flag from other addresses
             await supabaseAdmin
               .from('addresses')
               .update({ is_default: false })
@@ -396,22 +392,21 @@ export async function createOrder(req, res) {
           }
         }
         
-        // 2. Update order with address_id reference if we have one
+        // Update order with address_id reference
         if (addressId) {
           await supabaseAdmin
             .from('orders')
             .update({ 
               shipping_address_id: addressId,
-              billing_address_id: addressId // Use same address for billing if type is 'both'
+              billing_address_id: addressId
             })
             .eq('id', order.id);
         }
         
-        // 3. Also maintain JSONB fields for backward compatibility
+        // Maintain JSONB fields for backward compatibility
         const customerUpdateData = {};
         customerUpdateData.shipping_address = shipping_address;
         
-        // If address type is 'both' or not specified, use it for billing too
         if (!shipping_address.type || shipping_address.type === 'both' || shipping_address.type === 'billing') {
           customerUpdateData.billing_address = shipping_address;
         }
@@ -424,7 +419,6 @@ export async function createOrder(req, res) {
         console.log('Updated customer address in both addresses table and JSONB fields');
       } catch (addressError) {
         console.error('Failed to update customer address:', addressError);
-        // Don't fail the order creation if address update fails
       }
     }
 
@@ -435,7 +429,7 @@ export async function createOrder(req, res) {
         .update({ status: 'converted' })
         .eq('id', cart.id);
       
-      console.log(' Cart converted to inactive status');
+      console.log('Cart converted to inactive status');
     }
 
     res.status(201).json({
@@ -443,60 +437,92 @@ export async function createOrder(req, res) {
       razorpay_key_id: process.env.RAZORPAY_KEY_ID,
       razorpay_order_id: razorpayOrder?.id
     });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { 
+    console.error('Create order error:', e);
+    res.status(500).json({ error: e.message }); 
+  }
 }
 
 export async function listMyOrders(req, res) {
-  if (!req.session?.user) return res.status(401).json({ error: 'Login required' });
-  const userId = req.session.user.id;
-  const { data: customer } = await supabaseAdmin
-    .from('customers')
-    .select('id')
-    .eq('auth_user_id', userId)
-    .single();
-  
-  if (!customer || !customer.id) return res.status(404).json({ error: 'Customer record not found' });
-  
-  const { data, error } = await supabaseAdmin
-    .from('orders')
-    .select('*, order_items(*)')
-    .eq('customer_id', customer.id)
-    .order('created_at', { ascending: false });
-  if (error) return res.status(400).json({ error: error.message });
-  res.json(data);
+  // JWT authentication check
+  if (!req.user) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+
+  try {
+    const userId = req.user.id;
+    const { data: customer } = await supabaseAdmin
+      .from('customers')
+      .select('id')
+      .eq('auth_user_id', userId)
+      .single();
+    
+    if (!customer || !customer.id) return res.status(404).json({ error: 'Customer record not found' });
+    
+    const { data, error } = await supabaseAdmin
+      .from('orders')
+      .select('*, order_items(*)')
+      .eq('customer_id', customer.id)
+      .order('created_at', { ascending: false });
+    if (error) return res.status(400).json({ error: error.message });
+    res.json(data);
+  } catch (e) {
+    console.error('List my orders error:', e);
+    res.status(500).json({ error: e.message });
+  }
 }
 
-export async function listAllOrders(_req, res) {
-  const { data, error } = await supabaseAdmin
-    .from('orders')
-    .select(`
-      *,
-      order_items(*),
-      customers(
-        id,
-        full_name,
-        email,
-        phone,
-        shipping_address,
-        billing_address
-      )
-    `)
-    .order('created_at', { ascending: false });
-  if (error) return res.status(400).json({ error: error.message });
-  res.json(data);
+export async function listAllOrders(req, res) {
+  // JWT admin authentication check
+  if (!req.user || !req.user.isAdmin) {
+    return res.status(403).json({ error: 'Admin access required' });
+  }
+
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('orders')
+      .select(`
+        *,
+        order_items(*),
+        customers(
+          id,
+          full_name,
+          email,
+          phone,
+          shipping_address,
+          billing_address
+        )
+      `)
+      .order('created_at', { ascending: false });
+    if (error) return res.status(400).json({ error: error.message });
+    res.json(data);
+  } catch (e) {
+    console.error('List all orders error:', e);
+    res.status(500).json({ error: e.message });
+  }
 }
 
 export async function updateOrderStatus(req, res) {
-  const { id } = req.params;
-  const { status } = req.body; // pending|paid|shipped|delivered|cancelled|refunded
-  const { data, error } = await supabaseAdmin
-    .from('orders')
-    .update({ status })
-    .eq('id', id)
-    .select('*')
-    .single();
-  if (error) return res.status(400).json({ error: error.message });
-  res.json(data);
+  // JWT admin authentication check
+  if (!req.user || !req.user.isAdmin) {
+    return res.status(403).json({ error: 'Admin access required' });
+  }
+
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+    const { data, error } = await supabaseAdmin
+      .from('orders')
+      .update({ status })
+      .eq('id', id)
+      .select('*')
+      .single();
+    if (error) return res.status(400).json({ error: error.message });
+    res.json(data);
+  } catch (e) {
+    console.error('Update order status error:', e);
+    res.status(500).json({ error: e.message });
+  }
 }
 
 export async function confirmPayment(req, res) {
@@ -508,7 +534,10 @@ export async function confirmPayment(req, res) {
       order_id 
     } = req.body;
 
-    if (!req.session?.user) return res.status(401).json({ error: 'Login required' });
+    // JWT authentication check
+    if (!req.user) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
 
     // Verify payment signature
     const crypto = await import('crypto');
@@ -687,10 +716,12 @@ export async function handleWebhook(req, res) {
   }
 }
 
-// Confirm COD order - similar to payment confirmation but without payment gateway
 export async function confirmCODOrder(req, res) {
   try {
-    if (!req.session?.user) return res.status(401).json({ error: 'Login required' });
+    // JWT authentication check
+    if (!req.user) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
     
     const orderId = req.params.orderId;
     
@@ -706,7 +737,7 @@ export async function confirmCODOrder(req, res) {
     }
 
     // Verify order belongs to current user
-    const userId = req.session.user.id;
+    const userId = req.user.id;
     const { data: customer } = await supabaseAdmin
       .from('customers')
       .select('id')
@@ -770,10 +801,10 @@ export async function confirmCODOrder(req, res) {
   }
 }
 
-// 🔄 Restore stock for cancelled/failed orders
 export async function restoreStockForOrder(req, res) {
   try {
-    if (!req.session?.user || req.session.user.role !== 'admin') {
+    // JWT admin authentication check
+    if (!req.user || !req.user.isAdmin) {
       return res.status(403).json({ error: 'Admin access required' });
     }
 
@@ -783,7 +814,7 @@ export async function restoreStockForOrder(req, res) {
       return res.status(400).json({ error: 'Order ID is required' });
     }
 
-    console.log(` Restoring stock for order: ${orderId}`);
+    console.log(`Restoring stock for order: ${orderId}`);
 
     // Get order items
     const { data: orderItems, error: itemsError } = await supabaseAdmin
@@ -792,7 +823,7 @@ export async function restoreStockForOrder(req, res) {
       .eq('order_id', orderId);
 
     if (itemsError) {
-      console.error(' Failed to fetch order items:', itemsError);
+      console.error('Failed to fetch order items:', itemsError);
       return res.status(500).json({ error: 'Failed to fetch order items' });
     }
 
@@ -812,7 +843,7 @@ export async function restoreStockForOrder(req, res) {
           .single();
 
         if (productError) {
-          console.error(` Failed to fetch product ${item.product_id}:`, productError);
+          console.error(`Failed to fetch product ${item.product_id}:`, productError);
           continue;
         }
 
@@ -826,7 +857,7 @@ export async function restoreStockForOrder(req, res) {
           .eq('id', item.product_id);
 
         if (updateError) {
-          console.error(` Failed to restore stock for product ${item.product_id}:`, updateError);
+          console.error(`Failed to restore stock for product ${item.product_id}:`, updateError);
         } else {
           restoredItems.push({
             product_id: item.product_id,
@@ -834,10 +865,10 @@ export async function restoreStockForOrder(req, res) {
             quantity_restored: item.quantity,
             new_stock: product.stock_quantity + item.quantity
           });
-          console.log(` Restored ${item.quantity} units for "${product.title}"`);
+          console.log(`Restored ${item.quantity} units for "${product.title}"`);
         }
       } catch (itemError) {
-        console.error(` Error processing item ${item.product_id}:`, itemError);
+        console.error(`Error processing item ${item.product_id}:`, itemError);
       }
     }
 
@@ -850,7 +881,7 @@ export async function restoreStockForOrder(req, res) {
       })
       .eq('id', orderId);
 
-    console.log(`🎉 Stock restoration completed for order ${orderId}`);
+    console.log(`Stock restoration completed for order ${orderId}`);
 
     res.json({
       success: true,
@@ -860,7 +891,7 @@ export async function restoreStockForOrder(req, res) {
     });
 
   } catch (error) {
-    console.error(' Stock restoration failed:', error);
+    console.error('Stock restoration failed:', error);
     res.status(500).json({ 
       error: 'Stock restoration failed',
       message: error.message 

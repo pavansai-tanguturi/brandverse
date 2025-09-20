@@ -1,26 +1,37 @@
-import express from 'express';
-import { summary, exportAnalytics } from '../controllers/adminController.js';
-import { 
-  adminGetDeliveryLocations, 
-  adminAddDeliveryLocation, 
-  adminUpdateDeliveryLocation, 
-  adminDeleteDeliveryLocation, 
-  adminToggleDeliveryLocation 
+import {
+  adminGetDeliveryLocations,
+  adminGetDeliveryLocation, // ✅ You missed this!
+  adminAddDeliveryLocation,
+  adminBulkAddDeliveryLocations,
+  adminUpdateDeliveryLocation,
+  adminDeleteDeliveryLocation,
+  adminBulkDeleteDeliveryLocations,
+  adminToggleDeliveryLocation,
+  adminBulkToggleDeliveryLocations,
+  adminExportDeliveryLocations
 } from '../controllers/deliveryController.js';
-import { adminAuth, authenticateJWT } from '../controllers/authController.js';
 
+import { adminAuth } from '../controllers/authController.js';
+
+import express from 'express';
 const router = express.Router();
 
-// Apply JWT authentication to all admin routes
-router.use(adminAuth);
+// Bulk routes first
+router.post('/bulk', adminAuth, adminBulkAddDeliveryLocations);
+router.delete('/bulk', adminAuth, adminBulkDeleteDeliveryLocations);
+router.put('/bulk-toggle', adminAuth, adminBulkToggleDeliveryLocations);
 
-router.get('/analytics/summary', summary);
-router.get('/analytics/export', exportAnalytics);
+// Export
+router.get('/export', adminAuth, adminExportDeliveryLocations);
 
-// Delivery location management
-router.get('/delivery-locations', adminGetDeliveryLocations);
-router.post('/delivery-locations', adminAddDeliveryLocation);
-router.put('/delivery-locations/:id', adminUpdateDeliveryLocation);
-router.delete('/delivery-locations/:id', adminDeleteDeliveryLocation);
-router.patch('/delivery-locations/:id/toggle', adminToggleDeliveryLocation);
+// General
+router.get('/', adminAuth, adminGetDeliveryLocations);
+router.post('/', adminAuth, adminAddDeliveryLocation);
+
+// Dynamic routes last
+router.get('/:id', adminAuth, adminGetDeliveryLocation); // ✅ No longer undefined
+router.put('/:id', adminAuth, adminUpdateDeliveryLocation);
+router.delete('/:id', adminAuth, adminDeleteDeliveryLocation);
+router.put('/:id/toggle', adminAuth, adminToggleDeliveryLocation);
+
 export default router;

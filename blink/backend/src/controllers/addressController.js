@@ -44,6 +44,19 @@ const getAddress = async (req, res) => {
       return res.status(404).json({ error: 'Address not found' });
     }
 
+    // If user is authenticated, check if they own this address
+    if (req.user) {
+      const { data: customer } = await supabaseAdmin
+        .from('customers')
+        .select('id')
+        .eq('auth_user_id', req.user.userId)
+        .single();
+      
+      if (!req.user.isAdmin && address.customer_id !== customer?.id) {
+        return res.status(403).json({ error: 'Not authorized to view this address' });
+      }
+    }
+
     res.json(address);
   } catch (error) {
     console.error('Error in getAddress:', error);
@@ -136,7 +149,7 @@ const updateAddress = async (req, res) => {
       landmark
     } = req.body;
 
-        // Get the existing address to check if it exists and get customer info
+    // Get the existing address to check if it exists and get customer info
     const { data: existingAddress, error: fetchError } = await supabaseAdmin
       .from('addresses')
       .select('customer_id')
@@ -145,6 +158,19 @@ const updateAddress = async (req, res) => {
 
     if (fetchError) {
       return res.status(404).json({ error: 'Address not found' });
+    }
+
+    // Check if user owns this address (unless they're admin)
+    if (!req.user.isAdmin) {
+      const { data: customer } = await supabaseAdmin
+        .from('customers')
+        .select('id')
+        .eq('auth_user_id', req.user.userId)
+        .single();
+      
+      if (existingAddress.customer_id !== customer?.id) {
+        return res.status(403).json({ error: 'Not authorized to update this address' });
+      }
     }
 
     // If this is being set as default, unset other defaults for this customer
@@ -196,6 +222,30 @@ const deleteAddress = async (req, res) => {
   try {
     const { id } = req.params;
 
+    // Get the address to check ownership
+    const { data: existingAddress, error: fetchError } = await supabaseAdmin
+      .from('addresses')
+      .select('customer_id')
+      .eq('id', id)
+      .single();
+
+    if (fetchError) {
+      return res.status(404).json({ error: 'Address not found' });
+    }
+
+    // Check if user owns this address (unless they're admin)
+    if (!req.user.isAdmin) {
+      const { data: customer } = await supabaseAdmin
+        .from('customers')
+        .select('id')
+        .eq('auth_user_id', req.user.userId)
+        .single();
+      
+      if (existingAddress.customer_id !== customer?.id) {
+        return res.status(403).json({ error: 'Not authorized to delete this address' });
+      }
+    }
+
     const { error } = await supabaseAdmin
       .from('addresses')
       .delete()
@@ -218,7 +268,7 @@ const setDefaultAddress = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Get the address to get customer_id
+    // Get the address to get customer_id and check ownership
     const { data: address, error: fetchError } = await supabaseAdmin
       .from('addresses')
       .select('customer_id')
@@ -227,6 +277,19 @@ const setDefaultAddress = async (req, res) => {
 
     if (fetchError) {
       return res.status(404).json({ error: 'Address not found' });
+    }
+
+    // Check if user owns this address (unless they're admin)
+    if (!req.user.isAdmin) {
+      const { data: customer } = await supabaseAdmin
+        .from('customers')
+        .select('id')
+        .eq('auth_user_id', req.user.userId)
+        .single();
+      
+      if (address.customer_id !== customer?.id) {
+        return res.status(403).json({ error: 'Not authorized to modify this address' });
+      }
     }
 
     // Unset other defaults for this customer
@@ -262,12 +325,11 @@ const setDefaultAddress = async (req, res) => {
 // Get all addresses for the current authenticated user
 const getCurrentUserAddresses = async (req, res) => {
   try {
-    if (!req.session || !req.session.user) {
-      console.log('No session or user found');
+    if (!req.user) {
       return res.status(401).json({ error: 'User not authenticated' });
     }
 
-    const auth_user_id = req.session.user.id;
+    const auth_user_id = req.user.userId;
     console.log('Fetching addresses for auth_user_id:', auth_user_id);
 
     // First, get the customer record to find the database customer ID
@@ -308,11 +370,11 @@ const getCurrentUserAddresses = async (req, res) => {
 // Create a new address for the current authenticated user
 const createCurrentUserAddress = async (req, res) => {
   try {
-    if (!req.session || !req.session.user) {
+    if (!req.user) {
       return res.status(401).json({ error: 'User not authenticated' });
     }
 
-    const auth_user_id = req.session.user.id;
+    const auth_user_id = req.user.userId;
     
     // First, get the customer record to find the database customer ID
     let { data: customer, error: customerError } = await supabaseAdmin
@@ -325,8 +387,8 @@ const createCurrentUserAddress = async (req, res) => {
       console.error('Customer not found for auth_user_id:', auth_user_id, customerError);
       
       // Try to create the customer record if it doesn't exist
-      const userEmail = req.session.user.email;
-      const userName = req.session.user.full_name || req.session.user.name || 'User';
+      const userEmail = req.user.email;
+      const userName = req.user.full_name || req.user.name || 'User';
       
       console.log('Attempting to create customer record for:', { auth_user_id, userEmail, userName });
       
@@ -374,8 +436,6 @@ const createCurrentUserAddress = async (req, res) => {
         error: 'Required fields: full_name, phone, address_line_1, city, state, postal_code' 
       });
     }
-
-
 
     // If this is set as default, unset other default addresses
     if (is_default) {

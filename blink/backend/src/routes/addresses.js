@@ -1,5 +1,5 @@
 import express from 'express';
-import { requireAuth } from '../middleware/auth.js';
+import { authenticateJWT, adminAuth } from '../controllers/authController.js';
 import { 
   getCustomerAddresses, 
   getAddress, 
@@ -13,28 +13,16 @@ import {
 
 const router = express.Router();
 
-// Get all addresses for current authenticated user
-router.get('/', requireAuth, getCurrentUserAddresses);
+// User routes - require JWT authentication
+router.get('/', authenticateJWT, getCurrentUserAddresses);
+router.post('/', authenticateJWT, createCurrentUserAddress);
+router.put('/:id', authenticateJWT, updateAddress);
+router.delete('/:id', authenticateJWT, deleteAddress);
+router.patch('/:id/default', authenticateJWT, setDefaultAddress);
 
-// Create address for current authenticated user
-router.post('/', requireAuth, createCurrentUserAddress);
-
-// Get all addresses for a customer
-router.get('/customer/:customer_id', getCustomerAddresses);
-
-// Get a specific address by ID
-router.get('/:id', getAddress);
-
-// Create a new address for a customer
-router.post('/customer/:customer_id', createAddress);
-
-// Update an address
-router.put('/:id', requireAuth, updateAddress);
-
-// Delete an address
-router.delete('/:id', requireAuth, deleteAddress);
-
-// Set an address as default
-router.patch('/:id/default', requireAuth, setDefaultAddress);
+// Admin routes - require admin JWT authentication
+router.get('/customer/:customer_id', adminAuth, getCustomerAddresses);
+router.get('/:id', authenticateJWT, getAddress); // Users can view their own addresses
+router.post('/customer/:customer_id', adminAuth, createAddress);
 
 export default router;

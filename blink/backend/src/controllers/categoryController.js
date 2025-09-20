@@ -47,9 +47,9 @@ export async function listCategories(_req, res) {
 }
 
 export async function createCategory(req, res) {
-  if (!req.session?.user || !req.session.user.isAdmin)
-    return res.status(403).json({ error: 'Admin only' });
-  
+  if (!req.user || !req.user.isAdmin) {
+    return res.status(403).json({ error: 'Admin access required' });
+  }
   const { name, slug } = req.body;
   const { data, error } = await supabaseAdmin
     .from('categories')
@@ -61,9 +61,9 @@ export async function createCategory(req, res) {
 }
 
 export async function updateCategory(req, res) {
-  if (!req.session?.user || !req.session.user.isAdmin)
-    return res.status(403).json({ error: 'Admin only' });
-  
+  if (!req.user || !req.user.isAdmin) {
+    return res.status(403).json({ error: 'Admin access required' });
+  }
   const { id } = req.params;
   const patch = req.body;
   const { data, error } = await supabaseAdmin
@@ -77,9 +77,9 @@ export async function updateCategory(req, res) {
 }
 
 export async function deleteCategory(req, res) {
-  if (!req.session?.user || !req.session.user.isAdmin)
-    return res.status(403).json({ error: 'Admin only' });
-  
+  if (!req.user || !req.user.isAdmin) {
+    return res.status(403).json({ error: 'Admin access required' });
+  }
   const { id } = req.params;
   const { error } = await supabaseAdmin
     .from('categories')

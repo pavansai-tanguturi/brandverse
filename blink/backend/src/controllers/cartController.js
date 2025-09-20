@@ -2,8 +2,8 @@ import { supabaseAdmin } from '../config/supabaseClient.js';
 import { getOrCreateActiveCart } from '../models/cartModel.js';
 
 export async function getCart(req, res) {
-  if (!req.session?.user) return res.status(401).json({ error: 'Login required' });
-  const userId = req.session.user.id;
+  if (!req.user) return res.status(401).json({ error: 'Authentication required' });
+  const userId = req.user.userId; 
   const { data: customer } = await supabaseAdmin
     .from('customers')
     .select('id')
@@ -23,8 +23,8 @@ export async function getCart(req, res) {
 }
 
 export async function addItem(req, res) {
-  if (!req.session?.user) return res.status(401).json({ error: 'Login required' });
-  const userId = req.session.user.id;
+  if (!req.user) return res.status(401).json({ error: 'Authentication required' });
+  const userId = req.user.userId;
   const { data: customer } = await supabaseAdmin
     .from('customers')
     .select('id')
@@ -54,12 +54,12 @@ export async function addItem(req, res) {
 }
 
 export async function updateItemQty(req, res) {
-  if (!req.session?.user) return res.status(401).json({ error: 'Login required' });
+  if (!req.user) return res.status(401).json({ error: 'Authentication required' });
   const id = req.params.id;
   const { quantity } = req.body;
   if (!Number.isInteger(quantity) || quantity <= 0) return res.status(400).json({ error: 'Invalid quantity' });
   // Verify ownership: item must belong to a cart owned by the current session user
-  const userId = req.session.user.id;
+  const userId = req.user.userId; 
   const { data: item } = await supabaseAdmin.from('cart_items').select('id,cart_id,product_id').eq('id', id).single();
   if (!item) return res.status(404).json({ error: 'Cart item not found' });
 
@@ -80,10 +80,10 @@ export async function updateItemQty(req, res) {
 }
 
 export async function removeItem(req, res) {
-  if (!req.session?.user) return res.status(401).json({ error: 'Login required' });
+  if (!req.user) return res.status(401).json({ error: 'Authentication required' });
   const id = req.params.id;
   // Verify ownership before deleting
-  const userId = req.session.user.id;
+  const userId = req.user.userId;
   const { data: item } = await supabaseAdmin.from('cart_items').select('id,cart_id').eq('id', id).single();
   if (!item) return res.status(404).json({ error: 'Cart item not found' });
   const { data: cart } = await supabaseAdmin.from('carts').select('id,customer_id').eq('id', item.cart_id).single();

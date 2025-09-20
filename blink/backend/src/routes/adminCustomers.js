@@ -1,16 +1,20 @@
 import express from 'express';
+import { authenticateToken, requireAdmin } from '../middleware/auth.js';
 import {
   listCustomers,
   getCustomerDetails,
   updateCustomerAdmin
 } from '../controllers/customerController.js';
-import { adminAuth } from '../controllers/authController.js';
 
 const router = express.Router();
 
-// Apply JWT admin authentication to all admin/customer routes
-router.get('/', adminAuth, listCustomers);
-router.get('/:id', adminAuth, getCustomerDetails);
-router.put('/:id', adminAuth, updateCustomerAdmin);
+// All admin customer routes require authentication and admin privileges
+router.use(authenticateToken);
+router.use(requireAdmin);
+
+// Admin customer management routes
+router.get('/', listCustomers);
+router.get('/:id', getCustomerDetails);
+router.put('/:id', updateCustomerAdmin);
 
 export default router;

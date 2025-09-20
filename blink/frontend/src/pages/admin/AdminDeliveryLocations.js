@@ -7,12 +7,15 @@ const AdminDeliveryLocations = () => {
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showBulkAddForm, setShowBulkAddForm] = useState(false);
   const [editingLocation, setEditingLocation] = useState(null);
+  const [selectedLocations, setSelectedLocations] = useState([]);
   const [formData, setFormData] = useState({
     country: '',
     region: '',
     city: ''
   });
+  const [bulkFormData, setBulkFormData] = useState('');
 
   useEffect(() => {
     fetchDeliveryLocations();
@@ -85,6 +88,126 @@ const AdminDeliveryLocations = () => {
     }
   };
 
+  // Bulk add locations
+  const handleBulkAdd = async (e) => {
+    e.preventDefault();
+    setError('');
+    setMessage('');
+
+    if (!bulkFormData.trim()) {
+      setError('Please enter locations data');
+      return;
+    }
+
+    try {
+      // Parse CSV-like input (Country, Region, City)
+      const lines = bulkFormData.trim().split('\n');
+      const locations = [];
+
+      for (let line of lines) {
+        const parts = line.split(',').map(part => part.trim());
+        if (parts.length >= 1 && parts[0]) {
+          locations.push({
+            country: parts[0],
+            region: parts[1] || null,
+            city: parts[2] || null,
+            is_active: true
+          });
+        }
+      }
+
+      if (locations.length === 0) {
+        setError('No valid locations found');
+        return;
+      }
+
+      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
+      const res = await fetch(`${API_BASE}/api/admin/delivery-locations/bulk`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ locations })
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to add locations');
+      }
+
+      const data = await res.json();
+      setMessage(data.message);
+      setBulkFormData('');
+      setShowBulkAddForm(false);
+      await fetchDeliveryLocations();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  // Bulk delete selected locations
+  const handleBulkDelete = async () => {
+    if (selectedLocations.length === 0) {
+      setError('Please select locations to delete');
+      return;
+    }
+
+    if (!window.confirm(`Are you sure you want to delete ${selectedLocations.length} selected locations?`)) {
+      return;
+    }
+
+    try {
+      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
+      const res = await fetch(`${API_BASE}/api/admin/delivery-locations/bulk`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ ids: selectedLocations })
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to delete locations');
+      }
+
+      const data = await res.json();
+      setMessage(data.message);
+      setSelectedLocations([]);
+      await fetchDeliveryLocations();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  // Bulk toggle selected locations
+  const handleBulkToggle = async (isActive) => {
+    if (selectedLocations.length === 0) {
+      setError('Please select locations to toggle');
+      return;
+    }
+
+    try {
+      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
+      const res = await fetch(`${API_BASE}/api/admin/delivery-locations/bulk-toggle`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ ids: selectedLocations, is_active: isActive })
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to toggle locations');
+      }
+
+      const data = await res.json();
+      setMessage(data.message);
+      setSelectedLocations([]);
+      await fetchDeliveryLocations();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
   const handleToggleStatus = async (location) => {
     try {
       const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
@@ -147,6 +270,24 @@ const AdminDeliveryLocations = () => {
     setShowAddForm(false);
   };
 
+  // Handle select all checkbox
+  const handleSelectAll = (checked) => {
+    if (checked) {
+      setSelectedLocations(locations.map(loc => loc.id));
+    } else {
+      setSelectedLocations([]);
+    }
+  };
+
+  // Handle individual checkbox
+  const handleSelectLocation = (locationId, checked) => {
+    if (checked) {
+      setSelectedLocations(prev => [...prev, locationId]);
+    } else {
+      setSelectedLocations(prev => prev.filter(id => id !== locationId));
+    }
+  };
+
   const getLocationDisplay = (location) => {
     const parts = [location.country];
     if (location.region) parts.push(location.region);
@@ -166,18 +307,30 @@ const AdminDeliveryLocations = () => {
                 <p className="text-gray-600 mt-1">Manage where you deliver your products</p>
               </div>
               
-              <button
-                onClick={() => setShowAddForm(!showAddForm)}
-                className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-200 text-white rounded-lg font-medium transition-all duration-200 shadow-sm"
-              >
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                </svg>
-                Add Location
-              </button>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowAddForm(!showAddForm)}
+                  className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-200 text-white rounded-lg font-medium transition-all duration-200 shadow-sm"
+                >
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                  </svg>
+                  Add Location
+                </button>
+                
+                <button
+                  onClick={() => setShowBulkAddForm(!showBulkAddForm)}
+                  className="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 focus:ring-4 focus:ring-green-200 text-white rounded-lg font-medium transition-all duration-200 shadow-sm"
+                >
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                  </svg>
+                  Bulk Add
+                </button>
+              </div>
             </div>
 
-            {/* Add/Edit Form */}
+            {/* Single Add/Edit Form */}
             {showAddForm && (
               <div className="mb-6 p-4 bg-gray-50 rounded-lg border">
                 <h3 className="text-lg font-semibold mb-4">
@@ -241,6 +394,46 @@ const AdminDeliveryLocations = () => {
                 </form>
               </div>
             )}
+
+            {/* Bulk Add Form */}
+            {showBulkAddForm && (
+              <div className="mb-6 p-4 bg-green-50 rounded-lg border border-green-200">
+                <h3 className="text-lg font-semibold mb-4">Bulk Add Delivery Locations</h3>
+                <form onSubmit={handleBulkAdd} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Enter locations (one per line: Country, Region, City)
+                    </label>
+                    <textarea
+                      value={bulkFormData}
+                      onChange={(e) => setBulkFormData(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      rows="8"
+                      placeholder="Enter locations in format: Country, Region, City (one per line)"
+                      required
+                    />
+                    <p className="text-sm text-gray-600 mt-1">
+                      Format: Country (required), Region (optional), City (optional). Separate with commas.
+                    </p>
+                  </div>
+                  <div className="flex gap-3">
+                    <button
+                      type="submit"
+                      className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors"
+                    >
+                      Add All Locations
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowBulkAddForm(false)}
+                      className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg font-medium transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
           </div>
 
           {/* Messages */}
@@ -284,6 +477,37 @@ const AdminDeliveryLocations = () => {
             </div>
           )}
 
+          {/* Bulk Actions Bar */}
+          {selectedLocations.length > 0 && (
+            <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl shadow-sm">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div className="text-sm text-blue-800">
+                  {selectedLocations.length} location{selectedLocations.length !== 1 ? 's' : ''} selected
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleBulkToggle(true)}
+                    className="px-3 py-1 text-sm bg-green-600 hover:bg-green-700 text-white rounded transition-colors"
+                  >
+                    Enable Selected
+                  </button>
+                  <button
+                    onClick={() => handleBulkToggle(false)}
+                    className="px-3 py-1 text-sm bg-yellow-600 hover:bg-yellow-700 text-white rounded transition-colors"
+                  >
+                    Disable Selected
+                  </button>
+                  <button
+                    onClick={handleBulkDelete}
+                    className="px-3 py-1 text-sm bg-red-600 hover:bg-red-700 text-white rounded transition-colors"
+                  >
+                    Delete Selected
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Locations List */}
           {loading ? (
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12">
@@ -309,6 +533,14 @@ const AdminDeliveryLocations = () => {
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
+                      <th className="px-6 py-4 text-left">
+                        <input
+                          type="checkbox"
+                          checked={selectedLocations.length === locations.length && locations.length > 0}
+                          onChange={(e) => handleSelectAll(e.target.checked)}
+                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                        />
+                      </th>
                       <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Location</th>
                       <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Country</th>
                       <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Region</th>
@@ -320,6 +552,14 @@ const AdminDeliveryLocations = () => {
                   <tbody className="bg-white divide-y divide-gray-200">
                     {locations.map((location) => (
                       <tr key={location.id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-6 py-4">
+                          <input
+                            type="checkbox"
+                            checked={selectedLocations.includes(location.id)}
+                            onChange={(e) => handleSelectLocation(location.id, e.target.checked)}
+                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                          />
+                        </td>
                         <td className="px-6 py-4">
                           <div className="text-sm font-medium text-gray-900">
                             {getLocationDisplay(location)}
