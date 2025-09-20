@@ -59,7 +59,7 @@ const Login = () => {
         body: JSON.stringify({ 
           email: email, 
           token: otp,
-          type: 'magiclink'
+          type: 'email'
         })
       });
 
