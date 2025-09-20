@@ -64,6 +64,19 @@ router.post('/dev-admin-login', (req, res) => {
   });
 });
 
+// Session debug endpoint
+router.get('/session-debug', (req, res) => {
+  res.json({
+    sessionExists: !!req.session,
+    sessionId: req.sessionID || 'none',
+    user: req.session?.user || null,
+    cookies: req.headers.cookie || 'none',
+    origin: req.headers.origin || 'none',
+    userAgent: req.headers['user-agent']?.substring(0, 50) || 'none',
+    nodeEnv: process.env.NODE_ENV
+  });
+});
+
 // Protected admin route example
 router.get('/admin-only', (req, res) => {
   if (!req.session?.user || !req.session.user.isAdmin) {
