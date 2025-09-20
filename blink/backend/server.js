@@ -127,10 +127,26 @@ app.use((req, res, next) => {
       sessionId: req.sessionID,
       sessionExists: !!req.session,
       user: req.session?.user,
-      cookies: req.headers.cookie?.substring(0, 100) + '...', // Truncate for readability
+      rawCookies: req.headers.cookie,
+      hasBrandverseCookie: req.headers.cookie?.includes('brandverse.sid'),
+      cookieCount: req.headers.cookie?.split(';').length || 0,
       origin: req.headers.origin,
-      userAgent: req.headers['user-agent']?.substring(0, 50) + '...'
+      userAgent: req.headers['user-agent']?.substring(0, 50) + '...',
+      method: req.method,
+      path: req.path
     });
+    
+    // Intercept response to log set-cookie headers
+    const originalSend = res.send;
+    res.send = function(data) {
+      if (req.path.includes('/verify-otp')) {
+        console.log(`[Cookie Debug] Response headers for ${req.path}:`, {
+          setCookie: res.getHeaders()['set-cookie'],
+          allHeaders: Object.keys(res.getHeaders())
+        });
+      }
+      return originalSend.call(this, data);
+    };
   }
   next();
 });
