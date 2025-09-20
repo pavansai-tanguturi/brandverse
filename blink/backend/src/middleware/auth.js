@@ -24,26 +24,15 @@ export function requireAdmin(req, res, next) {
     sessionId: req.sessionID,
     user: req.session?.user,
     adminEmail: process.env.ADMIN_EMAIL,
-    adminId: process.env.ADMIN_ID
+    cookies: req.headers.cookie,
+    sessionCookie: req.headers.cookie?.includes('brandverse.sid') || req.headers.cookie?.includes('connect.sid')
   });
-  
-  if (!req.session?.user) {
-    console.log('[Admin] No session or user found');
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
-  
-  const adminEmail = process.env.ADMIN_EMAIL || process.env.AUTH_U;
-  const isAdmin = req.session.user.email === adminEmail || req.session.user.isAdmin === true;
-  
-  if (!isAdmin) {
-    console.log('[Admin] User is not admin:', {
-      userEmail: req.session.user.email,
-      expectedAdminEmail: adminEmail,
-      userIsAdmin: req.session.user.isAdmin
-    });
+
+  if (!req.session?.user || !req.session.user.isAdmin) {
+    console.log('[Admin] User is not admin or no session found');
     return res.status(403).json({ error: 'Admin access required' });
   }
-  
+
   console.log('[Admin] Admin access granted');
   return next();
 }

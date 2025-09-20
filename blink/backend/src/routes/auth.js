@@ -23,6 +23,24 @@ router.get('/session-debug', (req, res) => {
   });
 });
 
+// Admin session test
+router.get('/admin-test', (req, res) => {
+  const adminEmail = process.env.ADMIN_EMAIL || process.env.AUTH_U;
+  const isAdmin = req.session?.user?.email === adminEmail || req.session?.user?.isAdmin === true;
+  
+  res.json({
+    sessionExists: !!req.session,
+    sessionId: req.sessionID,
+    user: req.session?.user || null,
+    isAdmin: isAdmin,
+    adminEmail: adminEmail,
+    adminEnvVars: {
+      ADMIN_EMAIL: process.env.ADMIN_EMAIL,
+      AUTH_U: process.env.AUTH_U
+    }
+  });
+});
+
 // Development admin login shortcut (remove in production)
 router.post('/dev-admin-login', (req, res) => {
   if (process.env.NODE_ENV === 'production') {
@@ -30,10 +48,8 @@ router.post('/dev-admin-login', (req, res) => {
   }
   
   const adminEmail = process.env.ADMIN_EMAIL || process.env.AUTH_U;
-  const adminId = process.env.ADMIN_ID || 'admin';
   
   req.session.user = {
-    id: adminId,
     email: adminEmail,
     isAdmin: true
   };
@@ -45,6 +61,18 @@ router.post('/dev-admin-login', (req, res) => {
     message: 'Development admin login successful',
     user: req.session.user,
     admin: true
+  });
+});
+
+// Protected admin route example
+router.get('/admin-only', (req, res) => {
+  if (!req.session?.user || !req.session.user.isAdmin) {
+    return res.status(403).json({ error: 'Admin access required' });
+  }
+  
+  res.json({
+    message: 'Welcome, admin!',
+    user: req.session.user
   });
 });
 

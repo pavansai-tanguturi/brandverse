@@ -47,7 +47,7 @@ export async function listCategories(_req, res) {
 }
 
 export async function createCategory(req, res) {
-  if (!req.session?.user || req.session.user.id !== process.env.ADMIN_ID)
+  if (!req.session?.user || !req.session.user.isAdmin)
     return res.status(403).json({ error: 'Admin only' });
   
   const { name, slug } = req.body;
@@ -61,7 +61,7 @@ export async function createCategory(req, res) {
 }
 
 export async function updateCategory(req, res) {
-  if (!req.session?.user || req.session.user.id !== process.env.ADMIN_ID)
+  if (!req.session?.user || !req.session.user.isAdmin)
     return res.status(403).json({ error: 'Admin only' });
   
   const { id } = req.params;
@@ -77,7 +77,7 @@ export async function updateCategory(req, res) {
 }
 
 export async function deleteCategory(req, res) {
-  if (!req.session?.user || req.session.user.id !== process.env.ADMIN_ID)
+  if (!req.session?.user || !req.session.user.isAdmin)
     return res.status(403).json({ error: 'Admin only' });
   
   const { id } = req.params;
@@ -86,5 +86,6 @@ export async function deleteCategory(req, res) {
     .delete()
     .eq('id', id);
   if (error) return res.status(400).json({ error: error.message });
-  res.json({ deleted: true });
+
+  res.status(200).json({ message: 'Category deleted successfully' });
 }

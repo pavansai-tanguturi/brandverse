@@ -3,7 +3,7 @@ import { supabaseAdmin } from '../config/supabaseClient.js';
 export async function adminAddItem(req, res) {
   // req.body: { cart_id, product_id, quantity }
   if (!req.session?.user) return res.status(401).json({ error: 'Login required' });
-  if (req.session.user.id !== process.env.ADMIN_ID) return res.status(403).json({ error: 'Admin only' });
+  if (!req.session.user.isAdmin) return res.status(403).json({ error: 'Admin only' });
   const { cart_id, product_id, quantity = 1 } = req.body;
   if (!cart_id || !product_id) return res.status(400).json({ error: 'cart_id and product_id required' });
 
@@ -22,7 +22,7 @@ export async function adminAddItem(req, res) {
 
 export async function adminRemoveItem(req, res) {
   if (!req.session?.user) return res.status(401).json({ error: 'Login required' });
-  if (req.session.user.id !== process.env.ADMIN_ID) return res.status(403).json({ error: 'Admin only' });
+  if (!req.session.user.isAdmin) return res.status(403).json({ error: 'Admin only' });
   const { id } = req.params; // cart item id
   const { data: item } = await supabaseAdmin.from('cart_items').select('id,cart_id,product_id,quantity').eq('id', id).single();
   if (!item) return res.status(404).json({ error: 'Cart item not found' });

@@ -94,13 +94,12 @@ export async function verifyOtp(req, res) {
 
     // Check if this is admin user
     const adminEmail = process.env.ADMIN_EMAIL || process.env.AUTH_U;
-    const adminId = process.env.ADMIN_ID || 'admin';
     const isAdmin = email === adminEmail;
 
     // Set session with admin privileges if applicable
     if (isAdmin) {
       req.session.user = { 
-        id: adminId, 
+        id: data.user.id, 
         email: adminEmail, 
         isAdmin: true 
       };
@@ -108,9 +107,18 @@ export async function verifyOtp(req, res) {
       console.log('[verifyOtp] Admin session created:', req.session.user);
       console.log('[verifyOtp] Session ID:', req.sessionID);
       
+      // Force session save
+      req.session.save((err) => {
+        if (err) {
+          console.error('[verifyOtp] Session save error:', err);
+        } else {
+          console.log('[verifyOtp] Session saved successfully');
+        }
+      });
+      
       // Ensure there is a customers row for the admin as well
       try {
-        await ensureCustomer({ id: adminId, email: adminEmail });
+        await ensureCustomer({ id: data.user.id, email: adminEmail });
       } catch (err) {
         console.warn('[auth] failed to ensure admin customer row', err.message || err);
       }
@@ -126,6 +134,15 @@ export async function verifyOtp(req, res) {
       
       console.log('[verifyOtp] User session created:', req.session.user);
       console.log('[verifyOtp] Session ID:', req.sessionID);
+      
+      // Force session save
+      req.session.save((err) => {
+        if (err) {
+          console.error('[verifyOtp] Session save error:', err);
+        } else {
+          console.log('[verifyOtp] Session saved successfully');
+        }
+      });
       
       await ensureCustomer(data.user);
 
@@ -147,8 +164,7 @@ export async function sessionFromEmail(req, res) {
     // Create session based on email (used for admin authentication)
     const adminEmail = process.env.ADMIN_EMAIL || process.env.AUTH_U;
     if (email === adminEmail) {
-      const adminId = process.env.ADMIN_ID || 'admin';
-      req.session.user = { id: adminId, email: adminEmail, isAdmin: true };
+      req.session.user = { id: 'admin', email: adminEmail, isAdmin: true };
       return res.json({ message: 'Admin session created', user: req.session.user });
     }
     

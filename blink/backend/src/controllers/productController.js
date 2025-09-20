@@ -64,7 +64,7 @@ export async function getProduct(req, res) {
 
 
 export async function createProduct(req, res) {
-  if (!req.session?.user || req.session.user.id !== process.env.ADMIN_ID)
+  if (!req.session?.user || !req.session.user.isAdmin)
     return res.status(403).json({ error: 'Admin only' });
   try {
     const { 
@@ -113,7 +113,7 @@ export async function createProduct(req, res) {
 }
 
 export async function updateProduct(req, res) {
-  if (!req.session?.user || req.session.user.id !== process.env.ADMIN_ID)
+  if (!req.session?.user || !req.session.user.isAdmin)
     return res.status(403).json({ error: 'Admin only' });
 
   const { id } = req.params;
@@ -132,7 +132,7 @@ export async function updateProduct(req, res) {
 }
 
 export async function deleteProduct(req, res) {
-  if (!req.session?.user || req.session.user.id !== process.env.ADMIN_ID)
+  if (!req.session?.user || !req.session.user.isAdmin)
     return res.status(403).json({ error: 'Admin only' });
 
   const { id } = req.params;
@@ -149,8 +149,7 @@ export async function deleteProduct(req, res) {
 }
 
 export async function addImages(req, res) {
-  console.log('[addImages] called', { params: req.params, query: req.query, files: req.files?.length });
-  if (!req.session?.user || req.session.user.id !== process.env.ADMIN_ID)
+  if (!req.session?.user || !req.session.user.isAdmin)
     return res.status(403).json({ error: 'Admin only' });
 
   const { id } = req.params;
@@ -199,7 +198,7 @@ export async function addImages(req, res) {
 }
 
 export async function deleteImage(req, res) {
-  if (!req.session?.user || req.session.user.id !== process.env.ADMIN_ID)
+  if (!req.session?.user || !req.session.user.isAdmin)
     return res.status(403).json({ error: 'Admin only' });
 
   const { productId, imageId } = req.params;

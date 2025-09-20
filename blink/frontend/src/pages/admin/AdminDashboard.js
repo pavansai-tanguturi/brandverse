@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import AdminNav from '../../components/admin/AdminNav';
+import { useAuth } from '../../context/AuthContext';
 
 // Constants
 const API_TIMEOUT = 10000;
@@ -248,7 +249,8 @@ const EmptyState = React.memo(({ icon, title, subtitle }) => (
 // Main component
 const AdminDashboard = () => {
   const [summary, setSummary] = useState(INITIAL_SUMMARY);
-  const { makeRequest, error, retryCount } = useApiRequest();
+  const { makeRequest, loading: dataLoading, error, retryCount } = useApiRequest();
+  const { user, loading: authLoading } = useAuth();
 
   const fetchSummary = useCallback(async () => {
     const data = await makeRequest();
@@ -256,8 +258,42 @@ const AdminDashboard = () => {
   }, [makeRequest]);
 
   useEffect(() => {
-    fetchSummary();
-  }, [fetchSummary]);
+    console.log('AdminDashboard: Auth state changed', { 
+      authLoading, 
+      user: user ? { email: user.email, isAdmin: user.isAdmin } : null 
+    });
+    
+    // Only fetch if user is authenticated and is admin
+    if (!authLoading && user && user.isAdmin) {
+      console.log('AdminDashboard: Fetching summary data');
+      fetchSummary();
+    }
+  }, [fetchSummary, user, authLoading]);
+
+  // Additional effect to handle immediate fetch when component mounts
+  // This ensures data is fetched even if auth state changes after mount
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (user && user.isAdmin && summary === INITIAL_SUMMARY) {
+        console.log('Fetching summary after timeout - ensuring data load');
+        fetchSummary();
+      }
+    }, 500); // Small delay to allow auth state to settle
+
+    return () => clearTimeout(timer);
+  }, [user, fetchSummary, summary]);
+
+  // Fallback effect - try to fetch data periodically if we still have initial data
+  useEffect(() => {
+    if (summary === INITIAL_SUMMARY && !authLoading && !dataLoading) {
+      const fallbackTimer = setTimeout(() => {
+        console.log('Fallback: Attempting to fetch summary data');
+        fetchSummary();
+      }, 1000);
+
+      return () => clearTimeout(fallbackTimer);
+    }
+  }, [summary, authLoading, dataLoading, fetchSummary]);
 
   // Memoized metric cards data
   const metricCards = useMemo(() => [
@@ -322,6 +358,16 @@ const AdminDashboard = () => {
         </div>
 
         {error && <ErrorAlert error={error} />}
+
+        {/* Loading State */}
+        {(authLoading || dataLoading) && (
+          <div className="flex justify-center items-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mr-3"></div>
+            <span className="text-gray-600">
+              {authLoading ? 'Authenticating...' : 'Loading dashboard data...'}
+            </span>
+          </div>
+        )}
 
         {/* Main Metric Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">

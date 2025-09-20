@@ -8,6 +8,8 @@ const AdminUsers = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [showDetails, setShowDetails] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [loadingDetails, setLoadingDetails] = useState(false);
 
   useEffect(() => {
     fetchCustomers();
@@ -15,6 +17,8 @@ const AdminUsers = () => {
 
   const fetchCustomers = async () => {
     try {
+      setLoading(true);
+      setError('');
       const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
       
       const res = await fetch(`${API_BASE}/api/admin/customers`, {
@@ -29,11 +33,15 @@ const AdminUsers = () => {
       }
     } catch (err) {
       setError(err.message || 'Failed to fetch customers');
+    } finally {
+      setLoading(false);
     }
   };
 
   const viewCustomerDetails = async (customerId) => {
     try {
+      setLoadingDetails(true);
+      setError('');
       const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
       
       const res = await fetch(`${API_BASE}/api/admin/customers/${customerId}`, {
@@ -49,6 +57,8 @@ const AdminUsers = () => {
       }
     } catch (err) {
       setError(err.message || 'Failed to fetch customer details');
+    } finally {
+      setLoadingDetails(false);
     }
   };
 
@@ -108,31 +118,39 @@ const AdminUsers = () => {
 
           {/* Customer Table */}
           <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Customer
-                    </th>
-                    <th className="hidden sm:table-cell px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Contact
-                    </th>
-                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Orders
-                    </th>
-                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Total Spent
-                    </th>
-                    <th className="hidden lg:table-cell px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Joined
-                    </th>
-                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+            {loading ? (
+              <div className="flex justify-center items-center py-12">
+                <div className="flex flex-col items-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+                  <p className="text-gray-600">Loading customers...</p>
+                </div>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Customer
+                      </th>
+                      <th className="hidden sm:table-cell px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Contact
+                      </th>
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Orders
+                      </th>
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Total Spent
+                      </th>
+                      <th className="hidden lg:table-cell px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Joined
+                      </th>
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
                   {filteredCustomers.map((customer) => (
                     <tr key={customer.id} className="hover:bg-gray-50">
                       <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
@@ -176,28 +194,37 @@ const AdminUsers = () => {
                       <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <button
                           onClick={() => viewCustomerDetails(customer.id)}
-                          className="text-blue-600 hover:text-blue-900 text-xs sm:text-sm px-2 py-1 rounded hover:bg-blue-50"
+                          disabled={loadingDetails}
+                          className="text-blue-600 hover:text-blue-900 text-xs sm:text-sm px-2 py-1 rounded hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
                         >
-                          View
+                          {loadingDetails ? (
+                            <>
+                              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600 mr-1"></div>
+                              Loading...
+                            </>
+                          ) : (
+                            'View'
+                          )}
                         </button>
                       </td>
                     </tr>
                   ))}
-                </tbody>
-              </table>
-            </div>
-            
-            {filteredCustomers.length === 0 && (
-              <div className="text-center py-12">
-                <div className="mb-4">
-                  <svg className="w-16 h-16 mx-auto text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"></path>
-                  </svg>
-                </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No customers found</h3>
-                <p className="text-gray-500">
-                  {searchTerm ? 'Try adjusting your search terms.' : 'No customers have been added yet.'}
-                </p>
+                  </tbody>
+                </table>
+                
+                {filteredCustomers.length === 0 && (
+                  <div className="text-center py-12">
+                    <div className="mb-4">
+                      <svg className="w-16 h-16 mx-auto text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"></path>
+                      </svg>
+                    </div>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">No customers found</h3>
+                    <p className="text-gray-500">
+                      {searchTerm ? 'Try adjusting your search terms.' : 'No customers have been added yet.'}
+                    </p>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -222,7 +249,15 @@ const AdminUsers = () => {
               
               {/* Scrollable Content */}
               <div className="max-h-[calc(90vh-120px)] overflow-y-auto">
-                <div className="p-4 sm:p-6">
+                {loadingDetails ? (
+                  <div className="flex justify-center items-center py-12">
+                    <div className="flex flex-col items-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-3"></div>
+                      <p className="text-gray-600">Loading customer details...</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-4 sm:p-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* Basic Information */}
                     <div className="space-y-4">
@@ -338,7 +373,8 @@ const AdminUsers = () => {
                       </div>
                     </div>
                   )}
-                </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>

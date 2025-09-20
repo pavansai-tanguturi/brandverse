@@ -93,7 +93,7 @@ export async function deleteMe(req, res) {
 
 // Admin functions
 export async function listCustomers(req, res) {
-  if (!req.session?.user || req.session.user.id !== process.env.ADMIN_ID)
+  if (!req.session?.user || !req.session.user.isAdmin)
     return res.status(403).json({ error: 'Admin only' });
 
   try {

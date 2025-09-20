@@ -207,7 +207,7 @@ const AdminProducts = () => {
       const body = { 
         title, 
         slug, 
-        price_cents: Math.round(parseFloat(price) * 100), // Convert price to cents
+        price_cents: Math.round(Number((parseFloat(price) || 0).toFixed(2)) * 100), // Convert price to cents with precision fix
         stock_quantity: parseInt(stock, 10), 
         description,
         category_id: categoryId || null,

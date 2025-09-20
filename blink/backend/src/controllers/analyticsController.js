@@ -1,9 +1,6 @@
 import { supabaseAdmin } from '../config/supabaseClient.js';
 
 export async function getDashboardAnalytics(req, res) {
-  if (!req.session?.user || req.session.user.id !== process.env.ADMIN_ID)
-    return res.status(403).json({ error: 'Admin only' });
-
   try {
     const { startDate, endDate } = req.query;
     
@@ -175,7 +172,7 @@ export async function getDashboardAnalytics(req, res) {
 }
 
 export async function exportAnalytics(req, res) {
-  if (!req.session?.user || req.session.user.id !== process.env.ADMIN_ID)
+  if (!req.session?.user || !req.session.user.isAdmin)
     return res.status(403).json({ error: 'Admin only' });
 
   try {

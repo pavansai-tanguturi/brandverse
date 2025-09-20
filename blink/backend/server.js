@@ -23,7 +23,7 @@ const app = express();
 // --- CORS configuration for cross-origin cookies (Netlify + Render) ---
 const allowedOrigins = [
   'http://localhost:3000',
-  'https://heartfelt-lily-3bb33d.netlify.app', // Netlify frontend
+  process.env.FRONTEND_URL, // Netlify frontend
 ].filter(Boolean);
 
 app.use(cors({
@@ -50,14 +50,28 @@ app.use(
     resave: false,
     store: new session.MemoryStore(),
     saveUninitialized: false,
+    name: 'brandverse.sid',
     cookie: {
       httpOnly: true, // prevents JavaScript access
-      secure: true,   // 🔑 required for HTTPS (Netlify/Render)
-      sameSite: 'none', // 🔑 allows cross-site cookie sending
+      secure: process.env.NODE_ENV === 'production',   // 🔑 only require HTTPS in production
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // 🔑 allows cross-site cookie sending in production
       maxAge: 1000 * 60 * 60 * 24 * 7 // 7 days
     }
   })
 );
+
+// Session debugging middleware
+app.use((req, res, next) => {
+  if (req.path.includes('/admin/analytics')) {
+    console.log(`[Session Debug] ${req.method} ${req.path}`, {
+      sessionId: req.sessionID,
+      sessionExists: !!req.session,
+      user: req.session?.user,
+      cookies: req.headers.cookie
+    });
+  }
+  next();
+});
 
 app.get('/health', (_req, res) => res.json({ ok: true }));
 
@@ -69,7 +83,7 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/customers', customerRoutes);
 app.use('/api/admin', adminCartRoutes);
-app.use('/api/analytics', analyticsRoutes);
+app.use('/api/admin/analytics', analyticsRoutes);
 app.use('/api/admin/customers', adminCustomerRoutes);
 app.use('/api/delivery', deliveryRoutes);
 app.use('/api/addresses', addressRoutes);

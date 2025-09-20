@@ -22,16 +22,21 @@ export const AuthProvider = ({ children }) => {
 
   const checkUserSession = useCallback(async () => {
     try {
+      console.log('[AuthContext] Checking user session...');
       // Check if user has active session on server
       const response = await apiCall('/api/auth/me');
       
+      console.log('[AuthContext] Session check response:', response);
+      
       if (response.user) {
+        console.log('[AuthContext] User found:', response.user);
         setUser(response.user);
       } else {
+        console.log('[AuthContext] No user in session');
         setUser(null);
       }
     } catch (error) {
-      console.error('Session check failed:', error);
+      console.error('[AuthContext] Session check failed:', error);
       setUser(null);
     } finally {
       setLoading(false);
@@ -62,6 +67,12 @@ export const AuthProvider = ({ children }) => {
         if (response.user) {
           // Session is now stored server-side, just update user state
           setUser(response.user);
+          
+          // Force a session check after a brief delay to ensure cookie is set
+          setTimeout(() => {
+            checkUserSession();
+          }, 100);
+          
           return { success: true, message: response.message || 'Login successful' };
         } else {
           return { success: false, error: response.error || 'OTP verification failed' };
