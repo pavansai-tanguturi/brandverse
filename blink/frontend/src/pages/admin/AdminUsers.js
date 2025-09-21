@@ -10,6 +10,7 @@ const AdminUsers = () => {
   const [showDetails, setShowDetails] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadingDetails, setLoadingDetails] = useState(false);
+  const [loadingCustomerId, setLoadingCustomerId] = useState(null);
 
   useEffect(() => {
     fetchCustomers();
@@ -41,6 +42,7 @@ const AdminUsers = () => {
   const viewCustomerDetails = async (customerId) => {
     try {
       setLoadingDetails(true);
+      setLoadingCustomerId(customerId);
       setError('');
       const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
       
@@ -59,6 +61,7 @@ const AdminUsers = () => {
       setError(err.message || 'Failed to fetch customer details');
     } finally {
       setLoadingDetails(false);
+      setLoadingCustomerId(null);
     }
   };
 
@@ -194,10 +197,10 @@ const AdminUsers = () => {
                       <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <button
                           onClick={() => viewCustomerDetails(customer.id)}
-                          disabled={loadingDetails}
-                          className="text-blue-600 hover:text-blue-900 text-xs sm:text-sm px-2 py-1 rounded hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                          disabled={loadingDetails && loadingCustomerId === customer.id}
+                          className={`text-blue-600 hover:text-blue-900 text-xs sm:text-sm px-2 py-1 rounded hover:bg-blue-50 ${loadingDetails && loadingCustomerId === customer.id ? 'opacity-50 cursor-not-allowed' : ''} flex items-center`}
                         >
-                          {loadingDetails ? (
+                          {loadingDetails && loadingCustomerId === customer.id ? (
                             <>
                               <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600 mr-1"></div>
                               Loading...

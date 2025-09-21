@@ -929,6 +929,7 @@ const CheckoutPage = () => {
                 <h2 className="text-xl font-semibold mb-4">Payment Method</h2>
                 
                 <div className="space-y-4 mb-6">
+                  {/*
                   <div 
                     className={`p-4 border rounded-lg cursor-pointer transition-colors ${
                       paymentMethod === 'razorpay' 
@@ -954,6 +955,7 @@ const CheckoutPage = () => {
                       </div>
                     </div>
                   </div>
+                  */}
 
                   <div 
                     className={`p-4 border rounded-lg cursor-pointer transition-colors ${
