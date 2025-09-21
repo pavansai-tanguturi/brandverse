@@ -805,14 +805,119 @@ const CheckoutPage = () => {
                 ) : (
                   <div className="text-center py-8">
                     <p className="text-gray-600 mb-4">No addresses found. Please add a delivery address.</p>
-                    <button
-                      onClick={() => setShowAddressForm(true)}
-                      className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                    >
-                      Add Address
-                    </button>
-                    
-                    {/* Add address form would go here - same as above */}
+                    {/* Always show the address form if there are no addresses */}
+                    <div className="mt-6 p-4 border border-gray-200 rounded-lg bg-gray-50 max-w-xl mx-auto">
+                      <form onSubmit={handleAddressSubmit} className="space-y-4">
+                        <h3 className="text-lg font-medium mb-4">Add New Address</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Full Name *
+                            </label>
+                            <input
+                              type="text"
+                              required
+                              value={newAddress.full_name}
+                              onChange={(e) => setNewAddress(prev => ({...prev, full_name: e.target.value}))}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Phone Number *
+                            </label>
+                            <input
+                              type="tel"
+                              required
+                              value={newAddress.phone}
+                              onChange={(e) => setNewAddress(prev => ({...prev, phone: e.target.value}))}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Address Line 1 *
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            value={newAddress.address_line_1}
+                            onChange={(e) => setNewAddress(prev => ({...prev, address_line_1: e.target.value}))}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Address Line 2 (Optional)
+                          </label>
+                          <input
+                            type="text"
+                            value={newAddress.address_line_2}
+                            onChange={(e) => setNewAddress(prev => ({...prev, address_line_2: e.target.value}))}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              City *
+                            </label>
+                            <input
+                              type="text"
+                              required
+                              value={newAddress.city}
+                              onChange={(e) => setNewAddress(prev => ({...prev, city: e.target.value}))}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              State *
+                            </label>
+                            <input
+                              type="text"
+                              required
+                              value={newAddress.state}
+                              onChange={(e) => setNewAddress(prev => ({...prev, state: e.target.value}))}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Postal Code *
+                            </label>
+                            <input
+                              type="text"
+                              required
+                              value={newAddress.postal_code}
+                              onChange={(e) => setNewAddress(prev => ({...prev, postal_code: e.target.value}))}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Landmark (Optional)
+                          </label>
+                          <input
+                            type="text"
+                            value={newAddress.landmark}
+                            onChange={(e) => setNewAddress(prev => ({...prev, landmark: e.target.value}))}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
+                        <div className="flex justify-end pt-4">
+                          <button
+                            type="submit"
+                            disabled={loading}
+                            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                          >
+                            {loading ? 'Adding...' : 'Add Address'}
+                          </button>
+                        </div>
+                      </form>
+                    </div>
                   </div>
                 )}
               </div>
