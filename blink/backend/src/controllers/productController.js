@@ -515,6 +515,7 @@ export async function deleteImage(req, res) {
   }
 }
 
+// FIXED SEARCH FUNCTION - NO JOINS
 export async function searchProducts(req, res) {
   try {
     const { q } = req.query;
@@ -526,72 +527,51 @@ export async function searchProducts(req, res) {
     const searchTerm = q.trim();
     console.log(`Searching for: "${searchTerm}"`);
     
-    // First try exact matching with ILIKE
-    const { data, error } = await supabaseAdmin
+    // First get products without joins - this avoids the relationship error
+    const { data: products, error: searchError } = await supabaseAdmin
       .from('products')
-      .select(`
-        *, 
-        product_images(id, path, is_primary),
-        categories(id, name, slug)
-      `)
+      .select('*')
       .eq('is_active', true)
       .ilike('title', `%${searchTerm}%`)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .limit(20);
 
-    if (error) {
-      console.error('Search error:', error);
-      return res.status(400).json({ error: error.message });
+    if (searchError) {
+      console.error('Search error:', searchError);
+      return res.status(400).json({ error: searchError.message });
     }
 
-    let results = data || [];
-    console.log(`Found ${results.length} exact matches`);
-    
-    // If no exact matches, try fuzzy matching
+    let results = products || [];
+    console.log(`Found ${results.length} products matching search`);
+
     if (results.length === 0) {
-      console.log('No exact matches, trying fuzzy search...');
-      // Try variations for fuzzy matching
-      const fuzzySearches = [];
-      const words = searchTerm.split(' ').filter(word => word.length > 1);
+      console.log('No matches found, trying fuzzy search...');
+      
+      // Try fuzzy search without joins
+      const words = searchTerm.split(' ').filter(word => word.length > 2);
+      const fuzzyQueries = [];
+      
       for (const word of words) {
         // Try partial matches
         if (word.length >= 3) {
-          // Missing first character: "bad" -> "ad"
-          fuzzySearches.push(
+          fuzzyQueries.push(
             supabaseAdmin
               .from('products')
-              .select(`*, product_images(id, path, is_primary), categories(id, name, slug)`)
+              .select('*')
               .eq('is_active', true)
-              .ilike('title', `%${word.substring(1)}%`)
-          );
-          // Missing last character: "bad" -> "ba"
-          fuzzySearches.push(
-            supabaseAdmin
-              .from('products')
-              .select(`*, product_images(id, path, is_primary), categories(id, name, slug)`)
-              .eq('is_active', true)
-              .ilike('title', `%${word.substring(0, word.length-1)}%`)
-          );
-        }
-        // Try individual character wildcards: "bad" -> "b_d", "_ad", "ba_"
-        for (let i = 0; i < word.length; i++) {
-          const pattern = word.substring(0, i) + '_' + word.substring(i + 1);
-          fuzzySearches.push(
-            supabaseAdmin
-              .from('products')
-              .select(`*, product_images(id, path, is_primary), categories(id, name, slug)`)
-              .eq('is_active', true)
-              .ilike('title', `%${pattern}%`)
+              .or(`title.ilike.%${word.substring(1)}%,title.ilike.%${word.substring(0, word.length-1)}%`)
+              .limit(10)
           );
         }
       }
-      // Execute fuzzy searches and combine results
-      if (fuzzySearches.length > 0) {
-        const fuzzyResults = await Promise.all(fuzzySearches);
+      
+      if (fuzzyQueries.length > 0) {
+        const fuzzyResults = await Promise.allSettled(fuzzyQueries);
         const allFuzzyData = [];
         
         for (const result of fuzzyResults) {
-          if (!result.error && result.data) {
-            allFuzzyData.push(...result.data);
+          if (result.status === 'fulfilled' && result.value.data) {
+            allFuzzyData.push(...result.value.data);
           }
         }
         
@@ -600,32 +580,83 @@ export async function searchProducts(req, res) {
           index === self.findIndex(p => p.id === product.id)
         );
         
-        results = uniqueResults.slice(0, 20); // Limit to 20 results
+        results = uniqueResults.slice(0, 20);
         console.log(`Found ${results.length} fuzzy matches`);
       }
     }
 
-    // Generate signed URLs for product images
+    if (results.length === 0) {
+      console.log('No results found for search term:', searchTerm);
+      return res.json([]);
+    }
+
+    // Now fetch related data separately for each product
+    const productIds = results.map(p => p.id);
+    
+    // Fetch all images for these products
+    const { data: allImages } = await supabaseAdmin
+      .from('product_images')
+      .select('id, product_id, path, is_primary')
+      .in('product_id', productIds);
+
+    // Fetch all categories for these products
+    const categoryIds = [...new Set(results.map(p => p.category_id).filter(Boolean))];
+    let allCategories = [];
+    if (categoryIds.length > 0) {
+      const { data: categories } = await supabaseAdmin
+        .from('categories')
+        .select('id, name, slug')
+        .in('id', categoryIds);
+      allCategories = categories || [];
+    }
+
+    // Create lookup maps
+    const imagesByProductId = {};
+    (allImages || []).forEach(img => {
+      if (!imagesByProductId[img.product_id]) {
+        imagesByProductId[img.product_id] = [];
+      }
+      imagesByProductId[img.product_id].push(img);
+    });
+
+    const categoriesById = {};
+    allCategories.forEach(cat => {
+      categoriesById[cat.id] = cat;
+    });
+
+    // Enrich products with images and categories
     const enriched = await Promise.all(results.map(async (product) => {
-      const primary = (product.product_images || []).find(i => i.is_primary) || product.product_images?.[0];
+      const productImages = imagesByProductId[product.id] || [];
+      const category = categoriesById[product.category_id] || null;
+      
+      // Get signed URL for primary image
+      const primary = productImages.find(i => i.is_primary) || productImages[0];
       let image_url = null;
       
-      if (primary) {
-        const { data: signed } = await supabaseAdmin.storage
-          .from(process.env.PRODUCT_IMAGES_BUCKET)
-          .createSignedUrl(primary.path, 600);
-        image_url = signed?.signedUrl || null;
+      if (primary?.path && process.env.PRODUCT_IMAGES_BUCKET) {
+        try {
+          const { data: signed } = await supabaseAdmin.storage
+            .from(process.env.PRODUCT_IMAGES_BUCKET)
+            .createSignedUrl(primary.path, 600);
+          image_url = signed?.signedUrl || null;
+        } catch (urlError) {
+          console.error(`Error getting signed URL for product ${product.id}:`, urlError);
+        }
       }
       
       return { 
-        ...product, 
+        ...product,
+        product_images: productImages,
+        category: category,
+        categories: category, // backward compatibility
         image_url,
         price: product.price_cents ? (product.price_cents / 100) : 0,
+        formatted_price: product.price_cents ? `₹${(product.price_cents / 100).toFixed(2)}` : '₹0.00',
         discount: product.discount_percent || 0
       };
     }));
 
-    console.log(`Returning ${enriched.length} search results`);
+    console.log(`Returning ${enriched.length} enriched search results`);
     res.json(enriched);
     
   } catch (error) {

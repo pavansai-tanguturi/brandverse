@@ -101,5 +101,3 @@ app.listen(PORT, () => {
   console.log(`Auth method: JWT (No sessions)`);
   console.log(`Allowed origins: ${allowedOrigins.join(', ')}`);
 });
-
-// No session cleanup needed - JWT is stateless!
