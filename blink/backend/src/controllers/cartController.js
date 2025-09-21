@@ -130,7 +130,6 @@ export async function getCart(req, res) {
             price_cents,
             stock_quantity,
             is_active,
-            image_url,
             discount_percent
           )
         `)
@@ -702,8 +701,7 @@ export async function validateCartForCheckout(req, res) {
           price_cents,
           discount_percent,
           stock_quantity,
-          is_active,
-          image_url
+          is_active
         )
       `)
       .eq('cart_id', cart.id);

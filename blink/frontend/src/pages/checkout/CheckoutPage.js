@@ -65,19 +65,6 @@ const CheckoutPage = () => {
         setLoading(false);
         return;
       }
-      const itemsSummary = serverCart.items.map(item =>
-        `${item.title} (Qty: ${item.quantity}) - ₹${(item.total_cents ? item.total_cents / 100 : (item.unit_price_cents * item.quantity) / 100).toFixed(2)}`
-      ).join('\n');
-      const totalAmount = serverCart.items.reduce((sum, item) =>
-        sum + (item.total_cents !== undefined ? item.total_cents : item.unit_price_cents * item.quantity), 0
-      ) / 100;
-      const confirmed = window.confirm(
-        `Please confirm your order:\n\n${itemsSummary}\n\nTotal: ₹${totalAmount.toFixed(2)}\n\nProceed with COD order?`
-      );
-      if (!confirmed) {
-        setLoading(false);
-        return;
-      }
       if (!selectedAddress) {
         setError('Please select a shipping address');
         setLoading(false);
@@ -123,13 +110,13 @@ const CheckoutPage = () => {
           });
         });
       }
-      clearCart();
       navigate('/order-success', {
         state: {
           order: order,
           message: 'Order placed successfully! You can pay cash on delivery.'
         }
       });
+      setTimeout(() => clearCart(), 100);
     } catch (error) {
       console.error('💥 COD Order creation error:', error);
       setError(error.message || 'Failed to create order');

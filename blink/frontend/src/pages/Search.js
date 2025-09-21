@@ -173,8 +173,8 @@ const Search = () => {
                             className="w-full h-48 object-cover"
                           />
                           {discountPercent > 0 && (
-                            <div className="absolute top-3 left-3 bg-red-500 text-white px-2 py-1 rounded-lg text-sm font-bold">
-                              -{discountPercent}%
+                            <div className="absolute top-3 left-3 bg-red-500 text-white px-2 py-1 rounded-full text-xs font-bold">
+                              {discountPercent}% OFF
                             </div>
                           )}
                         </div>
@@ -187,14 +187,24 @@ const Search = () => {
                           <div className="flex items-center justify-between">
                             <div className="flex flex-col">
                               {discountPercent > 0 ? (
-                                <>
-                                  <span className="text-lg font-bold text-gray-900">
-                                    ₹{finalPrice.toFixed(2)}
-                                  </span>
-                                  <span className="text-sm text-gray-500 line-through">
-                                    ₹{originalPrice.toFixed(2)}
-                                  </span>
-                                </>
+                                <div className="space-y-1">
+                                  <div className="flex items-center space-x-2">
+                                    <span className="text-lg font-bold text-green-600">
+                                      ₹{finalPrice.toFixed(2)}
+                                    </span>
+                                    <span className="text-gray-500 line-through text-sm">
+                                      ₹{originalPrice.toFixed(2)}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center space-x-2">
+                                    <span className="text-green-600 font-semibold text-xs">
+                                      Save ₹{(originalPrice - finalPrice).toFixed(2)}
+                                    </span>
+                                    <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-bold">
+                                      {discountPercent}% OFF
+                                    </span>
+                                  </div>
+                                </div>
                               ) : (
                                 <span className="text-lg font-bold text-gray-900">
                                   ₹{originalPrice.toFixed(2)}

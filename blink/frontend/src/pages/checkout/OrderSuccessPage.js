@@ -8,14 +8,19 @@ const OrderSuccessPage = () => {
   const { order, message } = location.state || {};
 
   if (!order) {
-    // Redirect to home if no order data
-    setTimeout(() => navigate('/'), 2000);
     return (
       <div className="min-h-screen bg-gray-50">
         <Navigation />
         <div className="max-w-2xl mx-auto px-4 py-16" style={{ paddingTop: '100px' }}>
           <div className="text-center">
-            <p className="text-gray-600">Redirecting to home...</p>
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">Order Not Found</h1>
+            <p className="text-gray-600 mb-4">We couldn't find your order details. Please check your orders in your dashboard or contact support if you need help.</p>
+            <button
+              onClick={() => navigate('/')}
+              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors mt-4"
+            >
+              Go to Home
+            </button>
           </div>
         </div>
       </div>

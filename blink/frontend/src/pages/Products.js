@@ -21,7 +21,6 @@ function Products() {
   // Search and filters
   const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
   const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || 'all');
-  const [priceRange, setPriceRange] = useState([0, 1000]);
   const [sortBy, setSortBy] = useState('name');
   const [showFilters, setShowFilters] = useState(false);
   
@@ -93,11 +92,7 @@ function Products() {
       });
     }
 
-    // Price filter
-    filtered = filtered.filter(product => {
-      const price = product.price_cents / 100;
-      return price >= priceRange[0] && price <= priceRange[1];
-    });
+    // Removed price filter
 
     // Sort products
     filtered.sort((a, b) => {
@@ -116,7 +111,7 @@ function Products() {
 
     setFilteredProducts(filtered);
     setCurrentPage(1); // Reset to first page when filters change
-  }, [products, searchQuery, selectedCategory, priceRange, sortBy]);
+  }, [products, searchQuery, selectedCategory, sortBy]);
 
   // Handle search
   const handleSearch = (e) => {
@@ -361,10 +356,10 @@ function Products() {
                     <div className="relative">
                       <img 
                         src={product.image_url || 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?auto=format&fit=crop&w=300&q=80'} 
-                        alt={product.title || 'Product'}
+                        alt={product.title ? product.title : 'Product'}
                         className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-300"
                       />
-                      {product.discount_percent && product.discount_percent > 0 && (
+                      {product.discount_percent > 0 && (
                         <div className="absolute top-3 left-3 bg-red-500 text-white px-2 py-1 rounded-full text-xs font-bold">
                           {product.discount_percent}% OFF
                         </div>
@@ -377,10 +372,10 @@ function Products() {
                     </div>
                     <div className="p-6">
                       <h3 className="font-bold text-lg text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
-                        {product.title || 'Product Name'}
+                        {product.title ? product.title : 'Product Name'}
                       </h3>
                       <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-                        {product.description || 'No description available'}
+                        {product.description ? product.description : 'No description available'}
                       </p>
                       <div className="mb-4">
                         {product.discount_percent && product.discount_percent > 0 ? (
