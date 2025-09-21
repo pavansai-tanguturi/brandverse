@@ -69,49 +69,55 @@ function Products() {
 
 
   // Filter and search products
-  useEffect(() => {
-    let filtered = [...products];
+  // Filter and search products
+useEffect(() => {
+  let filtered = [...products];
 
-    // Search filter
-    if (searchQuery) {
-      filtered = filtered.filter(product =>
-        product.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        product.description?.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
+  // Search filter
+  if (searchQuery) {
+    filtered = filtered.filter(product =>
+      product.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      product.description?.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }
 
-    // Category filter
-    if (selectedCategory !== 'all') {
-      filtered = filtered.filter(product => {
-        // Check if product has categories relationship
-        if (product.categories && product.categories.slug) {
-          return product.categories.slug === selectedCategory;
-        }
-        // Fallback to direct category field if exists
-        return product.category === selectedCategory;
-      });
-    }
-
-    // Removed price filter
-
-    // Sort products
-    filtered.sort((a, b) => {
-      switch (sortBy) {
-        case 'price-low':
-          return a.price_cents - b.price_cents;
-        case 'price-high':
-          return b.price_cents - a.price_cents;
-        case 'discount':
-          return (b.discount_percent || 0) - (a.discount_percent || 0);
-        case 'name':
-        default:
-          return (a.title || '').localeCompare(b.title || '');
+  // Category filter - FIXED
+  if (selectedCategory !== 'all') {
+    filtered = filtered.filter(product => {
+      // Check if product has category relationship (singular)
+      if (product.category && product.category.slug) {
+        return product.category.slug === selectedCategory;
       }
+      // Fallback to direct category field if exists
+      if (product.category_slug) {
+        return product.category_slug === selectedCategory;
+      }
+      // Another fallback for different API structures
+      if (typeof product.category === 'string') {
+        return product.category === selectedCategory;
+      }
+      return false;
     });
+  }
 
-    setFilteredProducts(filtered);
-    setCurrentPage(1); // Reset to first page when filters change
-  }, [products, searchQuery, selectedCategory, sortBy]);
+  // Sort products
+  filtered.sort((a, b) => {
+    switch (sortBy) {
+      case 'price-low':
+        return a.price_cents - b.price_cents;
+      case 'price-high':
+        return b.price_cents - a.price_cents;
+      case 'discount':
+        return (b.discount_percent || 0) - (a.discount_percent || 0);
+      case 'name':
+      default:
+        return (a.title || '').localeCompare(b.title || '');
+    }
+  });
+
+  setFilteredProducts(filtered);
+  setCurrentPage(1); // Reset to first page when filters change
+}, [products, searchQuery, selectedCategory, sortBy]);
 
   // Handle search
   const handleSearch = (e) => {
