@@ -89,6 +89,19 @@ const AdminNav = () => {
             Analytics
           </Link>
 
+
+          {/* Categories */}
+          <Link 
+            to="/admin/categories" 
+            onClick={closeSidebar}
+            className="flex items-center px-3 py-2 text-gray-700 rounded-md hover:bg-blue-50 hover:text-blue-700 transition-colors"
+          >
+            <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+            Categories
+          </Link>
+
           {/* Products */}
           <Link 
             to="/admin/products" 
@@ -125,6 +138,19 @@ const AdminNav = () => {
                     <path d="M64.2501 37.7639C64.2501 48.6255 55.4448 57.4306 44.5834 57.4306C33.7218 57.4306 24.9167 48.6255 24.9167 37.7639C24.9167 26.9023 33.7218 18.0972 44.5834 18.0972C55.4448 18.0972 64.2501 26.9023 64.2501 37.7639Z" stroke="currentColor" strokeWidth="8.5"/>
                   </svg>
             Customers
+          </Link>
+
+          {/* Banners */}
+          <Link 
+            to="/admin/banners" 
+            onClick={closeSidebar}
+            className="flex items-center px-3 py-2 text-gray-700 rounded-md hover:bg-blue-50 hover:text-blue-700 transition-colors"
+          >
+            <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <rect x="3" y="7" width="18" height="10" rx="2" stroke="currentColor" strokeWidth="2"/>
+              <path d="M3 7l9 6 9-6" stroke="currentColor" strokeWidth="2"/>
+            </svg>
+            Banners
           </Link>
 
           {/* Delivery Locations */}
