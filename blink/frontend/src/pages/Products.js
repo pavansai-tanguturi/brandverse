@@ -21,7 +21,6 @@ function Products() {
   // Search and filters
   const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
   const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || 'all');
-  const [priceRange, setPriceRange] = useState([0, 1000]);
   const [sortBy, setSortBy] = useState('name');
   const [showFilters, setShowFilters] = useState(false);
   
@@ -70,53 +69,55 @@ function Products() {
 
 
   // Filter and search products
-  useEffect(() => {
-    let filtered = [...products];
+  // Filter and search products
+useEffect(() => {
+  let filtered = [...products];
 
-    // Search filter
-    if (searchQuery) {
-      filtered = filtered.filter(product =>
-        product.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        product.description?.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
+  // Search filter
+  if (searchQuery) {
+    filtered = filtered.filter(product =>
+      product.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      product.description?.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }
 
-    // Category filter
-    if (selectedCategory !== 'all') {
-      filtered = filtered.filter(product => {
-        // Check if product has categories relationship
-        if (product.categories && product.categories.slug) {
-          return product.categories.slug === selectedCategory;
-        }
-        // Fallback to direct category field if exists
-        return product.category === selectedCategory;
-      });
-    }
-
-    // Price filter
+  // Category filter - FIXED
+  if (selectedCategory !== 'all') {
     filtered = filtered.filter(product => {
-      const price = product.price_cents / 100;
-      return price >= priceRange[0] && price <= priceRange[1];
-    });
-
-    // Sort products
-    filtered.sort((a, b) => {
-      switch (sortBy) {
-        case 'price-low':
-          return a.price_cents - b.price_cents;
-        case 'price-high':
-          return b.price_cents - a.price_cents;
-        case 'discount':
-          return (b.discount_percent || 0) - (a.discount_percent || 0);
-        case 'name':
-        default:
-          return (a.title || '').localeCompare(b.title || '');
+      // Check if product has category relationship (singular)
+      if (product.category && product.category.slug) {
+        return product.category.slug === selectedCategory;
       }
+      // Fallback to direct category field if exists
+      if (product.category_slug) {
+        return product.category_slug === selectedCategory;
+      }
+      // Another fallback for different API structures
+      if (typeof product.category === 'string') {
+        return product.category === selectedCategory;
+      }
+      return false;
     });
+  }
 
-    setFilteredProducts(filtered);
-    setCurrentPage(1); // Reset to first page when filters change
-  }, [products, searchQuery, selectedCategory, priceRange, sortBy]);
+  // Sort products
+  filtered.sort((a, b) => {
+    switch (sortBy) {
+      case 'price-low':
+        return a.price_cents - b.price_cents;
+      case 'price-high':
+        return b.price_cents - a.price_cents;
+      case 'discount':
+        return (b.discount_percent || 0) - (a.discount_percent || 0);
+      case 'name':
+      default:
+        return (a.title || '').localeCompare(b.title || '');
+    }
+  });
+
+  setFilteredProducts(filtered);
+  setCurrentPage(1); // Reset to first page when filters change
+}, [products, searchQuery, selectedCategory, sortBy]);
 
   // Handle search
   const handleSearch = (e) => {
@@ -361,10 +362,10 @@ function Products() {
                     <div className="relative">
                       <img 
                         src={product.image_url || 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?auto=format&fit=crop&w=300&q=80'} 
-                        alt={product.title || 'Product'}
+                        alt={product.title ? product.title : 'Product'}
                         className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-300"
                       />
-                      {product.discount_percent && product.discount_percent > 0 && (
+                      {product.discount_percent > 0 && (
                         <div className="absolute top-3 left-3 bg-red-500 text-white px-2 py-1 rounded-full text-xs font-bold">
                           {product.discount_percent}% OFF
                         </div>
@@ -377,10 +378,10 @@ function Products() {
                     </div>
                     <div className="p-6">
                       <h3 className="font-bold text-lg text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
-                        {product.title || 'Product Name'}
+                        {product.title ? product.title : 'Product Name'}
                       </h3>
                       <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-                        {product.description || 'No description available'}
+                        {product.description ? product.description : 'No description available'}
                       </p>
                       <div className="mb-4">
                         {product.discount_percent && product.discount_percent > 0 ? (

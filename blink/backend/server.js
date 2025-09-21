@@ -1,9 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import session from 'express-session';
-import RedisStore from 'connect-redis';
-import { createClient } from 'redis';
+import cookieParser from 'cookie-parser';
 import authRoutes from './src/routes/auth.js';
 import productRoutes from './src/routes/products.js';
 import cartRoutes from './src/routes/cart.js';
@@ -21,127 +19,65 @@ dotenv.config();
 
 const app = express();
 
-// --- Redis Setup for Session Storage ---
-let redisClient;
-let sessionStore = new session.MemoryStore(); // Default fallback
-
-// Initialize Redis asynchronously
-const initializeRedis = async () => {
-  try {
-    if (process.env.NODE_ENV === 'production' && (process.env.UPSTASH_REDIS_URL || process.env.REDIS_URL)) {
-      // Production: Use Upstash Redis
-      const redisUrl = process.env.REDIS_URL || process.env.UPSTASH_REDIS_URL;
-      console.log('🔄 Attempting to connect to Redis:', redisUrl.replace(/\/\/.*@/, '//***@')); // Hide credentials in logs
-      
-      redisClient = createClient({
-        url: redisUrl,
-        socket: {
-          tls: true,
-          rejectUnauthorized: false
-        }
-      });
-
-      redisClient.on('error', (err) => {
-        console.error('❌ Redis Client Error:', err.message);
-      });
-
-      redisClient.on('connect', () => {
-        console.log('✅ Redis connected successfully');
-      });
-
-      redisClient.on('ready', () => {
-        console.log('✅ Redis ready for operations');
-      });
-
-      await redisClient.connect();
-      
-      // Test the connection
-      await redisClient.ping();
-      console.log('✅ Redis ping successful');
-      
-      sessionStore = new RedisStore({ client: redisClient });
-      console.log('✅ Redis session store configured');
-    } else {
-      // Development: Use memory store
-      console.log('⚠️  Using memory store for sessions (development only)');
-      console.log('   NODE_ENV:', process.env.NODE_ENV);
-      console.log('   REDIS_URL available:', !!process.env.REDIS_URL);
-      console.log('   UPSTASH_REDIS_URL available:', !!process.env.UPSTASH_REDIS_URL);
-    }
-  } catch (error) {
-    console.error('❌ Redis connection failed, falling back to memory store:', error.message);
-    sessionStore = new session.MemoryStore();
-  }
-};
-
-// Initialize Redis connection
-initializeRedis();
-
-
-// --- CORS configuration for cross-origin cookies (Netlify + Render) ---
+// CORS configuration
 const allowedOrigins = [
   'http://localhost:3000',
-  'https://heartfelt-lily-3bb33d.netlify.app', // Your Netlify frontend
-  process.env.FRONTEND_URL, // Additional frontend URL if set
+  'http://localhost:3001',
+  'https://heartfelt-lily-3bb33d.netlify.app',
+  process.env.FRONTEND_URL,
 ].filter(Boolean);
+
+console.log('Allowed origins:', allowedOrigins);
+console.log('FRONTEND_URL from env:', process.env.FRONTEND_URL);
 
 app.use(cors({
   origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
+    console.log('CORS request from origin:', origin);
     if (!origin) return callback(null, true);
     if (allowedOrigins.includes(origin)) {
+      console.log('CORS allowed for origin:', origin);
       callback(null, true);
     } else {
       console.log('CORS blocked origin:', origin);
       callback(new Error('Not allowed by CORS'));
     }
   },
-  credentials: true, // 🔑 allows cookies to be sent
+  credentials: true,
+  optionsSuccessStatus: 200
 }));
 
+// Middleware
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser()); // For JWT cookies
+app.set('trust proxy', 1);
 
-// --- Session configuration for cross-origin cookies (Netlify + Render) ---
-app.use(
-  session({
-    secret: process.env.SESSION_SECRET || 'your-session-secret-key',
-    resave: false,
-    store: sessionStore, // Use Redis store in production, memory store in development
-    saveUninitialized: false,
-    name: 'brandverse.sid',
-    cookie: {
-      httpOnly: true, // prevents JavaScript access
-      secure: process.env.NODE_ENV === 'production',   // 🔑 only require HTTPS in production
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // 🔑 allows cross-site cookie sending in production
-      maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
-      domain: process.env.NODE_ENV === 'production' ? undefined : undefined // Let browser handle domain
-    }
-  })
-);
-
-// Session debugging middleware
+// Simple request logging
 app.use((req, res, next) => {
   if (req.path.includes('/admin') || req.path.includes('/auth')) {
-    console.log(`[Session Debug] ${req.method} ${req.path}`, {
-      sessionId: req.sessionID,
-      sessionExists: !!req.session,
-      user: req.session?.user,
-      cookies: req.headers.cookie?.substring(0, 100) + '...', // Truncate for readability
-      origin: req.headers.origin,
-      userAgent: req.headers['user-agent']?.substring(0, 50) + '...'
-    });
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
+    console.log('Cookies:', req.cookies);
+    console.log('Authorization header:', req.headers.authorization);
   }
   next();
 });
 
+// Routes
 app.get('/health', (_req, res) => {
-  const isRedisConnected = redisClient && redisClient.isReady;
   res.json({ 
     ok: true, 
-    redis: isRedisConnected ? 'connected' : 'not connected',
-    sessionStore: sessionStore instanceof RedisStore ? 'redis' : 'memory',
-    nodeEnv: process.env.NODE_ENV
+    auth: 'JWT',
+    nodeEnv: process.env.NODE_ENV,
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Debug endpoint
+app.get('/api/debug/auth', (req, res) => {
+  res.json({
+    cookies: req.cookies,
+    authHeader: req.headers.authorization,
+    timestamp: new Date().toISOString()
   });
 });
 
@@ -159,4 +95,9 @@ app.use('/api/delivery', deliveryRoutes);
 app.use('/api/addresses', addressRoutes);
 
 const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => console.log(`API listening on http://localhost:${PORT}`));
+app.listen(PORT, () => {
+  console.log(`API listening on http://localhost:${PORT}`);
+  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`Auth method: JWT (No sessions)`);
+  console.log(`Allowed origins: ${allowedOrigins.join(', ')}`);
+});

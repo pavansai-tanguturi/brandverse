@@ -137,7 +137,17 @@ function Home() {
       const response = await fetch(`${API_BASE_URL}/api/products`);
       if (response.ok) {
         const data = await response.json();
-        console.log('Fetched products:', data); // Debug log
+        
+        // NEW DEBUG: Log each product ID specifically
+        data.forEach((product, index) => {
+          console.log(`Product ${index + 1}:`, {
+            id: product.id,
+            title: product.title,
+            id_type: typeof product.id,
+            id_length: product.id ? product.id.length : 'no id'
+          });
+        });
+        
         setProducts(data.slice(0, 12)); // Show first 12 products on home page
       } else {
         console.error('Failed to fetch products');
@@ -440,6 +450,13 @@ function Home() {
                     <h3 className="font-bold text-lg text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
                       {product.title || 'Product Name'}
                     </h3>
+                    
+                    {/* FIX: Render category name instead of the object */}
+                    {product.category && (
+                      <p className="text-sm text-gray-500 mb-2">
+                        Category: {product.category.name}
+                      </p>
+                    )}
                     <p className="text-gray-600 text-sm mb-4 line-clamp-2">
                       {product.description || 'No description available'}
                     </p>

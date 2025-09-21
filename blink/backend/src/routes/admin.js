@@ -1,23 +1,36 @@
 import express from 'express';
-import { requireAdmin } from '../middleware/auth.js';
 import { summary, exportAnalytics } from '../controllers/adminController.js';
 import { 
   adminGetDeliveryLocations, 
   adminAddDeliveryLocation, 
   adminUpdateDeliveryLocation, 
   adminDeleteDeliveryLocation, 
-  adminToggleDeliveryLocation 
+  adminToggleDeliveryLocation, 
+  adminBulkAddDeliveryLocations, 
+  adminBulkDeleteDeliveryLocations, 
+  adminBulkToggleDeliveryLocations, 
+  adminExportDeliveryLocations
 } from '../controllers/deliveryController.js';
+import { adminAuth, authenticateJWT } from '../controllers/authController.js';
 
 const router = express.Router();
-router.get('/analytics/summary', requireAdmin, summary);
-router.get('/analytics/export', requireAdmin, exportAnalytics);
+
+// Apply JWT authentication to all admin routes
+router.use(adminAuth);
+
+router.get('/analytics/summary', summary);
+router.get('/analytics/export', exportAnalytics);
 
 // Delivery location management
-router.get('/delivery-locations', requireAdmin, adminGetDeliveryLocations);
-router.post('/delivery-locations', requireAdmin, adminAddDeliveryLocation);
-router.put('/delivery-locations/:id', requireAdmin, adminUpdateDeliveryLocation);
-router.delete('/delivery-locations/:id', requireAdmin, adminDeleteDeliveryLocation);
-router.patch('/delivery-locations/:id/toggle', requireAdmin, adminToggleDeliveryLocation);
+router.get('/delivery-locations', adminGetDeliveryLocations);
+router.post('/delivery-locations', adminAddDeliveryLocation);
+router.put('/delivery-locations/:id', adminUpdateDeliveryLocation);
+router.delete('/delivery-locations/:id', adminDeleteDeliveryLocation);
+router.patch('/delivery-locations/:id/toggle', adminToggleDeliveryLocation);
 
+// Bulk operations
+router.post('/delivery-locations/bulk', adminBulkAddDeliveryLocations);
+router.delete('/delivery-locations/bulk', adminBulkDeleteDeliveryLocations);
+router.patch('/delivery-locations/bulk-toggle', adminBulkToggleDeliveryLocations);
+router.get('/delivery-locations/export', adminExportDeliveryLocations);
 export default router;

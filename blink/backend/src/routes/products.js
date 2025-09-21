@@ -1,5 +1,7 @@
 import express from 'express';
 import multer from 'multer';
+// ...existing code...
+import { adminAuth, authenticateJWT } from '../controllers/authController.js';
 import {
   listProducts,
   getProduct,
@@ -14,13 +16,16 @@ import {
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
 
+// Public routes (no authentication required)
 router.get('/search', searchProducts);
 router.get('/', listProducts);
 router.get('/:id', getProduct);
-router.post('/', upload.array('images', 6), createProduct);
-router.patch('/:id', updateProduct);
-router.delete('/:id', deleteProduct);
-router.post('/:id/images', upload.array('images', 6), addImages);
-router.delete('/:productId/images/:imageId', deleteImage);
+
+// Admin-only routes (require admin authentication)
+router.post('/', adminAuth, upload.array('images', 6), createProduct);
+router.patch('/:id', adminAuth, updateProduct);
+router.delete('/:id', adminAuth, deleteProduct);
+router.post('/:id/images', adminAuth, upload.array('images', 6), addImages);
+router.delete('/:productId/images/:imageId', adminAuth, deleteImage);
 
 export default router;

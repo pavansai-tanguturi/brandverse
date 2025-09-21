@@ -1,5 +1,52 @@
 import { supabaseAdmin } from '../config/supabaseClient.js';
 
+// Utility function to validate address data
+const validateAddressData = (addressData) => {
+  const errors = [];
+  
+  const requiredFields = {
+    full_name: 'Full Name',
+    phone: 'Phone Number',
+    address_line_1: 'Address Line 1',
+    city: 'City',
+    state: 'State',
+    postal_code: 'Postal Code'
+  };
+
+  for (const [field, label] of Object.entries(requiredFields)) {
+    if (!addressData[field] || addressData[field].trim().length === 0) {
+      errors.push(`${label} is required`);
+    }
+  }
+
+  // Validate phone number format (basic validation)
+  if (addressData.phone && !/^\d{10}$/.test(addressData.phone.replace(/[-\s]/g, ''))) {
+    errors.push('Phone number must be 10 digits');
+  }
+
+  // Validate postal code format (basic validation for Indian PIN codes)
+  if (addressData.postal_code && !/^\d{6}$/.test(addressData.postal_code)) {
+    errors.push('Postal code must be 6 digits');
+  }
+
+  return errors;
+};
+
+// Utility function to verify address ownership
+const verifyAddressOwnership = async (addressId, customerId) => {
+  const { data, error } = await supabaseAdmin
+    .from('addresses')
+    .select('customer_id')
+    .eq('id', addressId)
+    .single();
+
+  if (error || !data) {
+    return false;
+  }
+
+  return data.customer_id === customerId;
+};
+
 // Get all addresses for a customer
 const getCustomerAddresses = async (req, res) => {
   try {
@@ -8,7 +55,12 @@ const getCustomerAddresses = async (req, res) => {
     if (!customer_id) {
       return res.status(400).json({ error: 'Customer ID is required' });
     }
+    
+    if (!req.user) {
+      return res.status(401).json({ error: 'Login required' });
+    }
 
+    const auth_user_id = req.user.id;
     const { data: addresses, error } = await supabaseAdmin
       .from('addresses')
       .select('*')
@@ -262,12 +314,12 @@ const setDefaultAddress = async (req, res) => {
 // Get all addresses for the current authenticated user
 const getCurrentUserAddresses = async (req, res) => {
   try {
-    if (!req.session || !req.session.user) {
-      console.log('No session or user found');
+    if (!req.user) {
+      console.log('No user found');
       return res.status(401).json({ error: 'User not authenticated' });
     }
 
-    const auth_user_id = req.session.user.id;
+    const auth_user_id = req.user.id;
     console.log('Fetching addresses for auth_user_id:', auth_user_id);
 
     // First, get the customer record to find the database customer ID
@@ -308,11 +360,11 @@ const getCurrentUserAddresses = async (req, res) => {
 // Create a new address for the current authenticated user
 const createCurrentUserAddress = async (req, res) => {
   try {
-    if (!req.session || !req.session.user) {
+    if (!req.user) {
       return res.status(401).json({ error: 'User not authenticated' });
     }
 
-    const auth_user_id = req.session.user.id;
+    const auth_user_id = req.user.id;
     
     // First, get the customer record to find the database customer ID
     let { data: customer, error: customerError } = await supabaseAdmin
@@ -325,8 +377,8 @@ const createCurrentUserAddress = async (req, res) => {
       console.error('Customer not found for auth_user_id:', auth_user_id, customerError);
       
       // Try to create the customer record if it doesn't exist
-      const userEmail = req.session.user.email;
-      const userName = req.session.user.full_name || req.session.user.name || 'User';
+      const userEmail = req.user.email;
+      const userName = req.user.full_name || req.user.name || 'User';
       
       console.log('Attempting to create customer record for:', { auth_user_id, userEmail, userName });
       
@@ -422,6 +474,243 @@ const createCurrentUserAddress = async (req, res) => {
   }
 };
 
+// Bulk create addresses
+const bulkCreateAddresses = async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+
+    const { addresses } = req.body;
+    if (!Array.isArray(addresses) || addresses.length === 0) {
+      return res.status(400).json({ error: 'Addresses array is required' });
+    }
+
+    // Get customer ID
+    const { data: customer } = await supabaseAdmin
+      .from('customers')
+      .select('id')
+      .eq('auth_user_id', req.user.id)
+      .single();
+
+    if (!customer) {
+      return res.status(404).json({ error: 'Customer not found' });
+    }
+
+    // Validate all addresses
+    const validationErrors = [];
+    addresses.forEach((addr, index) => {
+      const errors = validateAddressData(addr);
+      if (errors.length > 0) {
+        validationErrors.push({ index, errors });
+      }
+    });
+
+    if (validationErrors.length > 0) {
+      return res.status(400).json({
+        error: 'Validation failed',
+        details: validationErrors
+      });
+    }
+
+    // Prepare addresses for insertion
+    const addressesToInsert = addresses.map(addr => ({
+      ...addr,
+      customer_id: customer.id,
+      country: addr.country || 'India'
+    }));
+
+    const { data, error } = await supabaseAdmin
+      .from('addresses')
+      .insert(addressesToInsert)
+      .select();
+
+    if (error) {
+      return res.status(500).json({ error: 'Failed to create addresses' });
+    }
+
+    res.status(201).json({
+      message: `Successfully created ${data.length} addresses`,
+      addresses: data
+    });
+  } catch (error) {
+    console.error('Error in bulkCreateAddresses:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+// Bulk delete addresses
+const bulkDeleteAddresses = async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+
+    const { ids } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ error: 'Address IDs array is required' });
+    }
+
+    // Get customer ID
+    const { data: customer } = await supabaseAdmin
+      .from('customers')
+      .select('id')
+      .eq('auth_user_id', req.user.id)
+      .single();
+
+    if (!customer) {
+      return res.status(404).json({ error: 'Customer not found' });
+    }
+
+    // Verify ownership of all addresses
+    for (const id of ids) {
+      const isOwner = await verifyAddressOwnership(id, customer.id);
+      if (!isOwner) {
+        return res.status(403).json({ error: 'Not authorized to delete one or more addresses' });
+      }
+    }
+
+    const { data, error } = await supabaseAdmin
+      .from('addresses')
+      .delete()
+      .in('id', ids)
+      .eq('customer_id', customer.id)
+      .select();
+
+    if (error) {
+      return res.status(500).json({ error: 'Failed to delete addresses' });
+    }
+
+    res.json({
+      message: `Successfully deleted ${data.length} addresses`,
+      deletedAddresses: data
+    });
+  } catch (error) {
+    console.error('Error in bulkDeleteAddresses:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+// Copy/Duplicate an address
+const duplicateAddress = async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+
+    const { id } = req.params;
+
+    // Get customer ID
+    const { data: customer } = await supabaseAdmin
+      .from('customers')
+      .select('id')
+      .eq('auth_user_id', req.user.id)
+      .single();
+
+    if (!customer) {
+      return res.status(404).json({ error: 'Customer not found' });
+    }
+
+    // Verify ownership and get address
+    const isOwner = await verifyAddressOwnership(id, customer.id);
+    if (!isOwner) {
+      return res.status(403).json({ error: 'Not authorized to access this address' });
+    }
+
+    const { data: sourceAddress } = await supabaseAdmin
+      .from('addresses')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (!sourceAddress) {
+      return res.status(404).json({ error: 'Address not found' });
+    }
+
+    // Create new address based on source
+    const { id: _, created_at, updated_at, is_default, ...addressData } = sourceAddress;
+    const { data: newAddress, error } = await supabaseAdmin
+      .from('addresses')
+      .insert({
+        ...addressData,
+        is_default: false,
+        full_name: `${sourceAddress.full_name} (Copy)`
+      })
+      .select()
+      .single();
+
+    if (error) {
+      return res.status(500).json({ error: 'Failed to duplicate address' });
+    }
+
+    res.status(201).json({
+      message: 'Address duplicated successfully',
+      address: newAddress
+    });
+  } catch (error) {
+    console.error('Error in duplicateAddress:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+// Search/Filter addresses
+const searchAddresses = async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+
+    const { query, state, city } = req.query;
+
+    // Get customer ID
+    const { data: customer } = await supabaseAdmin
+      .from('customers')
+      .select('id')
+      .eq('auth_user_id', req.user.id)
+      .single();
+
+    if (!customer) {
+      return res.status(404).json({ error: 'Customer not found' });
+    }
+
+    let dbQuery = supabaseAdmin
+      .from('addresses')
+      .select('*')
+      .eq('customer_id', customer.id);
+
+    // Apply filters
+    if (query) {
+      dbQuery = dbQuery.or(
+        `full_name.ilike.%${query}%,address_line_1.ilike.%${query}%,address_line_2.ilike.%${query}%`
+      );
+    }
+
+    if (state) {
+      dbQuery = dbQuery.ilike('state', `%${state}%`);
+    }
+
+    if (city) {
+      dbQuery = dbQuery.ilike('city', `%${city}%`);
+    }
+
+    // Order by default first, then created date
+    dbQuery = dbQuery
+      .order('is_default', { ascending: false })
+      .order('created_at', { ascending: false });
+
+    const { data, error } = await dbQuery;
+
+    if (error) {
+      return res.status(500).json({ error: 'Failed to search addresses' });
+    }
+
+    res.json(data || []);
+  } catch (error) {
+    console.error('Error in searchAddresses:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
 export {
   getCustomerAddresses,
   getAddress,
@@ -430,5 +719,9 @@ export {
   deleteAddress,
   setDefaultAddress,
   getCurrentUserAddresses,
-  createCurrentUserAddress
+  createCurrentUserAddress,
+  bulkCreateAddresses,
+  bulkDeleteAddresses,
+  duplicateAddress,
+  searchAddresses
 };

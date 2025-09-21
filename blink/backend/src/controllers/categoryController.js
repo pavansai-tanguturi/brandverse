@@ -46,10 +46,10 @@ export async function listCategories(_req, res) {
   }
 }
 
+
 export async function createCategory(req, res) {
-  if (!req.session?.user || !req.session.user.isAdmin)
+  if (!req.user || !req.user.isAdmin)
     return res.status(403).json({ error: 'Admin only' });
-  
   const { name, slug } = req.body;
   const { data, error } = await supabaseAdmin
     .from('categories')
@@ -61,9 +61,8 @@ export async function createCategory(req, res) {
 }
 
 export async function updateCategory(req, res) {
-  if (!req.session?.user || !req.session.user.isAdmin)
+  if (!req.user || !req.user.isAdmin)
     return res.status(403).json({ error: 'Admin only' });
-  
   const { id } = req.params;
   const patch = req.body;
   const { data, error } = await supabaseAdmin
@@ -77,15 +76,13 @@ export async function updateCategory(req, res) {
 }
 
 export async function deleteCategory(req, res) {
-  if (!req.session?.user || !req.session.user.isAdmin)
+  if (!req.user || !req.user.isAdmin)
     return res.status(403).json({ error: 'Admin only' });
-  
   const { id } = req.params;
   const { error } = await supabaseAdmin
     .from('categories')
     .delete()
     .eq('id', id);
   if (error) return res.status(400).json({ error: error.message });
-
   res.status(200).json({ message: 'Category deleted successfully' });
 }

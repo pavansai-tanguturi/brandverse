@@ -1,15 +1,16 @@
-import { Router } from 'express';
-import { listCustomers, getCustomerDetails, updateCustomerAdmin } from '../controllers/customerController.js';
+import express from 'express';
+import {
+  listCustomers,
+  getCustomerDetails,
+  updateCustomerAdmin
+} from '../controllers/customerController.js';
+import { adminAuth } from '../controllers/authController.js';
 
-const router = Router();
+const router = express.Router();
 
-// GET /api/admin/customers - List all customers with stats
-router.get('/', listCustomers);
-
-// GET /api/admin/customers/:id - Get customer details
-router.get('/:id', getCustomerDetails);
-
-// PUT /api/admin/customers/:id - Update customer (admin only)
-router.put('/:id', updateCustomerAdmin);
+// Apply JWT admin authentication to all admin/customer routes
+router.get('/', adminAuth, listCustomers);
+router.get('/:id', adminAuth, getCustomerDetails);
+router.put('/:id', adminAuth, updateCustomerAdmin);
 
 export default router;

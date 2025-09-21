@@ -1,9 +1,11 @@
 import express from 'express';
 import { getDashboardAnalytics, exportAnalytics } from '../controllers/analyticsController.js';
+import { adminAuth } from '../controllers/authController.js';
 
 const router = express.Router();
 
-router.get('/dashboard', getDashboardAnalytics);
-router.get('/export', exportAnalytics);
+// Protect analytics endpoints with adminAuth (JWT)
+router.get('/dashboard', adminAuth, getDashboardAnalytics);
+router.get('/export', adminAuth, exportAnalytics);
 
 export default router;
