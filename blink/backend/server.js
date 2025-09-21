@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
+import path from 'path';
 import authRoutes from './src/routes/auth.js';
 import productRoutes from './src/routes/products.js';
 import cartRoutes from './src/routes/cart.js';
@@ -14,10 +15,15 @@ import analyticsRoutes from './src/routes/analytics.js';
 import adminCustomerRoutes from './src/routes/adminCustomers.js';
 import deliveryRoutes from './src/routes/delivery.js';
 import addressRoutes from './src/routes/addresses.js';
+import uploadRoutes from './src/routes/upload.js';
+import bannersRoutes from './src/routes/banners.js';
 
 dotenv.config();
 
 const app = express();
+
+// Serve uploaded images statically
+app.use('/uploads', express.static(path.join(process.cwd(), 'blink', 'backend', 'uploads')));
 
 // CORS configuration
 const allowedOrigins = [
@@ -93,6 +99,8 @@ app.use('/api/admin/analytics', analyticsRoutes);
 app.use('/api/admin/customers', adminCustomerRoutes);
 app.use('/api/delivery', deliveryRoutes);
 app.use('/api/addresses', addressRoutes);
+app.use('/api/upload', uploadRoutes);
+app.use('/api/banners', bannersRoutes);
 
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {

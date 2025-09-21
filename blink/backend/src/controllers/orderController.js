@@ -363,12 +363,30 @@ export async function restoreStockForOrder(req, res) {
 // List all orders (admin only)
 export async function listAllOrders(req, res) {
   try {
-    // Optionally, add admin check here if not handled by middleware
-    const { data, error } = await supabaseAdmin
+    const search = req.query.search?.toLowerCase();
+    let query = supabaseAdmin
       .from('orders')
-      .select('*, order_items(*)')
+      .select('*, order_items(*), customers(full_name, email, phone)')
       .order('created_at', { ascending: false });
+
+    let { data, error } = await query;
     if (error) return res.status(400).json({ error: error.message });
+
+    // If search param is present, filter in JS (Supabase doesn't support ilike on joined fields)
+    if (search) {
+      data = (data || []).filter(order => {
+        // Order ID
+        if (order.id && order.id.toLowerCase().includes(search)) return true;
+        // Customer name/email/phone (handle missing customers object)
+        const customer = order.customers || {};
+        if (
+          (customer.full_name && customer.full_name.toLowerCase().includes(search)) ||
+          (customer.email && customer.email.toLowerCase().includes(search)) ||
+          (customer.phone && customer.phone.toLowerCase().includes(search))
+        ) return true;
+        return false;
+      });
+    }
     res.json(data);
   } catch (error) {
     console.error('💥 listAllOrders failed:', error);

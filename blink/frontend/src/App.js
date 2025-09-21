@@ -24,6 +24,8 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminProducts from './pages/admin/AdminProducts';
 import AdminOrders from './pages/admin/AdminOrders';
 import AdminUsers from './pages/admin/AdminUsers';
+import AdminCategories from './pages/admin/AdminCategories';
+import AdminBanners from './pages/admin/AdminBanners';
 import AdminDeliveryLocations from './pages/admin/AdminDeliveryLocations';
 import AnalyticsDashboard from './pages/admin/AnalyticsDashboard';
 import UnauthorizedPage from './pages/UnauthorizedPage';
@@ -69,6 +71,8 @@ function App() {
             <Route path="/admin/users" element={<AdminUsers />} />
             <Route path="/admin/delivery-locations" element={<AdminDeliveryLocations />} />
             <Route path="/admin/analytics" element={<AnalyticsDashboard />} />
+            <Route path="/admin/categories" element={<AdminCategories />} />
+            <Route path="/admin/banners" element={<AdminBanners />} />
             <Route path="/admin/logout" element={<Logout />} />
           </Routes>
               

@@ -483,15 +483,15 @@ const CustomerDashboard = () => {
                     </svg>
                   )
                 },
-                { 
-                  id: 'payment', 
-                  name: 'Payment', 
-                  icon: (
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                    </svg>
-                  )
-                },
+                // {
+                //   id: 'payment',
+                //   name: 'Payment',
+                //   icon: (
+                //     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                //       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                //     </svg>
+                //   )
+                // },
                 { 
                   id: 'addresses', 
                   name: 'Addresses', 
@@ -542,6 +542,29 @@ const CustomerDashboard = () => {
                   {loadingData && (
                     <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
                   )}
+                </div>
+                {/* Status Color Legend */}
+                <div className="flex flex-wrap gap-3 mb-4 text-xs">
+                  <div className="flex items-center gap-2">
+                    <span className="inline-block w-4 h-4 rounded-full bg-green-100 border border-green-200"></span>
+                    <span className="text-gray-700">Delivered / COD Confirmed</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="inline-block w-4 h-4 rounded-full bg-blue-100 border border-blue-200"></span>
+                    <span className="text-gray-700">Shipped</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="inline-block w-4 h-4 rounded-full bg-yellow-100 border border-yellow-200"></span>
+                    <span className="text-gray-700">Processing / Payment Pending</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="inline-block w-4 h-4 rounded-full bg-red-100 border border-red-200"></span>
+                    <span className="text-gray-700">Payment Failed</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="inline-block w-4 h-4 rounded-full bg-gray-100 border border-gray-200"></span>
+                    <span className="text-gray-700">Pending / Other</span>
+                  </div>
                 </div>
                 
                 {error && (
@@ -839,6 +862,7 @@ const CustomerDashboard = () => {
             )}
 
             {/* Payment Methods Tab */}
+            {/*
             {activeTab === 'payment' && (
               <div>
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 space-y-2 sm:space-y-0">
@@ -892,6 +916,7 @@ const CustomerDashboard = () => {
                 )}
               </div>
             )}
+            */}
 
             {/* Addresses Tab */}
             {activeTab === 'addresses' && (

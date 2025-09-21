@@ -23,63 +23,24 @@ function Home() {
   const [showDeliveryMessage, setShowDeliveryMessage] = useState(true);
   const categoriesRef = useRef(null);
 
-  // Get category image based on slug
-  const getCategoryImage = (slug) => {
-    const imageMap = {
-      'dairy': "https://images.unsplash.com/photo-1563636619-e9143da7973b?auto=format&fit=crop&w=200&q=80",
-      'vegetables': "https://images.unsplash.com/photo-1610348725531-843dff563e2c?auto=format&fit=crop&w=200&q=80",
-      'drinks': "https://images.unsplash.com/photo-1570197788417-0e82375c9371?auto=format&fit=crop&w=200&q=80",
-      'bakery': "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=200&q=80",
-      'grains': "https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&w=200&q=80",
-      'beverages': "https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=200&q=80",
-      'personal-care': "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?auto=format&fit=crop&w=200&q=80",
-      'cleaning': "https://images.unsplash.com/photo-1585421514738-01798e348b17?auto=format&fit=crop&w=200&q=80",
-      'frozen': "https://images.unsplash.com/photo-1571197119011-ee0bb51c1535?auto=format&fit=crop&w=200&q=80",
-      'beauty': "https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&w=200&q=80",
-      'organic': "https://images.unsplash.com/photo-1584464491033-06628f3a6b7b?auto=format&fit=crop&w=200&q=80"
-    };
-    return imageMap[slug] || "https://images.unsplash.com/photo-1584464491033-06628f3a6b7b?auto=format&fit=crop&w=200&q=80";
-  };
+  // Banners state
+  const [banners, setBanners] = useState([]);
 
-  // Banner data - moved before useEffect that references it
-  const banners = [
-    {
-      id: 1,
-      title: "Fresh Dairy, Everyday",
-      subtitle: "Farm-fresh milk, cheese, and dairy products delivered to your doorstep",
-      buttonText: "Shop Dairy",
-      link: "/category/dairy",
-      image: "https://images.unsplash.com/photo-1563636619-e9143da7973b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
-      color: "#2563eb"
-    },
-    {
-      id: 2,
-      title: "Fresh Groceries",
-      subtitle: "Quality groceries at unbeatable prices - delivered fresh daily",
-      buttonText: "Shop Groceries",
-      link: "/category/groceries",
-      image: "https://images.unsplash.com/photo-1542838132-92c53300491e?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
-      color: "#059669"
-    },
-    {
-      id: 3,
-      title: "Health & Wellness",
-      subtitle: "Your health is our priority - pharmacy and wellness products",
-      buttonText: "Shop Health",
-      link: "/category/pharmacy",
-      image: "https://images.unsplash.com/photo-1559757148-5c350d0d3c56?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
-      color: "#dc2626"
-    },
-    {
-      id: 4,
-      title: "Pet Care Essentials",
-      subtitle: "Everything your furry friends need for a happy, healthy life",
-      buttonText: "Shop Pet Care",
-      link: "/category/pet-care",
-      image: "https://images.unsplash.com/photo-1601758228041-f3b2795255f1?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
-      color: "#7c3aed"
+  // Fetch banners from backend
+  const fetchBanners = async () => {
+    try {
+      const API_BASE_URL = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
+      const response = await fetch(`${API_BASE_URL}/api/banners`);
+      if (response.ok) {
+        const data = await response.json();
+        setBanners(data);
+      } else {
+        console.error('Failed to fetch banners');
+      }
+    } catch (error) {
+      console.error('Error fetching banners:', error);
     }
-  ];
+  };
 
   // Check scroll position and update arrow states
   const updateScrollButtons = () => {
@@ -199,16 +160,18 @@ function Home() {
     setCheckingDelivery(false);
   };
 
+
   // Banner carousel functionality
   useEffect(() => {
+    if (banners.length === 0) return;
     const interval = setInterval(() => {
-      setCurrentBannerIndex((prevIndex) => 
+      setCurrentBannerIndex((prevIndex) =>
         prevIndex === banners.length - 1 ? 0 : prevIndex + 1
       );
     }, 4000); // Change banner every 4 seconds
 
     return () => clearInterval(interval);
-  }, [banners.length]); // Added proper dependency array
+  }, [banners.length]);
 
   // Prevent admin access from customer interface
   const checkAdminAccess = useCallback(() => {
@@ -238,7 +201,7 @@ function Home() {
   useEffect(() => {
     fetchCategories();
     fetchProducts();
-    
+    fetchBanners();
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(async (position) => {
         const { latitude, longitude } = position.coords;
@@ -247,7 +210,6 @@ function Home() {
             `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`
           );
           const data = await response.json();
-          
           // Extract location details with better fallbacks
           const city = data.address.city || 
                       data.address.town || 
@@ -259,7 +221,6 @@ function Home() {
                         data.address.county || 
                         null;
           const country = data.address.country || 'Unknown country';
-          
           setLocationName(`${city}${region ? `, ${region}` : ''}, ${country}`);
           setUserLocation({ 
             city, 
@@ -269,7 +230,6 @@ function Home() {
             longitude,
             fullAddress: data.display_name
           });
-          
           // Check delivery availability with all location details
           await checkDeliveryAvailability(country, region, city);
         } catch (error) {
@@ -362,47 +322,58 @@ function Home() {
       {/* Modern Banner Carousel */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="relative rounded-3xl overflow-hidden shadow-2xl">
-          <div 
-            className="h-64 md:h-96 bg-cover bg-center relative flex items-center transition-all duration-700"
-            style={{ 
-              backgroundImage: `url(${banners[currentBannerIndex].image})`,
-              backgroundColor: banners[currentBannerIndex].color || '#2563eb'
-            }}
-          >
-            {/* Gradient Overlay */}
-            <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-transparent"></div>
-            
-            {/* Content */}
-            <div className="relative z-10 text-white px-8 md:px-16 max-w-2xl">
-              <h1 className="text-3xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-white to-blue-200 bg-clip-text text-transparent">
-                {banners[currentBannerIndex].title}
-              </h1>
-              <p className="text-lg md:text-xl mb-8 text-gray-200 leading-relaxed">
-                {banners[currentBannerIndex].subtitle}
-              </p>
-              <button 
-                className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold px-8 py-4 rounded-full transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl"
-                onClick={() => navigate(banners[currentBannerIndex].link)}
+          {banners.length > 0 && banners[currentBannerIndex] ? (
+            <>
+              <div 
+                className="h-64 md:h-96 bg-cover bg-center relative flex items-center transition-all duration-700"
+                style={{ 
+                  backgroundImage: `url(${banners[currentBannerIndex].image_url})`,
+                  backgroundColor: banners[currentBannerIndex].color || '#2563eb'
+                }}
               >
-                {banners[currentBannerIndex].buttonText}
-              </button>
+                {/* Gradient Overlay */}
+                <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-transparent"></div>
+                {/* Content */}
+                <div className="relative z-10 text-white px-8 md:px-16 max-w-2xl">
+                  <h1 className="text-3xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-white to-blue-200 bg-clip-text text-transparent">
+                    {banners[currentBannerIndex].title}
+                  </h1>
+                  <p className="text-lg md:text-xl mb-8 text-gray-200 leading-relaxed">
+                    {banners[currentBannerIndex].subtitle}
+                  </p>
+                  <button 
+                    className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold px-8 py-4 rounded-full transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl"
+                    onClick={() => {
+                      const slug = banners[currentBannerIndex].category_slug;
+                      if (slug) {
+                        navigate(`/products?category=${slug}`);
+                      }
+                    }}
+                  >
+                    {banners[currentBannerIndex].button_text || 'Shop Now'}
+                  </button>
+                </div>
+              </div>
+              {/* Banner Navigation Dots */}
+              <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex space-x-3">
+                {banners.map((_, index) => (
+                  <button
+                    key={index}
+                    className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                      index === currentBannerIndex 
+                        ? 'bg-white shadow-lg scale-125' 
+                        : 'bg-white/50 hover:bg-white/75'
+                    }`}
+                    onClick={() => setCurrentBannerIndex(index)}
+                  />
+                ))}
+              </div>
+            </>
+          ) : (
+            <div className="h-64 md:h-96 flex items-center justify-center bg-gray-200 animate-pulse">
+              <span className="text-gray-400 text-xl">Loading banners...</span>
             </div>
-          </div>
-          
-          {/* Banner Navigation Dots */}
-          <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex space-x-3">
-            {banners.map((_, index) => (
-              <button
-                key={index}
-                className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                  index === currentBannerIndex 
-                    ? 'bg-white shadow-lg scale-125' 
-                    : 'bg-white/50 hover:bg-white/75'
-                }`}
-                onClick={() => setCurrentBannerIndex(index)}
-              />
-            ))}
-          </div>
+          )}
         </div>
       </div>
 
@@ -580,13 +551,13 @@ function Home() {
                     onClick={() => navigate(`/products?category=${item.slug}`)}
                   >
                     <div className="mb-6 overflow-hidden rounded-lg">
-                      <img 
-                        src={getCategoryImage(item.slug)} 
-                        alt={item.name || 'Category'} 
-                        className="w-full h-48 sm:h-56 md:h-64 lg:h-72 xl:h-80 object-cover group-hover:scale-105 transition-transform duration-300" 
+                      <img
+                        src={item.image_url}
+                        alt={item.name || 'Category'}
+                        className="w-full h-48 sm:h-56 md:h-64 lg:h-72 xl:h-80 object-cover group-hover:scale-105 transition-transform duration-300"
                       />
                     </div>
-                    <p className="text-center text-lg sm:text-xl md:text-2xl font-medium text-gray-900 group-hover:text-blue-600 transition-colors px-2">
+                    <p className="text-center text-lg sm:text-xl md:text-2xl font-extrabold bg-gradient-to-r from-blue-600 via-purple-500 to-pink-500 bg-clip-text text-transparent group-hover:from-blue-700 group-hover:to-pink-600 transition-all duration-300 px-2 font-sans tracking-wide drop-shadow-sm" style={{fontFamily: 'Poppins, Inter, Arial, sans-serif'}}>
                       {item.name || 'Category'}
                     </p>
                   </div>

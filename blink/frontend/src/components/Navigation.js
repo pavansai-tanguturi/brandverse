@@ -70,7 +70,7 @@ const Navigation = ({ showSearch = true }) => {
           )}
 
           {/* Location Display - Hidden on small screens */}
-          <div className="hidden lg:flex items-center space-x-2 bg-white/10 backdrop-blur-lg rounded-xl px-3 py-2 cursor-pointer hover:bg-white/20 transition-all" onClick={() => navigate('/delivery-locations')}>
+          <div className="hidden lg:flex items-center space-x-2 bg-white/10 backdrop-blur-lg rounded-xl px-3 py-2 cursor-pointer hover:bg-white/20 transition-all">
             <img src={locationIcon} className="h-4 w-4" alt="location" />
             <div className="flex flex-col">
               <span className="text-gray-300 text-xs uppercase tracking-wide">Deliver to</span>

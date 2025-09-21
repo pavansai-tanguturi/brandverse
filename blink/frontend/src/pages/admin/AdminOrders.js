@@ -21,25 +21,19 @@ const AdminOrders = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredOrders, setFilteredOrders] = useState([]);
 
-  useEffect(() => {
-    fetchOrders();
-    fetchDeliveryLocations();
-  }, []);
 
-  // Filter orders based on search query
+  // Fetch orders on mount and when searchQuery changes
   useEffect(() => {
-    if (!searchQuery.trim()) {
-      setFilteredOrders(orders);
-    } else {
-      const filtered = orders.filter(order => 
-        order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        order.customers?.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        order.customers?.email?.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-      setFilteredOrders(filtered);
-      setCurrentPage(1); // Reset to first page when searching
-    }
-  }, [orders, searchQuery]);
+    fetchOrders(typeof searchQuery === 'string' ? searchQuery : '');
+    fetchDeliveryLocations();
+    // eslint-disable-next-line
+  }, [searchQuery]);
+
+  // Set filteredOrders directly from orders (backend already filters)
+  useEffect(() => {
+    setFilteredOrders(orders);
+    setCurrentPage(1);
+  }, [orders]);
 
   // Auto-dismiss success messages after 5 seconds
   useEffect(() => {
@@ -51,10 +45,14 @@ const AdminOrders = () => {
     }
   }, [message]);
 
-  const fetchOrders = async () => {
+  const fetchOrders = async (search) => {
     try {
       const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
-      const res = await fetch(`${API_BASE}/api/orders/admin`, {
+      const searchStr = typeof search === 'string' ? search : '';
+      const url = searchStr.trim()
+        ? `${API_BASE}/api/orders/admin?search=${encodeURIComponent(searchStr.trim())}`
+        : `${API_BASE}/api/orders/admin`;
+      const res = await fetch(url, {
         credentials: 'include'
       });
       if (res.ok) {
@@ -312,13 +310,17 @@ const AdminOrders = () => {
                   {sortByStatus ? 'Sort by Status ✓' : 'Sort by Date'}
                 </button>
                 <button
-                  onClick={fetchOrders}
-                  className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-200 text-white rounded-lg font-medium transition-all duration-200 shadow-sm"
+                  onClick={() => {
+                    setLoading(true);
+                    fetchOrders(searchQuery);
+                  }}
+                  className={`inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-200 text-white rounded-lg font-medium transition-all duration-200 shadow-sm ${loading ? 'opacity-80' : ''}`}
+                  disabled={loading}
                 >
-                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                   </svg>
-                  Refresh
+                  {loading ? 'Refreshing...' : 'Refresh'}
                 </button>
               </div>
             </div>
