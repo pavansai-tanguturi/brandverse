@@ -67,16 +67,17 @@ const Login = () => {
       
       if (response.ok) {
         setMessage('Authentication successful!');
-        
-        // Check if user is admin based on backend response
+        // Store token and admin status in localStorage
+        if (data.token) {
+          localStorage.setItem('auth_token', data.token);
+        }
         if (data.admin) {
+          localStorage.setItem('is_admin', 'true');
           navigate('/admin/dashboard');
         } else {
           setMessage('Login successful! Refreshing user session...');
-          
           // Refresh the AuthContext to get the new user session
           await refreshUser();
-          
           setMessage('Login successful! Redirecting to home...');
           setTimeout(() => {
             navigate('/home');

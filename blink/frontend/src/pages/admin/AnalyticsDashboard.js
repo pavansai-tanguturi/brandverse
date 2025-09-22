@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { apiCall } from '../../utils/api';
 import { 
@@ -17,6 +18,8 @@ import {
 } from 'recharts';
 import { format, subDays } from 'date-fns';
 import AdminNav from '../../components/admin/AdminNav';
+// Get JWT token for admin API calls
+const token = localStorage.getItem('auth_token');
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D'];
 
@@ -75,7 +78,6 @@ const AnalyticsDashboard = () => {
     try {
       // Use fetch directly for blob download, but add Authorization header
       const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
-      const token = localStorage.getItem('auth_token');
       const res = await fetch(`${API_BASE}/api/admin/analytics/export?format=${format}&startDate=${dateRange.start}&endDate=${dateRange.end}`, {
         credentials: 'include',
         headers: {
