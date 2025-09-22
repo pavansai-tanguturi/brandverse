@@ -127,10 +127,12 @@ export async function verifyOtp(req, res) {
       console.warn('[VERIFY_OTP CUSTOMER WARN]', err.message || err);
     }
     // Set JWT as HTTP-only cookie AND return in response
+    const isProduction = process.env.NODE_ENV === 'production';
     const cookieOptions = {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      secure: isProduction, // Only HTTPS in production
+      sameSite: isProduction ? 'none' : 'lax', // Allow cross-origin in prod
+      domain: isProduction ? '.onrender.com' : 'localhost',
       maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
     };
     
@@ -212,28 +214,36 @@ export const authenticateJWT = (req, res, next) => {
   console.log('[AUTH_MIDDLEWARE] Request URL:', req.url);
   console.log('[AUTH_MIDDLEWARE] Cookies:', req.cookies);
   console.log('[AUTH_MIDDLEWARE] Authorization header:', req.headers.authorization);
-  
+
+  // Try to get token from cookie first
   let token = req.cookies?.auth_token;
+
+  // Fallback: try Authorization header
   if (!token && req.headers.authorization) {
     const authHeader = req.headers.authorization;
     if (authHeader.startsWith('Bearer ')) {
       token = authHeader.substring(7);
     }
   }
-  
+
+  // Fallback: try parsing from document.cookie header (for some proxies)
+  if (!token && req.headers.cookie) {
+    const match = req.headers.cookie.match(/auth_token=([^;]+)/);
+    if (match) token = match[1];
+  }
+
   if (!token) {
-    console.warn('[AUTH_MIDDLEWARE WARN] No token provided');
-    console.log('[AUTH_MIDDLEWARE] NODE_ENV:', process.env.NODE_ENV);
+    console.warn('[AUTH_MIDDLEWARE WARN] No token provided in cookie or Authorization header');
     return res.status(401).json({ error: 'Authentication required' });
   }
-  
+
   console.log('[AUTH_MIDDLEWARE] Token found, verifying...');
   const decoded = verifyToken(token);
   if (!decoded) {
     console.warn('[AUTH_MIDDLEWARE WARN] Invalid or expired token');
     return res.status(401).json({ error: 'Invalid or expired token' });
   }
-  
+
   console.log('[AUTH_MIDDLEWARE] Token verified successfully for:', decoded.email);
   req.user = {
     id: decoded.userId,

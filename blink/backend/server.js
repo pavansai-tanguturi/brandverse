@@ -29,8 +29,11 @@ app.use('/uploads', express.static(path.join(process.cwd(), 'blink', 'backend', 
 const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:3001',
+  'https://brandverse.onrender.com',
   'https://heartfelt-lily-3bb33d.netlify.app',
   process.env.FRONTEND_URL,
+  process.env.VITE_API_BASE,
+  process.env.SUPABASE_URL
 ].filter(Boolean);
 
 console.log('Allowed origins:', allowedOrigins);
@@ -49,6 +52,17 @@ app.use(cors({
     }
   },
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With'],
+  optionsSuccessStatus: 200
+}));
+
+// Ensure preflight requests are handled
+app.options('*', cors({
+  origin: allowedOrigins,
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With'],
   optionsSuccessStatus: 200
 }));
 

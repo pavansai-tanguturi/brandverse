@@ -1,5 +1,3 @@
-// 1. FIRST - Update your CartContext.js to handle missing endpoints gracefully
-
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
 
 const CartContext = createContext();
@@ -11,14 +9,18 @@ const CART_ACTIONS = {
   UPDATE_QUANTITY: 'UPDATE_QUANTITY',
   CLEAR_CART: 'CLEAR_CART',
   LOAD_CART: 'LOAD_CART',
-  SET_LOADING: 'SET_LOADING'
+  SET_LOADING: 'SET_LOADING',
+  SET_GUEST_MODE: 'SET_GUEST_MODE'
 };
 
-// Cart reducer (same as before)
+// Cart reducer
 const cartReducer = (state, action) => {
   switch (action.type) {
     case CART_ACTIONS.SET_LOADING:
       return { ...state, isLoading: action.payload };
+
+    case CART_ACTIONS.SET_GUEST_MODE:
+      return { ...state, isGuestMode: action.payload };
 
     case CART_ACTIONS.ADD_ITEM: {
       const { product, quantity = 1 } = action.payload;
@@ -94,18 +96,26 @@ const getInitialState = () => {
     const savedCart = localStorage.getItem('brandverse_cart');
     if (savedCart) {
       const parsedCart = JSON.parse(savedCart);
-      return parsedCart.items ? parsedCart : { items: [], isLoading: false };
+      return {
+        items: parsedCart.items || [],
+        isLoading: false,
+        isGuestMode: true // Always start in guest mode
+      };
     }
   } catch (error) {
     console.error('Error loading cart from localStorage:', error);
   }
-  return { items: [], isLoading: false };
+  return { 
+    items: [], 
+    isLoading: false, 
+    isGuestMode: true // Always start in guest mode
+  };
 };
 
-// Fallback sync function - uses existing /api/cart endpoint
+// Fallback sync function - only works for authenticated users
 const forceCartSyncFallback = async (dispatch) => {
   try {
-    console.log('🔄 Syncing cart with basic endpoint...');
+    console.log('🔄 Syncing cart with server...');
     const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
     
     const response = await fetch(`${API_BASE}/api/cart`, {
@@ -114,9 +124,19 @@ const forceCartSyncFallback = async (dispatch) => {
       credentials: 'include'
     });
 
+    if (response.status === 401) {
+      // User not authenticated - switch to guest mode
+      dispatch({ type: CART_ACTIONS.SET_GUEST_MODE, payload: true });
+      console.log('👤 Running in guest mode (not authenticated)');
+      return false;
+    }
+
     if (response.ok) {
       const cartData = await response.json();
       console.log('🛒 Server cart data:', cartData);
+      
+      // User is authenticated
+      dispatch({ type: CART_ACTIONS.SET_GUEST_MODE, payload: false });
       
       if (cartData.items && cartData.items.length > 0) {
         // Map the response to match your cart format
@@ -134,15 +154,17 @@ const forceCartSyncFallback = async (dispatch) => {
         console.log('✅ Cart synced successfully');
         return true;
       } else {
-        // Empty cart
+        // Empty cart but user is authenticated
         dispatch({ type: CART_ACTIONS.CLEAR_CART });
-        console.log('Cart is empty');
+        console.log('🛒 Server cart is empty');
         return true;
       }
     }
     return false;
   } catch (error) {
     console.error('❌ Cart sync failed:', error);
+    // On network error, assume guest mode
+    dispatch({ type: CART_ACTIONS.SET_GUEST_MODE, payload: true });
     return false;
   }
 };
@@ -162,19 +184,10 @@ export const CartProvider = ({ children }) => {
     localStorage.setItem('brandverse_cart', JSON.stringify(state));
   }, [state]);
 
-  // Sync on mount
-  useEffect(() => {
-    const syncOnMount = async () => {
-      try {
-        await forceCartSyncFallback(dispatch);
-      } catch (error) {
-        console.error('Failed to sync cart on mount:', error);
-      }
-    };
-    syncOnMount();
-  }, []);
+  // REMOVED the automatic initialization that was causing premature API calls
+  // No more useEffect making API calls on mount!
 
-  // Optimistic addToCart: update local state immediately, backend in background, sync only on error
+  // Optimistic addToCart with guest/authenticated mode handling
   const addToCart = (product, quantity = 1) => {
     // Check stock locally first
     const currentQuantityInCart = getItemQuantity(product.id);
@@ -187,40 +200,38 @@ export const CartProvider = ({ children }) => {
     // Update local state immediately for better UX
     dispatch({ type: CART_ACTIONS.ADD_ITEM, payload: { product, quantity } });
 
-    // Fire backend add in background
-    (async () => {
-      try {
-        const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
-        const response = await fetch(`${API_BASE}/api/cart/add`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ product_id: product.id, quantity })
-        });
+    // Only sync with server if user is authenticated
+    if (!state.isGuestMode) {
+      (async () => {
+        try {
+          const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
+          const response = await fetch(`${API_BASE}/api/cart/add`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ product_id: product.id, quantity })
+          });
 
-        if (!response.ok) {
-          const error = await response.json();
-          console.error('Backend add failed:', error);
-          // If stock error, show alert and sync cart
-          if (error.error && error.error.includes('stock')) {
-            alert(error.error);
-            await forceCartSyncFallback(dispatch);
+          if (response.status === 401) {
+            // User was logged out, switch to guest mode
+            dispatch({ type: CART_ACTIONS.SET_GUEST_MODE, payload: true });
+            console.log('👤 Switched to guest mode - user logged out');
+            return;
           }
-          // For other errors, just log and sync
-          else {
-            console.warn('Backend sync failed, syncing cart:', error.error);
-            await forceCartSyncFallback(dispatch);
+
+          if (!response.ok) {
+            const error = await response.json();
+            console.error('Backend add failed:', error);
+            if (error.error && error.error.includes('stock')) {
+              alert(error.error);
+              await forceCartSyncFallback(dispatch);
+            }
           }
-        } else {
-          // Optionally debounce sync for consistency, but not required for instant UX
-          // setTimeout(() => forceCartSyncFallback(dispatch), 500);
+        } catch (backendError) {
+          console.warn('Backend cart sync failed:', backendError);
         }
-      } catch (backendError) {
-        console.warn('Backend cart sync failed:', backendError);
-        // Optionally sync cart after error
-        // setTimeout(() => forceCartSyncFallback(dispatch), 500);
-      }
-    })();
+      })();
+    }
   };
 
   const removeFromCart = async (productId) => {
@@ -228,17 +239,23 @@ export const CartProvider = ({ children }) => {
       // Update local state immediately
       dispatch({ type: CART_ACTIONS.REMOVE_ITEM, payload: { productId } });
       
-      // Try backend sync
-      try {
-        const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
-        await fetch(`${API_BASE}/api/cart/remove`, {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ product_id: productId })
-        });
-      } catch (backendError) {
-        console.warn('Backend remove failed:', backendError);
+      // Try backend sync only if authenticated
+      if (!state.isGuestMode) {
+        try {
+          const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
+          const response = await fetch(`${API_BASE}/api/cart/remove`, {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ product_id: productId })
+          });
+          
+          if (response.status === 401) {
+            dispatch({ type: CART_ACTIONS.SET_GUEST_MODE, payload: true });
+          }
+        } catch (backendError) {
+          console.warn('Backend remove failed:', backendError);
+        }
       }
     } catch (error) {
       console.error('Failed to remove from cart:', error);
@@ -255,17 +272,23 @@ export const CartProvider = ({ children }) => {
       // Update local state immediately
       dispatch({ type: CART_ACTIONS.UPDATE_QUANTITY, payload: { productId, quantity } });
       
-      // Try backend sync
-      try {
-        const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
-        await fetch(`${API_BASE}/api/cart/update-quantity`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ product_id: productId, quantity })
-        });
-      } catch (backendError) {
-        console.warn('Backend update failed:', backendError);
+      // Try backend sync only if authenticated
+      if (!state.isGuestMode) {
+        try {
+          const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
+          const response = await fetch(`${API_BASE}/api/cart/update-quantity`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ product_id: productId, quantity })
+          });
+          
+          if (response.status === 401) {
+            dispatch({ type: CART_ACTIONS.SET_GUEST_MODE, payload: true });
+          }
+        } catch (backendError) {
+          console.warn('Backend update failed:', backendError);
+        }
       }
     } catch (error) {
       console.error('Failed to update quantity:', error);
@@ -274,6 +297,10 @@ export const CartProvider = ({ children }) => {
   };
 
   const forceSync = async () => {
+    if (state.isGuestMode) {
+      console.log('👤 In guest mode, skipping server sync');
+      return false;
+    }
     return await forceCartSyncFallback(dispatch);
   };
 
@@ -281,10 +308,91 @@ export const CartProvider = ({ children }) => {
     dispatch({ type: CART_ACTIONS.CLEAR_CART });
   };
 
-  // Simple validation using existing endpoints
+  // NEW: Call this function when user successfully logs in
+  const initializeAuthenticatedCart = async () => {
+    console.log('🔐 User logged in, initializing authenticated cart...');
+    
+    try {
+      // Switch to authenticated mode first
+      dispatch({ type: CART_ACTIONS.SET_GUEST_MODE, payload: false });
+      
+      // Sync guest cart to server if there are items
+      if (state.items.length > 0) {
+        console.log('🔄 Syncing guest cart to server...');
+        
+        for (const item of state.items) {
+          try {
+            const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
+            await fetch(`${API_BASE}/api/cart/add`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              body: JSON.stringify({ 
+                product_id: item.id, 
+                quantity: item.quantity 
+              })
+            });
+          } catch (error) {
+            console.error('Failed to sync item to server:', error);
+          }
+        }
+      }
+      
+      // Now sync back from server to get the authoritative state
+      await forceCartSyncFallback(dispatch);
+      
+    } catch (error) {
+      console.error('Failed to initialize authenticated cart:', error);
+      // If authentication fails, revert to guest mode
+      dispatch({ type: CART_ACTIONS.SET_GUEST_MODE, payload: true });
+    }
+  };
+
+  // NEW: Call this when user logs out
+  const handleLogout = () => {
+    console.log('🚪 User logged out, switching to guest mode...');
+    dispatch({ type: CART_ACTIONS.SET_GUEST_MODE, payload: true });
+    // Keep the cart items in localStorage for guest mode
+  };
+
+  // Convert guest cart to server cart when user logs in
+  const syncGuestCartToServer = async () => {
+    if (state.isGuestMode && state.items.length > 0) {
+      console.log('🔄 Syncing guest cart to server...');
+      
+      for (const item of state.items) {
+        try {
+          const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
+          await fetch(`${API_BASE}/api/cart/add`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ 
+              product_id: item.id, 
+              quantity: item.quantity 
+            })
+          });
+        } catch (error) {
+          console.error('Failed to sync item to server:', error);
+        }
+      }
+      
+      // Now sync back from server to get the authoritative state
+      await forceCartSyncFallback(dispatch);
+    } else {
+      // Just sync from server
+      await forceCartSyncFallback(dispatch);
+    }
+  };
+
+  // Simple validation
   const validateForCheckout = async () => {
     try {
-      // Force sync first
+      if (state.isGuestMode) {
+        throw new Error('Please log in to proceed with checkout');
+      }
+      
+      // Force sync first for authenticated users
       await forceCartSyncFallback(dispatch);
       
       if (state.items.length === 0) {
@@ -359,6 +467,7 @@ export const CartProvider = ({ children }) => {
     // State
     items: state.items,
     isLoading: state.isLoading || false,
+    isGuestMode: state.isGuestMode || false,
     
     // Actions
     addToCart,
@@ -366,7 +475,12 @@ export const CartProvider = ({ children }) => {
     updateQuantity,
     clearCart,
     forceSync,
+    syncGuestCartToServer,
     validateForCheckout,
+    
+    // NEW: Auth-related functions
+    initializeAuthenticatedCart,
+    handleLogout,
     
     // Calculations
     getCartTotal,
@@ -390,84 +504,3 @@ export const CartProvider = ({ children }) => {
     </CartContext.Provider>
   );
 };
-
-// 2. ADD THIS TO YOUR CART CONTROLLER - Simple fallback route
-export async function validateCartSimple(req, res) {
-  try {
-    if (!req.user) {
-      return res.status(401).json({ error: 'Login required' });
-    }
-    
-    const userId = req.user.id;
-    
-    // Find customer
-    const { data: customer, error: customerError } = await supabaseAdmin
-      .from('customers')
-      .select('id')
-      .eq('auth_user_id', userId)
-      .single();
-    
-    if (customerError || !customer) {
-      return res.status(404).json({ 
-        error: 'Customer not found',
-        isValid: false 
-      });
-    }
-    
-    // Find active cart
-    const { data: carts, error: cartsError } = await supabaseAdmin
-      .from('carts')
-      .select('*')
-      .eq('customer_id', customer.id)
-      .eq('status', 'active')
-      .limit(1);
-      
-    if (cartsError) {
-      return res.status(500).json({ 
-        error: 'Failed to fetch cart',
-        isValid: false 
-      });
-    }
-    
-    const cart = carts?.[0];
-    
-    if (!cart) {
-      return res.json({
-        isValid: false,
-        hasActiveCart: false,
-        message: 'No active cart found'
-      });
-    }
-    
-    // Get cart items
-    const { data: cartItems, error: itemsError } = await supabaseAdmin
-      .from('cart_items')
-      .select('*')
-      .eq('cart_id', cart.id);
-      
-    if (itemsError) {
-      return res.status(500).json({ 
-        error: 'Failed to fetch cart items',
-        isValid: false 
-      });
-    }
-
-    const isEmpty = !cartItems || cartItems.length === 0;
-    
-    res.json({
-      isValid: !isEmpty,
-      hasActiveCart: true,
-      isEmpty: isEmpty,
-      itemCount: cartItems?.length || 0,
-      cart: cart,
-      message: isEmpty ? 'Cart is empty' : 'Cart is valid'
-    });
-    
-  } catch (error) {
-    console.error('Cart validation failed:', error);
-    res.status(500).json({ 
-      error: 'Cart validation failed',
-      isValid: false 
-    });
-  }
-}
