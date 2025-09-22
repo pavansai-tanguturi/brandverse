@@ -133,7 +133,8 @@ export async function verifyOtp(req, res) {
       secure: isProduction, // Only HTTPS in production
       sameSite: isProduction ? 'none' : 'lax', // Allow cross-origin in prod
       domain: isProduction ? '.onrender.com' : 'localhost',
-      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      path: '/'
     };
     
     console.log('[verifyOtp] Cookie options:', cookieOptions);
