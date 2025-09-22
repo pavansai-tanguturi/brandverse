@@ -22,10 +22,82 @@ const AdminProducts = () => {
   const [deletingProduct, setDeletingProduct] = useState(null);
   const [existingImageUrl, setExistingImageUrl] = useState(null);
 
-  // Helper function to get auth headers
+  // Helper function to get auth token
+  const getAuthToken = () => {
+    try {
+      return localStorage.getItem('auth_token') || localStorage.getItem('token') || '';
+    } catch (error) {
+      console.error('Error accessing localStorage:', error);
+      return '';
+    }
+  };
+
+  // Helper function to get auth headers with better error handling
   const getAuthHeaders = () => {
-    const token = localStorage.getItem('auth_token') || '';
-    return token ? { 'Authorization': `Bearer ${token}` } : {};
+    const token = getAuthToken();
+    const headers = {
+      'Content-Type': 'application/json'
+    };
+    
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    
+    return headers;
+  };
+
+  // Helper function to get auth headers for FormData (without Content-Type)
+  const getAuthHeadersForFormData = () => {
+    const token = getAuthToken();
+    const headers = {};
+    
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    
+    return headers;
+  };
+
+  // Helper function to handle API responses
+  const handleApiResponse = async (response) => {
+    const contentType = response.headers.get('content-type');
+    let data = null;
+    
+    try {
+      if (contentType && contentType.includes('application/json')) {
+        data = await response.json();
+      } else {
+        const text = await response.text();
+        try {
+          data = JSON.parse(text);
+        } catch (e) {
+          data = { error: text || 'Unknown error occurred' };
+        }
+      }
+    } catch (error) {
+      data = { error: 'Failed to parse response' };
+    }
+
+    if (!response.ok) {
+      if (response.status === 401 || response.status === 403) {
+        // Clear invalid token
+        try {
+          localStorage.removeItem('auth_token');
+          localStorage.removeItem('token');
+        } catch (e) {
+          console.error('Error clearing localStorage:', e);
+        }
+        throw new Error(data?.error || 'Authentication failed. Please login again.');
+      }
+      throw new Error(data?.error || `API Error: ${response.status} ${response.statusText}`);
+    }
+
+    return data;
+  };
+
+  // Get API base URL
+  const getApiBase = () => {
+    return import.meta.env.VITE_API_BASE || 'http://localhost:3001';
   };
 
   // Fetch products and categories on component mount
@@ -36,33 +108,39 @@ const AdminProducts = () => {
 
   const fetchCategories = async () => {
     try {
-      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
-      const res = await fetch(`${API_BASE}/api/categories`, {
+      const API_BASE = getApiBase();
+      const response = await fetch(`${API_BASE}/api/categories`, {
+        method: 'GET',
+        headers: getAuthHeaders(),
         credentials: 'include'
       });
-      if (res.ok) {
-        const data = await res.json();
-        setCategories(data);
-      }
+      
+      const data = await handleApiResponse(response);
+      setCategories(data || []);
     } catch (err) {
       console.error('Failed to fetch categories:', err);
+      setError(err.message);
     }
   };
 
   const fetchProducts = async () => {
     try {
-      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
-      const res = await fetch(`${API_BASE}/api/products`, {
+      setLoadingProducts(true);
+      const API_BASE = getApiBase();
+      const response = await fetch(`${API_BASE}/api/products`, {
+        method: 'GET',
+        headers: getAuthHeaders(),
         credentials: 'include'
       });
-      if (res.ok) {
-        const data = await res.json();
-        setProducts(data);
-      }
+      
+      const data = await handleApiResponse(response);
+      setProducts(data || []);
     } catch (err) {
       console.error('Failed to fetch products:', err);
+      setError(err.message);
+    } finally {
+      setLoadingProducts(false);
     }
-    setLoadingProducts(false);
   };
 
   const resetForm = () => {
@@ -82,114 +160,101 @@ const AdminProducts = () => {
   };
 
   const handleEdit = async (product) => {
-    // First set the form with available data immediately for fast response
-    setEditingProduct(product);
-    setTitle(product.title || '');
-    setPrice(((product.price_cents || 0) / 100).toString());
-    setStock((product.stock_quantity || 0).toString());
-    setDescription(product.description || '');
-    setCategoryId(product.category_id || '');
-    setDiscount((product.discount_percent || 0).toString());
-    setExistingImageUrl(product.image_url || null);
-    setShowAddForm(true);
-
-    // Then fetch additional details (like product images) in the background
     try {
-      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
-      const res = await fetch(`${API_BASE}/api/products/${product.id}`, { 
-        credentials: 'include',
-        headers: getAuthHeaders()
+      // Set form with available data immediately
+      setEditingProduct(product);
+      setTitle(product.title || '');
+      setPrice(((product.price_cents || 0) / 100).toString());
+      setStock((product.stock_quantity || 0).toString());
+      setDescription(product.description || '');
+      setCategoryId(product.category_id || '');
+      setDiscount((product.discount_percent || 0).toString());
+      setExistingImageUrl(product.image_url || null);
+      setShowAddForm(true);
+
+      // Fetch additional details
+      const API_BASE = getApiBase();
+      const response = await fetch(`${API_BASE}/api/products/${product.id}`, { 
+        method: 'GET',
+        headers: getAuthHeaders(),
+        credentials: 'include'
       });
-      if (res.ok) {
-        const data = await res.json();
-        // Update with fresh data and images
-        setExistingImages(data.product_images || []);
-        if (data.product_images && data.product_images.length > 0) {
-          setExistingImageUrl(data.product_images[0].url);
-        }
-        // Update other fields if they differ from what we initially set
-        if (data.title !== product.title) setTitle(data.title || '');
-        if (data.price_cents !== product.price_cents) setPrice(((data.price_cents || 0) / 100).toString());
-        if (data.stock_quantity !== product.stock_quantity) setStock((data.stock_quantity || 0).toString());
-        if (data.description !== product.description) setDescription(data.description || '');
-        if (data.category_id !== product.category_id) setCategoryId(data.category_id || '');
-        if (data.discount_percent !== product.discount_percent) setDiscount((data.discount_percent || 0).toString());
+      
+      const data = await handleApiResponse(response);
+      
+      // Update with fresh data
+      setExistingImages(data.product_images || []);
+      if (data.product_images && data.product_images.length > 0) {
+        setExistingImageUrl(data.product_images[0].url);
       }
+      
+      // Update fields if different
+      if (data.title !== product.title) setTitle(data.title || '');
+      if (data.price_cents !== product.price_cents) setPrice(((data.price_cents || 0) / 100).toString());
+      if (data.stock_quantity !== product.stock_quantity) setStock((data.stock_quantity || 0).toString());
+      if (data.description !== product.description) setDescription(data.description || '');
+      if (data.category_id !== product.category_id) setCategoryId(data.category_id || '');
+      if (data.discount_percent !== product.discount_percent) setDiscount((data.discount_percent || 0).toString());
     } catch (err) {
-      console.error('Error fetching additional product details:', err);
-      // Form is already populated with available data, so this is not critical
+      console.error('Error fetching product details:', err);
+      setError(err.message);
       setExistingImages([]);
     }
   };
 
   const handleDelete = async (productId) => {
     if (!window.confirm('Are you sure you want to delete this product?')) return;
+    
     setError('');
     setMessage('');
     setDeletingProduct(productId);
+    
     try {
-      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
-
-      const res = await fetch(`${API_BASE}/api/products/${productId}`, {
+      const API_BASE = getApiBase();
+      const response = await fetch(`${API_BASE}/api/products/${productId}`, {
         method: 'DELETE',
         headers: getAuthHeaders(),
         credentials: 'include'
       });
 
-      // try to parse response body for better error messages
-      const text = await res.text();
-      let parsed = null;
-      try { parsed = JSON.parse(text); } catch (e) { /* ignore */ }
-
-      if (res.ok) {
-        setMessage('Product deleted successfully');
-        await fetchProducts();
-      } else if (res.status === 403 || res.status === 401) {
-        setError(parsed?.error || 'Not authorized. Please login as admin.');
-        // optional: redirect to admin login page if present
-        // window.location.href = '/admin/login';
-      } else {
-        setError(parsed?.error || `Failed to delete product: ${res.status} ${res.statusText}`);
-      }
+      await handleApiResponse(response);
+      setMessage('Product deleted successfully');
+      await fetchProducts();
     } catch (err) {
-      setError(err.message || 'Failed to delete product');
+      console.error('Error deleting product:', err);
+      setError(err.message);
     } finally {
       setDeletingProduct(null);
     }
   };
 
   const handleDeleteImage = async (imageId) => {
-    console.log('Attempting to delete image with ID:', imageId); // Debug log
     if (!window.confirm('Are you sure you want to delete this image?')) return;
     if (!editingProduct) return;
     
     setDeletingImageId(imageId);
+    
     try {
-      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
-
-      console.log('DELETE request to:', `${API_BASE}/api/products/${editingProduct.id}/images/${imageId}`); // Debug log
-      const res = await fetch(`${API_BASE}/api/products/${editingProduct.id}/images/${imageId}`, {
+      const API_BASE = getApiBase();
+      const response = await fetch(`${API_BASE}/api/products/${editingProduct.id}/images/${imageId}`, {
         method: 'DELETE',
         headers: getAuthHeaders(),
         credentials: 'include'
       });
 
-      console.log('Delete response status:', res.status); // Debug log
-      if (res.ok) {
-        // Remove the deleted image from existingImages
-        setExistingImages(prev => prev.filter(img => img.id !== imageId));
-        setMessage('Image deleted successfully');
-        
-        // If we deleted the last image, clear the existingImageUrl fallback
-        if (existingImages.length <= 1) {
-          setExistingImageUrl(null);
-        }
-      } else {
-        const errorData = await res.json().catch(() => ({ error: 'Failed to delete image' }));
-        setError(errorData.error || 'Failed to delete image');
+      await handleApiResponse(response);
+      
+      // Remove the deleted image from state
+      setExistingImages(prev => prev.filter(img => img.id !== imageId));
+      setMessage('Image deleted successfully');
+      
+      // Clear fallback if no images left
+      if (existingImages.length <= 1) {
+        setExistingImageUrl(null);
       }
     } catch (err) {
-      setError(err.message || 'Failed to delete image');
+      console.error('Error deleting image:', err);
+      setError(err.message);
     } finally {
       setDeletingImageId(null);
     }
@@ -200,20 +265,20 @@ const AdminProducts = () => {
     setError('');
     setMessage('');
     setLoading(true);
+    
     try {
-      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
+      const API_BASE = getApiBase();
       
       // Generate slug from title
       const slug = title.toLowerCase()
-        .replace(/[^a-z0-9\s-]/g, '') // Remove special characters
-        .replace(/\s+/g, '-') // Replace spaces with hyphens
-        .replace(/-+/g, '-') // Replace multiple hyphens with single
-        .trim('-'); // Remove leading/trailing hyphens
+        .replace(/[^a-z0-9\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-')
+        .trim('-');
       
-      // Convert price to cents with proper precision handling
+      // Convert price to cents
       const convertToCents = (priceStr) => {
         if (!priceStr || priceStr === '') return 0;
-        // Use string manipulation to avoid floating point errors
         const cleanPrice = priceStr.toString().trim();
         const [wholePart, decimalPart = ''] = cleanPrice.split('.');
         const wholePartCents = parseInt(wholePart || '0', 10) * 100;
@@ -225,67 +290,60 @@ const AdminProducts = () => {
         title, 
         slug, 
         price_cents: convertToCents(price),
-        stock_quantity: parseInt(stock, 10), 
-        description,
+        stock_quantity: parseInt(stock, 10) || 0, 
+        description: description || '',
         category_id: categoryId || null,
         discount_percent: parseFloat(discount) || 0
-      };
-
-      // helper to parse responses safely
-      const parseJsonSafe = async (res) => {
-        const text = await res.text();
-        try { return { ok: res.ok, data: JSON.parse(text), text }; }
-        catch (e) { return { ok: res.ok, data: null, text }; }
       };
 
       const isEditing = editingProduct !== null;
       const url = isEditing ? `${API_BASE}/api/products/${editingProduct.id}` : `${API_BASE}/api/products`;
       const method = isEditing ? 'PATCH' : 'POST';
 
-      const res = await fetch(url, {
+      console.log('Sending request:', { method, url, body });
+
+      const response = await fetch(url, {
         method,
-        headers: { 
-          'Content-Type': 'application/json', 
-          ...getAuthHeaders()
-        },
+        headers: getAuthHeaders(),
         credentials: 'include',
         body: JSON.stringify(body)
       });
-      const parsed = await parseJsonSafe(res);
-      if (!parsed.ok) {
-        throw new Error(parsed.data?.error || `Failed to ${isEditing ? 'update' : 'create'} product: ${res.status} ${res.statusText} - ${parsed.text.slice(0,200)}`);
-      }
-      const data = parsed.data || {};
       
+      const data = await handleApiResponse(response);
+      console.log('Product response:', data);
+      
+      // Handle image upload if there are files
       if (imageFiles.length > 0) {
         const productId = isEditing ? editingProduct.id : data.id;
-        const form = new FormData();
+        const formData = new FormData();
+        
         for (const file of imageFiles) {
-          form.append('images', file);
+          formData.append('images', file);
         }
-        const replaceParam = isEditing ? '?replace=true' : '';
-        console.log('Uploading images:', { productId, replaceParam, imageCount: imageFiles.length });
-        const imgRes = await fetch(`${API_BASE}/api/products/${productId}/images${replaceParam}`, {
+        
+        const replaceParam = isEditing ? '?replace=false' : '';
+        console.log('Uploading images:', { productId, imageCount: imageFiles.length });
+        
+        const imgResponse = await fetch(`${API_BASE}/api/products/${productId}/images${replaceParam}`, {
           method: 'POST',
-          headers: getAuthHeaders(),
+          headers: getAuthHeadersForFormData(),
           credentials: 'include',
-          body: form
+          body: formData
         });
-        const imgParsed = await parseJsonSafe(imgRes);
-        console.log('Image upload response:', imgParsed);
-        if (!imgParsed.ok) {
-          setError(imgParsed.data?.error || `Image upload failed: ${imgRes.status} ${imgRes.statusText} - ${imgParsed.text.slice(0,200)}`);
-          throw new Error(imgParsed.data?.error || `Image upload failed: ${imgRes.status} ${imgRes.statusText} - ${imgParsed.text.slice(0,200)}`);
-        }
+        
+        await handleApiResponse(imgResponse);
+        console.log('Images uploaded successfully');
       }
       
       setMessage(`Product ${isEditing ? 'updated' : 'created'} successfully`);
       resetForm();
-      fetchProducts(); // Refresh product list after creation
+      await fetchProducts();
     } catch (err) {
-      setError(err.message || 'Network error');
+      console.error('Error saving product:', err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
@@ -461,9 +519,6 @@ const AdminProducts = () => {
                         </div>
                       ))}
                     </div>
-                    <p className="text-sm text-gray-600">
-                      Hover over images to delete them individually. Upload new images above to add more.
-                    </p>
                   </div>
                 )}
                 

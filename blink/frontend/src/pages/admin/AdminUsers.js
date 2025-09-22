@@ -2,9 +2,6 @@ import React, { useState, useEffect } from 'react';
 import AdminNav from '../../components/admin/AdminNav';
 import AddressDisplay from '../../components/admin/AddressDisplay';
 
-// Get JWT token for admin API calls
-const token = localStorage.getItem('auth_token');
-
 const AdminUsers = () => {
   const [customers, setCustomers] = useState([]);
   const [error, setError] = useState('');
@@ -24,14 +21,15 @@ const AdminUsers = () => {
       setLoading(true);
       setError('');
       const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
+      const token = localStorage.getItem('auth_token');
       
-        const res = await fetch(`${API_BASE}/api/admin/customers`, {
-          credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-          }
-        });
+      const res = await fetch(`${API_BASE}/api/admin/customers`, {
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        }
+      });
 
       if (res.ok) {
         const data = await res.json();
@@ -52,6 +50,7 @@ const AdminUsers = () => {
       setLoadingCustomerId(customerId);
       setError('');
       const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
+      const token = localStorage.getItem('auth_token'); 
       
       const res = await fetch(`${API_BASE}/api/admin/customers/${customerId}`, {
         credentials: 'include',

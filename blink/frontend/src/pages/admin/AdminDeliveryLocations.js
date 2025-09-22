@@ -25,8 +25,14 @@ const AdminDeliveryLocations = () => {
     setError('');
     try {
       const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
+      const token = localStorage.getItem('auth_token');
+      
       const res = await fetch(`${API_BASE}/api/admin/delivery-locations`, {
-        credentials: 'include'
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        }
       });
 
       if (!res.ok) {
@@ -54,6 +60,13 @@ const AdminDeliveryLocations = () => {
 
     try {
       const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
+      const token = localStorage.getItem('auth_token');
+      
+      if (!token) {
+        setError('Authentication token not found. Please login again.');
+        return;
+      }
+
       const url = editingLocation 
         ? `${API_BASE}/api/admin/delivery-locations/${editingLocation.id}`
         : `${API_BASE}/api/admin/delivery-locations`;
@@ -62,7 +75,10 @@ const AdminDeliveryLocations = () => {
 
       const res = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         credentials: 'include',
         body: JSON.stringify({
           country: formData.country.trim(),
@@ -90,9 +106,20 @@ const AdminDeliveryLocations = () => {
   const handleToggleStatus = async (location) => {
     try {
       const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
+      const token = localStorage.getItem('auth_token');
+      
+      if (!token) {
+        setError('Authentication token not found. Please login again.');
+        return;
+      }
+
       const res = await fetch(`${API_BASE}/api/admin/delivery-locations/${location.id}/toggle`, {
         method: 'PATCH',
-        credentials: 'include'
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
       });
 
       if (!res.ok) {
@@ -115,9 +142,20 @@ const AdminDeliveryLocations = () => {
 
     try {
       const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
+      const token = localStorage.getItem('auth_token');
+      
+      if (!token) {
+        setError('Authentication token not found. Please login again.');
+        return;
+      }
+
       const res = await fetch(`${API_BASE}/api/admin/delivery-locations/${location.id}`, {
         method: 'DELETE',
-        credentials: 'include'
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
       });
 
       if (!res.ok) {
@@ -161,6 +199,13 @@ const AdminDeliveryLocations = () => {
 
     try {
       const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
+      const token = localStorage.getItem('auth_token');
+      
+      if (!token) {
+        setError('Authentication token not found. Please login again.');
+        return;
+      }
+
       let url;
       let body;
 
@@ -183,7 +228,10 @@ const AdminDeliveryLocations = () => {
 
       const res = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         credentials: 'include',
         body: JSON.stringify(body)
       });
@@ -208,6 +256,13 @@ const AdminDeliveryLocations = () => {
     if (!file) return;
 
     try {
+      const token = localStorage.getItem('auth_token');
+      
+      if (!token) {
+        setError('Authentication token not found. Please login again.');
+        return;
+      }
+
       const reader = new FileReader();
       reader.onload = async (e) => {
         try {
@@ -218,7 +273,7 @@ const AdminDeliveryLocations = () => {
             locations = JSON.parse(text);
           } else if (file.type === 'text/csv') {
             // Simple CSV parsing
-            locations = text.split('\\n').slice(1) // Skip header
+            locations = text.split('\n').slice(1) // Skip header
               .filter(line => line.trim())
               .map(line => {
                 const [country, region, city] = line.split(',').map(val => val.trim().replace(/^"(.*)"$/, '$1'));
@@ -231,7 +286,10 @@ const AdminDeliveryLocations = () => {
           const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
           const res = await fetch(`${API_BASE}/api/admin/delivery-locations/bulk-add`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
             credentials: 'include',
             body: JSON.stringify({ locations })
           });
@@ -261,8 +319,18 @@ const AdminDeliveryLocations = () => {
   const handleExport = async (format = 'csv') => {
     try {
       const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
+      const token = localStorage.getItem('auth_token');
+      
+      if (!token) {
+        setError('Authentication token not found. Please login again.');
+        return;
+      }
+
       const res = await fetch(`${API_BASE}/api/admin/delivery-locations/export?format=${format}`, {
-        credentials: 'include'
+        credentials: 'include',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
       });
 
       if (!res.ok) {

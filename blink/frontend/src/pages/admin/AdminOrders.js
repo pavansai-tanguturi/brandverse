@@ -21,6 +21,24 @@ const AdminOrders = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredOrders, setFilteredOrders] = useState([]);
 
+  // Get JWT token for admin API calls
+  const getAuthToken = () => {
+    return localStorage.getItem('auth_token');
+  };
+
+  // Helper function to get authorization headers
+  const getAuthHeaders = () => {
+    const token = getAuthToken();
+    const headers = {
+      'Content-Type': 'application/json'
+    };
+    
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    
+    return headers;
+  };
 
   // Fetch orders on mount and when searchQuery changes
   useEffect(() => {
@@ -52,14 +70,23 @@ const AdminOrders = () => {
       const url = searchStr.trim()
         ? `${API_BASE}/api/orders/admin?search=${encodeURIComponent(searchStr.trim())}`
         : `${API_BASE}/api/orders/admin`;
+      
       const res = await fetch(url, {
+        method: 'GET',
+        headers: getAuthHeaders(),
         credentials: 'include'
       });
+      
       if (res.ok) {
         const data = await res.json();
         setOrders(data);
+        setError(''); // Clear any previous errors
+      } else if (res.status === 401) {
+        setError('Authentication failed. Please login again.');
+        // Optionally redirect to login page
+        // window.location.href = '/admin/login';
       } else {
-        throw new Error('Failed to fetch orders');
+        throw new Error(`Failed to fetch orders: ${res.status}`);
       }
     } catch (err) {
       setError('Failed to fetch orders: ' + err.message);
@@ -70,7 +97,11 @@ const AdminOrders = () => {
   const fetchDeliveryLocations = async () => {
     try {
       const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
-      const res = await fetch(`${API_BASE}/api/delivery/locations`);
+      const res = await fetch(`${API_BASE}/api/delivery/locations`, {
+        method: 'GET',
+        headers: getAuthHeaders(),
+        credentials: 'include'
+      });
       
       if (res.ok) {
         const data = await res.json();
@@ -82,6 +113,13 @@ const AdminOrders = () => {
   };
 
   const updateOrderStatus = async (orderId, newStatus) => {
+    // Check if token exists
+    const token = getAuthToken();
+    if (!token) {
+      setError('Authentication token missing. Please login again.');
+      return;
+    }
+
     const statusActions = {
       'accepted': 'accept',
       'packing': 'mark as packing done',
@@ -103,16 +141,18 @@ const AdminOrders = () => {
       
       const res = await fetch(`${API_BASE}/api/orders/admin/${orderId}/status`, {
         method: 'PATCH',
-        headers: { 
-          'Content-Type': 'application/json'
-        },
+        headers: getAuthHeaders(),
         credentials: 'include',
         body: JSON.stringify({ status: newStatus })
       });
       
       if (res.ok) {
         setMessage(`Order ${actionText} successfully`);
-        await fetchOrders(); // Refresh orders list
+        await fetchOrders(searchQuery); // Refresh orders list
+      } else if (res.status === 401) {
+        setError('Authentication failed. Please login again.');
+        // Optionally redirect to login page
+        // window.location.href = '/admin/login';
       } else {
         const errorData = await res.json();
         throw new Error(errorData.error || 'Failed to update order status');

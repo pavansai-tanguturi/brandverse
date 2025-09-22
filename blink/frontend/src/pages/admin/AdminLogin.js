@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const AdminLogin = () => {
@@ -10,13 +10,54 @@ const AdminLogin = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  // Check if user is already authenticated on component mount
+  useEffect(() => {
+    const checkExistingAuth = () => {
+      const token = localStorage.getItem('auth_token');
+      if (token) {
+        // Optionally verify the token is still valid
+        verifyExistingToken(token);
+      }
+    };
+    
+    checkExistingAuth();
+  }, []);
+
+  // Helper function to verify existing token
+  const verifyExistingToken = async (token) => {
+    try {
+      const API_BASE_URL = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
+      const response = await fetch(`${API_BASE_URL}/api/auth/verify-token`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        credentials: 'include'
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.admin) {
+          navigate('/admin/dashboard');
+        }
+      } else {
+        // Token is invalid, remove it
+        localStorage.removeItem('auth_token');
+      }
+    } catch (err) {
+      // Token verification failed, remove it
+      localStorage.removeItem('auth_token');
+      console.error('Token verification failed:', err);
+    }
+  };
+
   const handleSendOtp = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
     try {
-      // Send OTP via backend (consistent with regular users)
       const API_BASE_URL = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
       const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
         method: 'POST',
@@ -67,8 +108,18 @@ const AdminLogin = () => {
       
       if (response.ok) {
         if (data.admin) {
-          setMessage('Admin authentication successful');
-          navigate('/admin/dashboard');
+          // Store the authentication token
+          if (data.token) {
+            localStorage.setItem('auth_token', data.token);
+            setMessage('Admin authentication successful');
+            
+            // Navigate to dashboard after a brief delay to show success message
+            setTimeout(() => {
+              navigate('/admin/dashboard');
+            }, 1000);
+          } else {
+            setError('Authentication successful but no token received. Please try again.');
+          }
         } else {
           setError('Access denied. Admin privileges required.');
         }
@@ -81,6 +132,24 @@ const AdminLogin = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Helper function to handle logout (clear token)
+  const handleLogout = () => {
+    localStorage.removeItem('auth_token');
+    setStep(1);
+    setEmail('');
+    setOtp('');
+    setError('');
+    setMessage('');
+  };
+
+  // Helper function to go back to email step
+  const handleBackToEmail = () => {
+    setStep(1);
+    setOtp('');
+    setError('');
+    setMessage('');
   };
 
   return (
@@ -138,7 +207,8 @@ const AdminLogin = () => {
                 borderRadius: '6px',
                 fontSize: '16px',
                 fontWeight: '500',
-                cursor: loading ? 'not-allowed' : 'pointer'
+                cursor: loading ? 'not-allowed' : 'pointer',
+                transition: 'background-color 0.2s'
               }}
             >
               {loading ? 'Sending Code...' : 'Send Verification Code'}
@@ -154,7 +224,7 @@ const AdminLogin = () => {
                 type="text" 
                 placeholder="Enter 6-digit code" 
                 value={otp} 
-                onChange={e => setOtp(e.target.value)} 
+                onChange={e => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))} // Only allow digits, max 6
                 maxLength="6"
                 required 
                 style={{
@@ -169,41 +239,108 @@ const AdminLogin = () => {
               />
               <button 
                 type="submit" 
-                disabled={loading || !otp}
+                disabled={loading || !otp || otp.length !== 6}
                 style={{
                   width: '100%',
-                  backgroundColor: (loading || !otp) ? '#9ca3af' : '#059669',
+                  backgroundColor: (loading || !otp || otp.length !== 6) ? '#9ca3af' : '#059669',
                   color: 'white',
                   padding: '0.75rem',
                   border: 'none',
                   borderRadius: '6px',
                   fontSize: '16px',
                   fontWeight: '500',
-                  cursor: (loading || !otp) ? 'not-allowed' : 'pointer'
+                  cursor: (loading || !otp || otp.length !== 6) ? 'not-allowed' : 'pointer',
+                  transition: 'background-color 0.2s'
                 }}
               >
                 {loading ? 'Verifying...' : 'Verify Code'}
               </button>
             </form>
-            <button 
-              onClick={() => setStep(1)} 
-              style={{ 
-                marginTop: '1rem', 
-                background: 'transparent', 
-                color: '#3b82f6',
-                border: 'none',
-                cursor: 'pointer',
-                fontSize: '14px',
-                width: '100%'
-              }}
-            >
-              ← Back to Email
-            </button>
+            
+            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
+              <button 
+                onClick={handleBackToEmail} 
+                disabled={loading}
+                style={{ 
+                  flex: 1,
+                  background: 'transparent', 
+                  color: '#3b82f6',
+                  border: '1px solid #3b82f6',
+                  borderRadius: '6px',
+                  padding: '0.5rem',
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                  fontSize: '14px',
+                  opacity: loading ? 0.5 : 1
+                }}
+              >
+                ← Back to Email
+              </button>
+              
+              <button 
+                onClick={() => handleSendOtp({ preventDefault: () => {} })} 
+                disabled={loading}
+                style={{ 
+                  flex: 1,
+                  background: 'transparent', 
+                  color: '#059669',
+                  border: '1px solid #059669',
+                  borderRadius: '6px',
+                  padding: '0.5rem',
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                  fontSize: '14px',
+                  opacity: loading ? 0.5 : 1
+                }}
+              >
+                Resend Code
+              </button>
+            </div>
           </div>
         )}
       
-        {error && <p style={{ color: '#dc2626', marginTop: '1rem', textAlign: 'center' }}>{error}</p>}
-        {message && <p style={{ color: '#059669', marginTop: '1rem', textAlign: 'center' }}>{message}</p>}
+        {error && (
+          <div style={{ 
+            color: '#dc2626', 
+            backgroundColor: '#fef2f2',
+            border: '1px solid #fecaca',
+            borderRadius: '6px',
+            padding: '0.75rem',
+            marginTop: '1rem', 
+            textAlign: 'center',
+            fontSize: '14px'
+          }}>
+            {error}
+          </div>
+        )}
+        
+        {message && (
+          <div style={{ 
+            color: '#059669', 
+            backgroundColor: '#f0fdf4',
+            border: '1px solid #bbf7d0',
+            borderRadius: '6px',
+            padding: '0.75rem',
+            marginTop: '1rem', 
+            textAlign: 'center',
+            fontSize: '14px'
+          }}>
+            {message}
+          </div>
+        )}
+
+        {/* Debug info - remove in production */}
+        {process.env.NODE_ENV === 'development' && (
+          <div style={{ 
+            marginTop: '1rem', 
+            padding: '0.5rem', 
+            backgroundColor: '#f3f4f6', 
+            borderRadius: '4px',
+            fontSize: '12px',
+            color: '#6b7280'
+          }}>
+            <p>Current token: {localStorage.getItem('auth_token') ? 'Present' : 'Not found'}</p>
+            <p>Step: {step}</p>
+          </div>
+        )}
       </div>
     </div>
   );
