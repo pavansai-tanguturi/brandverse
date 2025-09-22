@@ -113,11 +113,20 @@ const useApiRequest = () => {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT);
 
+      // Get JWT from localStorage
+      const token = localStorage.getItem('auth_token');
+      console.log('[AdminDashboard] About to fetch analytics summary', {
+        API_BASE,
+        token,
+        attempt
+      });
+
       const response = await fetch(`${API_BASE}/api/admin/analytics/summary`, {
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/json'
+          'Accept': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
         },
         signal: controller.signal
       });
@@ -251,6 +260,7 @@ const AdminDashboard = () => {
   const [summary, setSummary] = useState(INITIAL_SUMMARY);
   const { makeRequest, loading: dataLoading, error, retryCount } = useApiRequest();
   const { user, loading: authLoading } = useAuth();
+  console.log('[AdminDashboard] Render', { user, authLoading });
 
   const fetchSummary = useCallback(async () => {
     const data = await makeRequest();

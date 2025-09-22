@@ -24,7 +24,7 @@ const AdminProducts = () => {
 
   // Helper function to get auth headers
   const getAuthHeaders = () => {
-    const token = localStorage.getItem('adminToken') || '';
+    const token = localStorage.getItem('auth_token') || '';
     return token ? { 'Authorization': `Bearer ${token}` } : {};
   };
 

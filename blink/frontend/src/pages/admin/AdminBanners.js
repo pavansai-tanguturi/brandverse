@@ -1,3 +1,5 @@
+// Get JWT token for admin API calls
+const token = localStorage.getItem('auth_token');
 import React, { useState, useEffect } from 'react';
 import AdminNav from '../../components/admin/AdminNav';
 

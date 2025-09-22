@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import AdminNav from '../../components/admin/AdminNav';
 import AddressDisplay from '../../components/admin/AddressDisplay';
 
+// Get JWT token for admin API calls
+const token = localStorage.getItem('auth_token');
+
 const AdminUsers = () => {
   const [customers, setCustomers] = useState([]);
   const [error, setError] = useState('');
@@ -22,9 +25,13 @@ const AdminUsers = () => {
       setError('');
       const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
       
-      const res = await fetch(`${API_BASE}/api/admin/customers`, {
-        credentials: 'include'
-      });
+        const res = await fetch(`${API_BASE}/api/admin/customers`, {
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+          }
+        });
 
       if (res.ok) {
         const data = await res.json();
@@ -47,7 +54,11 @@ const AdminUsers = () => {
       const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
       
       const res = await fetch(`${API_BASE}/api/admin/customers/${customerId}`, {
-        credentials: 'include'
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        }
       });
 
       if (res.ok) {
@@ -134,10 +145,10 @@ const AdminUsers = () => {
                   <thead className="bg-gray-50">
                     <tr>
                       <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Customer
+                        Name
                       </th>
                       <th className="hidden sm:table-cell px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Contact
+                        Email / Phone
                       </th>
                       <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Orders

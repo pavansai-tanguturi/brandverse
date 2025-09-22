@@ -1,3 +1,5 @@
+// Get JWT token for admin API calls
+const token = localStorage.getItem('auth_token');
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   LineChart, 
