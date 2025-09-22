@@ -1,6 +1,5 @@
-// Get JWT token for admin API calls
-const token = localStorage.getItem('auth_token');
 import React, { useState, useEffect, useRef } from 'react';
+import { apiCall } from '../../utils/api';
 import { 
   LineChart, 
   Line, 
@@ -56,25 +55,14 @@ const AnalyticsDashboard = () => {
     setError('');
     setIsRefreshing(true);
     try {
-      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
-      
-      const res = await fetch(`${API_BASE}/api/admin/analytics/summary?startDate=${dateRange.start}&endDate=${dateRange.end}`, {
-        credentials: 'include'
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        const timeBasedData = generateTimeBasedData(data.dailyRevenue || []);
-        setAnalytics(prevData => ({
-          ...prevData,
-          ...data,
-          monthlyRevenue: timeBasedData.monthly,
-          yearlyRevenue: timeBasedData.yearly
-        }));
-      } else {
-        const errorData = await res.json().catch(() => ({ error: 'Failed to fetch analytics' }));
-        setError(errorData.error || 'Failed to fetch analytics');
-      }
+      const data = await apiCall(`/api/admin/analytics/summary?startDate=${dateRange.start}&endDate=${dateRange.end}`);
+      const timeBasedData = generateTimeBasedData(data.dailyRevenue || []);
+      setAnalytics(prevData => ({
+        ...prevData,
+        ...data,
+        monthlyRevenue: timeBasedData.monthly,
+        yearlyRevenue: timeBasedData.yearly
+      }));
     } catch (err) {
       setError(err.message || 'Failed to fetch analytics');
     } finally {
@@ -85,12 +73,16 @@ const AnalyticsDashboard = () => {
   const exportData = async (format) => {
     setExportLoading(true);
     try {
+      // Use fetch directly for blob download, but add Authorization header
       const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
-      
+      const token = localStorage.getItem('auth_token');
       const res = await fetch(`${API_BASE}/api/admin/analytics/export?format=${format}&startDate=${dateRange.start}&endDate=${dateRange.end}`, {
-        credentials: 'include'
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        }
       });
-
       if (res.ok) {
         const blob = await res.blob();
         const url = window.URL.createObjectURL(blob);

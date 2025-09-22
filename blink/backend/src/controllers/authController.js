@@ -129,12 +129,12 @@ export async function verifyOtp(req, res) {
     // Set JWT as HTTP-only cookie AND return in response
     const isProduction = process.env.NODE_ENV === 'production';
     const cookieOptions = {
-      httpOnly: true,
-      secure: isProduction, // Only HTTPS in production
-      sameSite: isProduction ? 'none' : 'lax', // Allow cross-origin in prod
-      domain: isProduction ? '.onrender.com' : 'localhost',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-      path: '/'
+  httpOnly: true,
+  secure: isProduction, // Only HTTPS in production
+  sameSite: isProduction ? 'none' : 'lax', // Allow cross-origin in prod
+  // domain property removed to allow default host
+  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+  path: '/'
     };
     
     console.log('[verifyOtp] Cookie options:', cookieOptions);
