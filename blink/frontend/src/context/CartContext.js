@@ -112,6 +112,15 @@ const getInitialState = () => {
   };
 };
 
+// Helper function to get auth headers
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('auth_token');
+  return {
+    'Content-Type': 'application/json',
+    ...(token && { 'Authorization': `Bearer ${token}` })
+  };
+};
+
 // Fallback sync function - only works for authenticated users
 const forceCartSyncFallback = async (dispatch) => {
   try {
@@ -120,7 +129,7 @@ const forceCartSyncFallback = async (dispatch) => {
     
     const response = await fetch(`${API_BASE}/api/cart`, {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       credentials: 'include'
     });
 
@@ -207,7 +216,7 @@ export const CartProvider = ({ children }) => {
           const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
           const response = await fetch(`${API_BASE}/api/cart/add`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: getAuthHeaders(),
             credentials: 'include',
             body: JSON.stringify({ product_id: product.id, quantity })
           });
@@ -245,7 +254,7 @@ export const CartProvider = ({ children }) => {
           const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
           const response = await fetch(`${API_BASE}/api/cart/remove`, {
             method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
+            headers: getAuthHeaders(),
             credentials: 'include',
             body: JSON.stringify({ product_id: productId })
           });
@@ -278,7 +287,7 @@ export const CartProvider = ({ children }) => {
           const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
           const response = await fetch(`${API_BASE}/api/cart/update-quantity`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: getAuthHeaders(),
             credentials: 'include',
             body: JSON.stringify({ product_id: productId, quantity })
           });
@@ -325,7 +334,7 @@ export const CartProvider = ({ children }) => {
             const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
             await fetch(`${API_BASE}/api/cart/add`, {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              headers: getAuthHeaders(),
               credentials: 'include',
               body: JSON.stringify({ 
                 product_id: item.id, 
@@ -365,7 +374,7 @@ export const CartProvider = ({ children }) => {
           const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
           await fetch(`${API_BASE}/api/cart/add`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: getAuthHeaders(),
             credentials: 'include',
             body: JSON.stringify({ 
               product_id: item.id, 

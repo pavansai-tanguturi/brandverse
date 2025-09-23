@@ -6,6 +6,15 @@ import { useWishlist } from '../../context/WishlistContext';
 import { useCart } from '../../context/CartContext';
 import { useNavigate } from 'react-router-dom';
 
+// Helper function to get auth headers
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('auth_token');
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {})
+  };
+};
+
 // Order Details Modal Component - Moved outside of main component
 const OrderDetailsModal = ({ order, onClose, getStatusColor, navigate }) => {
   if (!order) return null;
@@ -265,7 +274,8 @@ const CustomerDashboard = () => {
     try {
       const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
       const response = await fetch(`${API_BASE}/api/customers/me`, {
-        credentials: 'include'
+        credentials: 'include',
+        headers: getAuthHeaders()
       });
       
       if (response.ok) {
@@ -277,24 +287,33 @@ const CustomerDashboard = () => {
           full_name: profileData.full_name || '',
           phone: profileData.phone || ''
         });
+      } else if (response.status === 401) {
+        // Token expired or invalid, redirect to login
+        localStorage.removeItem('auth_token');
+        navigate('/login');
       }
     } catch (err) {
       console.error('Error fetching user profile:', err);
       setError('Failed to load profile data');
     }
-  }, [user]);
+  }, [user, navigate]);
 
   const fetchOrders = async () => {
     try {
       setLoadingData(true);
       const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
       const response = await fetch(`${API_BASE}/api/orders`, {
-        credentials: 'include'
+        credentials: 'include',
+        headers: getAuthHeaders()
       });
       
       if (response.ok) {
         const ordersData = await response.json();
         setOrders(ordersData || []);
+      } else if (response.status === 401) {
+        // Token expired or invalid, redirect to login
+        localStorage.removeItem('auth_token');
+        navigate('/login');
       } else {
         setError('Failed to load orders');
       }
@@ -319,10 +338,8 @@ const CustomerDashboard = () => {
 
       const response = await fetch(`${API_BASE}/api/customers/me`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         credentials: 'include',
+        headers: getAuthHeaders(),
         body: JSON.stringify(profileData)
       });
       
@@ -330,6 +347,11 @@ const CustomerDashboard = () => {
         await fetchUserProfile(); // Refresh the profile data
         setError('');
         return true;
+      } else if (response.status === 401) {
+        // Token expired or invalid, redirect to login
+        localStorage.removeItem('auth_token');
+        navigate('/login');
+        return false;
       } else {
         const errorData = await response.json().catch(() => ({}));
         console.error('Profile update error:', errorData);
@@ -359,6 +381,8 @@ const CustomerDashboard = () => {
 
   const handleLogout = async () => {
     try {
+      // Clear token from localStorage
+      localStorage.removeItem('auth_token');
       await logout();
       navigate('/');
     } catch (error) {

@@ -90,12 +90,25 @@ function Auth() {
         })
       });
       const data = await response.json();
+      const token = data.token;
       if (response.ok) {
+        // Store token in localStorage for admin access
+        if (data.token) {
+          localStorage.setItem('auth_token', data.token);
+        }
         setMessage(data.message || 'Authentication successful');
-        
-        // Check if user is admin
-        const adminEmail = import.meta.env.VITE_ADMIN_EMAIL;
-        if (adminEmail && formData.email.trim().toLowerCase() === adminEmail.trim().toLowerCase()) {
+        // Only allow admin dashboard navigation if backend confirms admin
+        if (data.admin === true) {
+          try {
+            const API_BASE_URL = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
+            await fetch(`${API_BASE_URL}/api/auth/refresh-session`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include'
+            });
+          } catch (e) {
+            console.warn('Session refresh failed:', e);
+          }
           navigate('/admin/dashboard');
         } else {
           navigate('/home');

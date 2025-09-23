@@ -23,8 +23,16 @@ export const AuthProvider = ({ children }) => {
   const checkUserSession = useCallback(async () => {
     try {
       console.log('[AuthContext] Checking user session...');
+      
+      // Get token from localStorage for authorization
+      const token = localStorage.getItem('auth_token');
+      
       // Check if user has active session on server
-      const response = await apiCall('/api/auth/me');
+      const response = await apiCall('/api/auth/me', {
+        headers: token ? {
+          'Authorization': `Bearer ${token}`
+        } : {}
+      });
       
       console.log('[AuthContext] Session check response:', response);
       
@@ -34,10 +42,14 @@ export const AuthProvider = ({ children }) => {
       } else {
         console.log('[AuthContext] No user in session');
         setUser(null);
+        // Clear invalid token if session check fails
+        localStorage.removeItem('auth_token');
       }
     } catch (error) {
       console.error('[AuthContext] Session check failed:', error);
       setUser(null);
+      // Clear token on session check failure
+      localStorage.removeItem('auth_token');
     } finally {
       setLoading(false);
     }
@@ -87,15 +99,22 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     try {
+      // Get token for logout request
+      const token = localStorage.getItem('auth_token');
+      
       // Call logout endpoint to destroy session
       await apiCall('/api/auth/logout', {
-        method: 'POST'
+        method: 'POST',
+        headers: token ? {
+          'Authorization': `Bearer ${token}`
+        } : {}
       });
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
-      // Clear user state
+      // Clear user state and token
       setUser(null);
+      localStorage.removeItem('auth_token');
     }
   };
 

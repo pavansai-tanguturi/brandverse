@@ -169,9 +169,9 @@ function SignUp() {
             navigate('/admin/dashboard');
           }, 2000);
         } else {
-          setMessage('Your account is verified! Redirecting to home...');
+          setMessage('Your account is verified! Redirecting to login...');
           setTimeout(() => {
-            navigate('/home');
+            navigate('/login');
           }, 2000);
         }
       } else {

@@ -328,7 +328,7 @@ const AdminLogin = () => {
         )}
 
         {/* Debug info - remove in production */}
-        {process.env.NODE_ENV === 'development' && (
+        {import.meta.env.NODE_ENV === 'development' && (
           <div style={{ 
             marginTop: '1rem', 
             padding: '0.5rem', 

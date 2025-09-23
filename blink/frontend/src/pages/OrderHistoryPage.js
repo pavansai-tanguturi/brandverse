@@ -17,7 +17,13 @@ const OrderHistoryPage = () => {
   const fetchOrders = async () => {
     try {
       const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
+      const token = localStorage.getItem('auth_token');
+      
       const response = await fetch(`${API_BASE}/api/orders`, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         credentials: 'include'
       });
 

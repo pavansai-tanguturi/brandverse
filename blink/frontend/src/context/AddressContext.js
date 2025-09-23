@@ -92,12 +92,25 @@ export const AddressProvider = ({ children }) => {
   const API_BASE_URL = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
   const API_BASE = `${API_BASE_URL}/api`;
 
+  // Helper function to get auth headers
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem('auth_token');
+    return {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    };
+  };
+
   // Fetch addresses for a customer
   const fetchAddresses = useCallback(async (customerId) => {
     dispatch({ type: ADDRESS_ACTIONS.SET_LOADING, payload: true });
     
     try {
+      const token = localStorage.getItem('auth_token');
       const response = await fetch(`${API_BASE}/addresses`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
         credentials: 'include'
       });
       
@@ -120,9 +133,7 @@ export const AddressProvider = ({ children }) => {
     try {
       const response = await fetch(`${API_BASE}/addresses`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: getAuthHeaders(),
         credentials: 'include',
         body: JSON.stringify(addressData)
       });
@@ -149,9 +160,7 @@ export const AddressProvider = ({ children }) => {
     try {
       const response = await fetch(`${API_BASE}/addresses/${addressId}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: getAuthHeaders(),
         credentials: 'include',
         body: JSON.stringify(addressData)
       });
@@ -176,8 +185,12 @@ export const AddressProvider = ({ children }) => {
     dispatch({ type: ADDRESS_ACTIONS.SET_LOADING, payload: true });
     
     try {
+      const token = localStorage.getItem('auth_token');
       const response = await fetch(`${API_BASE}/addresses/${addressId}`, {
         method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
         credentials: 'include'
       });
       
@@ -201,9 +214,7 @@ export const AddressProvider = ({ children }) => {
     try {
       const response = await fetch(`${API_BASE}/addresses/${addressId}/default`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: getAuthHeaders(),
         credentials: 'include'
       });
       
