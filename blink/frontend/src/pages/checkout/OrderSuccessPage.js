@@ -126,7 +126,7 @@ const OrderSuccessPage = () => {
             <p className="text-sm text-gray-500">
               Need help with your order? 
               <button 
-                onClick={() => window.location.href = 'mailto:support@brandverse.com'}
+                onClick={() => window.location.href = 'mailto:subashakepati@gmail.com'}
                 className="text-blue-600 hover:text-blue-700 ml-1"
               >
                 Contact Support

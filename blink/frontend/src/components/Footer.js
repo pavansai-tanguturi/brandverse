@@ -9,7 +9,7 @@ const Footer = () => (
         <span className="text-sm text-blue-100 mb-2">Your trusted daily essentials store</span>
         {/* <span className="text-xs text-blue-200 mb-2">Serving Hyderabad, Telangana, India</span> */}
         {/* <span className="text-xs text-blue-200 mb-2">Contact: <a href="tel:+919999999999" className="underline hover:text-blue-300">+91 99999 99999</a> |  */}
-        <span className="text-xs text-blue-200 mb-2"><a href="mailto:support@brandverse.com" className="underline hover:text-blue-300">subashakepati@gmail.com</a></span>
+        <span className="text-xs text-blue-200 mb-2"><a href="mailto:subashakepati@gmail.com" className="underline hover:text-blue-300">subashakepati@gmail.com</a></span>
         <div className="flex gap-4 mt-2 justify-center md:justify-start">
           <a href="https://www.instagram.com/" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="hover:text-pink-300 transition-colors">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect width="20" height="20" x="2" y="2" rx="5" ry="5" strokeWidth="2"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" strokeWidth="2"/><line x1="17.5" y1="6.5" x2="17.5" y2="6.5" strokeWidth="2"/></svg>
