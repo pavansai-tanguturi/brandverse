@@ -476,6 +476,17 @@ function Home() {
                   </div>
                 </div>
               ))}
+            {/* View More Products message if more than 8 products */}
+            {products.length > 8 && (
+              <div className="col-span-full flex justify-center mt-8">
+                <Link to="/products" className="inline-flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-full shadow-lg transition-all duration-300">
+                  View More Products
+                  <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                  </svg>
+                </Link>
+              </div>
+            )}
             </div>
           ) : (
             <div className="text-center py-20">
