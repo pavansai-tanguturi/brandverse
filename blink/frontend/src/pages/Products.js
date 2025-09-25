@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { CartIcon, CustomerIcon } from '../components/icons';
 import logo from '../assets/logos.png';
 import locationIcon from '../assets/location.png';
-import Footer from '../components/Footer';
+// import Footer from '../components/Footer';
 
 function Products() {
   const navigate = useNavigate();
@@ -492,7 +492,7 @@ useEffect(() => {
       </div>
 
       {/* Footer */}
-      <Footer />
+      {/* <Footer /> */}
     </div>
   );
 }

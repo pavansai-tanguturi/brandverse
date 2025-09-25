@@ -5,7 +5,7 @@ import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
 import { CustomerIcon, CartIcon } from '../components/icons';
 import Navigation from '../components/Navigation';
-import Footer from '../components/Footer';
+// import Footer from '../components/Footer';
 import '../styles/App.css';
 
 // Quick Add Button Component
@@ -720,7 +720,7 @@ const ProductPage = () => {
         </div>
       </div>
       
-      <Footer />
+      {/* <Footer /> */}
     </div>
   );
 };
