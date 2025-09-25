@@ -22,7 +22,7 @@ const AdminNav = () => {
               </svg>
             </button>
             <Link to="/admin/dashboard" className="ml-3 text-xl font-bold text-blue-700">
-              Brandverse Admin
+              Akepatimart Admin
             </Link>
           </div>
           

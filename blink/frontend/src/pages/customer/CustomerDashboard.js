@@ -255,6 +255,8 @@ const CustomerDashboard = () => {
 
   // Temporary static data (will be implemented later)
   const [paymentMethods] = useState([]);
+  // Payment methods feature is currently disabled
+  // const [paymentMethods] = useState([]);
   const [addresses] = useState([]);
   
   // Address form state
@@ -458,7 +460,7 @@ const CustomerDashboard = () => {
                     <option value="orders">Orders</option>
                     <option value="wishlist">Wishlist</option>
                     <option value="settings">Settings</option>
-                    <option value="payment">Payment</option>
+                    {/* <option value="payment">Payment</option> */}
                     <option value="addresses">Addresses</option>
                   </select>
                 </div>
@@ -507,6 +509,8 @@ const CustomerDashboard = () => {
                     </svg>
                   )
                 },
+                // {
+                // Payment tab is currently disabled
                 // {
                 //   id: 'payment',
                 //   name: 'Payment',

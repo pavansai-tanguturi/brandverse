@@ -43,15 +43,12 @@ const Navigation = ({ showSearch = true }) => {
         <div className="flex items-center justify-between h-16 md:h-20">
           
           {/* Logo and Brand */}
-          <div className="flex items-center space-x-2 sm:space-x-3 cursor-pointer flex-shrink-0" onClick={() => navigate('/')}>
+          <div className="flex items-center space-x-2 sm:space-x-3 cursor-pointer flex-shrink-0" onClick={() => navigate('/')}> 
             <img
               src={logo}
-              className="h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12 rounded-lg"
-              alt="Brandverse"
+              className="h-12 w-auto object-contain rounded-lg"
+              alt="Akepatimart"
             />
-            <span className="font-bold text-sm sm:text-lg md:text-xl bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-              Brandverse
-            </span>
           </div>
 
           {/* Search Icon - Navigate to Search Page */}

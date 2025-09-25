@@ -99,15 +99,16 @@ function Auth() {
         setMessage(data.message || 'Authentication successful');
         // Only allow admin dashboard navigation if backend confirms admin
         if (data.admin === true) {
+          // Call analytics summary endpoint before navigating to dashboard
           try {
             const API_BASE_URL = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
-            await fetch(`${API_BASE_URL}/api/auth/refresh-session`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+            await fetch(`${API_BASE_URL}/api/admin/analytics/summary`, {
+              method: 'GET',
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${data.token}` },
               credentials: 'include'
             });
           } catch (e) {
-            console.warn('Session refresh failed:', e);
+            console.warn('Analytics summary fetch failed:', e);
           }
           navigate('/admin/dashboard');
         } else {

@@ -381,14 +381,16 @@ function Home() {
       <div className="bg-white/70 backdrop-blur-sm py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            <h2 className="text-xl sm:text-2xl md:text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
               Featured Products
             </h2>
             <Link to="/products" className="text-blue-600 hover:text-blue-800 font-semibold flex items-center space-x-2 group">
-              <span>View All Products</span>
-              <svg className="w-5 h-5 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-              </svg>
+              <span className="hidden sm:inline">View All Products</span>
+              <span className="flex sm:block items-center justify-center w-8 h-8 sm:w-5 sm:h-5">
+                <svg className="w-5 h-5 sm:w-5 sm:h-5 mx-auto transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                </svg>
+              </span>
             </Link>
           </div>
           
@@ -557,7 +559,7 @@ function Home() {
                         className="w-full h-48 sm:h-56 md:h-64 lg:h-72 xl:h-80 object-cover group-hover:scale-105 transition-transform duration-300"
                       />
                     </div>
-                    <p className="text-center text-lg sm:text-xl md:text-2xl font-extrabold bg-gradient-to-r from-blue-600 via-purple-500 to-pink-500 bg-clip-text text-transparent group-hover:from-blue-700 group-hover:to-pink-600 transition-all duration-300 px-2 font-sans tracking-wide drop-shadow-sm" style={{fontFamily: 'Poppins, Inter, Arial, sans-serif'}}>
+                    <p className="text-center text-lg sm:text-xl md:text-2xl font-normal bg-gradient-to-r from-blue-600 via-purple-500 to-pink-500 bg-clip-text text-transparent group-hover:from-blue-700 group-hover:to-pink-600 transition-all duration-300 px-2 font-sans tracking-wide drop-shadow-sm" style={{fontFamily: 'Poppins, Inter, Arial, sans-serif'}}>
                       {item.name || 'Category'}
                     </p>
                   </div>

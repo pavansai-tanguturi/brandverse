@@ -173,12 +173,9 @@ useEffect(() => {
             <div className="flex items-center space-x-3 cursor-pointer" onClick={() => navigate('/')}>
               <img
                 src={logo}
-                className="h-10 w-10 md:h-12 md:w-12 rounded-lg"
-                alt="Brandverse"
+                className="h-12 w-auto object-contain rounded-lg"
+                alt="Akepatimart"
               />
-              <span className="font-bold text-lg md:text-xl bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-                Brandverse
-              </span>
             </div>
 
             {/* Location Display - Hidden on small screens */}
@@ -215,7 +212,7 @@ useEffect(() => {
                   <div className="bg-white/20 rounded-full p-1">
                     <CustomerIcon width={16} height={16} color="white" />
                   </div>
-                  <span className="text-sm font-medium">{user.name || user.email?.split('@')[0] || 'User'}</span>
+                  
                 </Link>
               ) : (
                 <Link to="/login" className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-6 py-2 rounded-xl transition-all shadow-lg">
