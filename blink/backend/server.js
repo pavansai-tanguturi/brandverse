@@ -31,8 +31,9 @@ const allowedOrigins = [
   'http://localhost:3001',
   'https://brandverse.onrender.com',
   'https://heartfelt-lily-3bb33d.netlify.app',
+  'https://akepatimart.com',
+  process.env.DEPLOYMENT_URL,
   process.env.FRONTEND_URL,
-  process.env.VITE_API_BASE,
   process.env.SUPABASE_URL
 ].filter(Boolean);
 
