@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useReducer, useEffect } from 'react';
+import React, { createContext, useContext, useReducer, useEffect, useState } from 'react';
 
 const CartContext = createContext();
 
@@ -188,6 +188,7 @@ export const useCart = () => {
 
 export const CartProvider = ({ children }) => {
   const [state, dispatch] = useReducer(cartReducer, getInitialState());
+  const [isInitializing, setIsInitializing] = useState(false);
 
   useEffect(() => {
     localStorage.setItem('brandverse_cart', JSON.stringify(state));
@@ -319,20 +320,30 @@ export const CartProvider = ({ children }) => {
 
   // NEW: Call this function when user successfully logs in
   const initializeAuthenticatedCart = async () => {
-    console.log('🔐 User logged in, initializing authenticated cart...');
+    if (isInitializing) {
+      console.log('🔐 [CART] Already initializing authenticated cart, skipping...');
+      return;
+    }
+    
+    setIsInitializing(true);
+    console.log('🔐 [CART] User logged in, initializing authenticated cart...');
+    console.log('🔐 [CART] Current guest cart items:', state.items.map(item => ({ id: item.id, title: item.title, quantity: item.quantity })));
     
     try {
+      const guestItems = [...state.items]; // Save guest items before switching modes
+      
       // Switch to authenticated mode first
       dispatch({ type: CART_ACTIONS.SET_GUEST_MODE, payload: false });
       
       // Sync guest cart to server if there are items
-      if (state.items.length > 0) {
-        console.log('🔄 Syncing guest cart to server...');
+      if (guestItems.length > 0) {
+        console.log('🔄 [CART] Syncing guest cart to server...');
         
-        for (const item of state.items) {
+        let syncErrors = 0;
+        for (const item of guestItems) {
           try {
             const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
-            await fetch(`${API_BASE}/api/cart/add`, {
+            const response = await fetch(`${API_BASE}/api/cart/add`, {
               method: 'POST',
               headers: getAuthHeaders(),
               credentials: 'include',
@@ -341,19 +352,53 @@ export const CartProvider = ({ children }) => {
                 quantity: item.quantity 
               })
             });
+            
+            if (!response.ok) {
+              console.error('❌ [CART] Failed to sync item to server:', item.title, response.status);
+              syncErrors++;
+            } else {
+              console.log('✅ [CART] Synced item to server:', item.title, 'x' + item.quantity);
+            }
           } catch (error) {
-            console.error('Failed to sync item to server:', error);
+            console.error('❌ [CART] Failed to sync item to server:', item.title, error);
+            syncErrors++;
           }
         }
+        
+        console.log(`🔄 [CART] Sync completed. Errors: ${syncErrors}/${guestItems.length}`);
+        
+        // If sync was successful, wait a moment then fetch from server
+        if (syncErrors === 0) {
+          console.log('⏳ [CART] Waiting for server to process items...');
+          await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
+          
+          // Now try to sync from server, but keep guest items if server is still empty
+          const serverSyncResult = await forceCartSyncFallback(dispatch);
+          
+          // If server sync didn't work or returned empty, keep the guest items
+          const currentItems = state.items;
+          if (!serverSyncResult || currentItems.length === 0) {
+            console.log('⚠️ [CART] Server sync returned empty cart, keeping guest items locally');
+            dispatch({ type: CART_ACTIONS.LOAD_CART, payload: { items: guestItems } });
+          }
+        } else {
+          console.log('⚠️ [CART] Some items failed to sync, keeping guest cart locally');
+          // Keep the guest items since some failed to sync
+          dispatch({ type: CART_ACTIONS.LOAD_CART, payload: { items: guestItems } });
+        }
+      } else {
+        // No guest items, just sync from server
+        await forceCartSyncFallback(dispatch);
       }
       
-      // Now sync back from server to get the authoritative state
-      await forceCartSyncFallback(dispatch);
+      console.log('✅ [CART] Authenticated cart initialization completed');
       
     } catch (error) {
-      console.error('Failed to initialize authenticated cart:', error);
+      console.error('❌ [CART] Failed to initialize authenticated cart:', error);
       // If authentication fails, revert to guest mode
       dispatch({ type: CART_ACTIONS.SET_GUEST_MODE, payload: true });
+    } finally {
+      setIsInitializing(false);
     }
   };
 

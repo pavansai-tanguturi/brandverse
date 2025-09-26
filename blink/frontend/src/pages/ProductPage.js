@@ -116,7 +116,7 @@ const ProductPage = () => {
         const data = await response.json();
         setProduct(data);
         
-        if (data) {
+        if (data && data.category && data.category.slug) {
           fetchRelatedProducts(data.category.slug, data.id);
         }
       } else {

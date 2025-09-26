@@ -5,16 +5,42 @@ import Navigation from '../../components/Navigation';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
 
+// Utility function for authenticated API calls
+const makeAuthenticatedRequest = async (url, options = {}) => {
+  // Get token from localStorage or cookie for authentication
+  let token = localStorage.getItem('auth_token');
+  if (!token && typeof document !== 'undefined') {
+    const match = document.cookie.match(/auth_token=([^;]+)/);
+    if (match) token = match[1];
+  }
+  
+  const headers = {
+    'Content-Type': 'application/json',
+    ...options.headers
+  };
+  
+  // Add Authorization header if token exists
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+  
+  return fetch(url, {
+    credentials: 'include',
+    ...options,
+    headers
+  });
+};
+
 // --- CART VALIDATION & FORCE REFRESH HELPERS ---
 const validateCartBeforeOrder = async () => {
   try {
     console.log('🔍 Validating cart before order...');
     const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
-    const response = await fetch(`${API_BASE}/api/cart/validate`, {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include'
+    
+    const response = await makeAuthenticatedRequest(`${API_BASE}/api/cart/validate`, {
+      method: 'GET'
     });
+    
     if (response.ok) {
       const serverCart = await response.json();
       console.log('🛒 Server cart items:', serverCart.items);
@@ -29,48 +55,211 @@ const validateCartBeforeOrder = async () => {
       });
       return serverCart;
     } else {
-      console.error('❌ Failed to fetch server cart');
-      return null;
+      const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+      console.error('❌ Failed to fetch server cart:', response.status, errorData);
+      
+      // If cart is empty on server but we have items on client, try to sync
+      if (response.status === 400 && errorData.error === 'Cart is empty') {
+        console.warn('⚠️ Server cart is empty but client has items. Cart sync required.');
+        return { isEmpty: true, needsSync: true, error: errorData };
+      }
+      
+      return { error: errorData, status: response.status };
     }
   } catch (error) {
     console.error('❌ Cart validation error:', error);
-    return null;
+    return { error: error.message };
   }
 };
 
-const forceCartRefresh = async () => {
+// SIMPLIFIED: Skip cart sync during checkout to prevent clearing items
+const forceCartRefresh = async (items) => {
   try {
-    console.log('🔄 Forcing cart refresh...');
-    if (typeof window.refreshCart === 'function') {
-      await window.refreshCart();
-    }
-    // Removed artificial delay for faster UX
-    console.log('✅ Cart refresh completed');
+    console.log('🔄 [CHECKOUT] Skipping cart refresh to preserve items during checkout');
+    console.log('� [CHECKOUT] Current cart items:', items.length);
+    console.log('� [CHECKOUT] Items:', items.map(item => ({ id: item.id, title: item.title, quantity: item.quantity })));
+    
+    // Don't sync or refresh - just preserve current items for checkout
+    return;
   } catch (error) {
-    console.error('❌ Cart refresh failed:', error);
+    console.error('❌ [CHECKOUT] Cart refresh failed:', error);
   }
 };
 
 const CheckoutPage = () => {
+  // Helper function to check stock before checkout
+  const checkCartStock = async () => {
+    try {
+      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
+      const response = await makeAuthenticatedRequest(`${API_BASE}/api/cart/validate`, {
+        method: 'POST',
+        body: JSON.stringify({ cart_items: items })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        if (errorData.error && errorData.error.includes('Insufficient stock')) {
+          return {
+            valid: false,
+            error: errorData.error,
+            item: errorData.item,
+            available: errorData.available,
+            required: errorData.required
+          };
+        }
+      }
+      
+      return { valid: true };
+    } catch (error) {
+      console.error('Stock check failed:', error);
+      return { valid: true }; // Allow checkout if stock check fails
+    }
+  };
+
+  // Helper function to verify product stock directly
+  const verifyProductStock = async (productId) => {
+    try {
+      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
+      const response = await makeAuthenticatedRequest(`${API_BASE}/api/products/${productId}`);
+      
+      if (response.ok) {
+        const product = await response.json();
+        console.log(`🔍 [STOCK CHECK] Product ${productId}:`, {
+          title: product.title,
+          stock_quantity: product.stock_quantity,
+          is_available: product.is_available,
+          price_cents: product.price_cents
+        });
+        return product;
+      }
+    } catch (error) {
+      console.error(`Failed to fetch product ${productId}:`, error);
+      return null;
+    }
+  };
+
+  // Function to remove out-of-stock item and retry checkout
+  const handleRemoveOutOfStockItem = async () => {
+    if (!outOfStockItem?.item?.id) return;
+    
+    try {
+      setLoading(true);
+      console.log(`🗑️ [CHECKOUT] Removing out-of-stock item: ${outOfStockItem.item.id}`);
+      await removeFromCart(outOfStockItem.item.id);
+      
+      // Clear error states
+      setError('');
+      setOutOfStockItem(null);
+      
+      // Show success message
+      setError(`"${outOfStockItem.name}" has been removed from your cart. You can now proceed with checkout.`);
+      
+      setTimeout(() => setError(''), 3000); // Clear success message after 3 seconds
+    } catch (error) {
+      console.error('Failed to remove out-of-stock item:', error);
+      setError('Failed to remove item from cart. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Function to ensure all cart items are synced to server
+  const ensureServerCartSync = async () => {
+    try {
+      console.log('🔄 [CHECKOUT] Ensuring server cart is synced with local cart...');
+      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
+      
+      // Clear existing server cart first
+      try {
+        await makeAuthenticatedRequest(`${API_BASE}/api/cart/clear`, {
+          method: 'POST'
+        });
+        console.log('🗑️ [CHECKOUT] Server cart cleared');
+      } catch (clearError) {
+        console.warn('⚠️ [CHECKOUT] Failed to clear server cart:', clearError);
+      }
+      
+      // Add all current items to server cart
+      for (const item of items) {
+        console.log(`➕ [CHECKOUT] Adding item to server cart: ${item.title} (qty: ${item.quantity})`);
+        
+        const addResponse = await makeAuthenticatedRequest(`${API_BASE}/api/cart/add`, {
+          method: 'POST',
+          body: JSON.stringify({
+            product_id: item.id,
+            quantity: item.quantity
+          })
+        });
+        
+        if (!addResponse.ok) {
+          const errorData = await addResponse.json();
+          console.error(`❌ [CHECKOUT] Failed to add ${item.title} to server cart:`, errorData);
+          throw new Error(`Failed to sync ${item.title} to server cart`);
+        }
+      }
+      
+      console.log('✅ [CHECKOUT] All items synced to server cart');
+      return true;
+      
+    } catch (syncError) {
+      console.error('❌ [CHECKOUT] Server cart sync failed:', syncError);
+      return false;
+    }
+  };
+
   // COD order with validation (moved inside component for access to state)
   const createCODOrderWithValidation = async () => {
     try {
-      console.log('🚀 Starting COD order with validation...');
+      console.log('🚀 [CHECKOUT] Starting COD order with validation...');
+      console.log('🚀 [CHECKOUT] Initial state - User:', user?.email, 'Guest Mode:', isGuestMode, 'Items in cart:', items.length);
       setLoading(true);
       setError('');
-      await forceCartRefresh();
-      const serverCart = await validateCartBeforeOrder();
-      if (!serverCart || !serverCart.items || serverCart.items.length === 0) {
-        setError('Your cart appears to be empty. Please refresh the page and try again.');
+      await forceCartRefresh(items);
+      console.log('🔍 [CHECKOUT] Skipping server cart validation, using client cart directly');
+      
+      // Verify stock for all cart items
+      console.log('🔍 [CHECKOUT] Verifying stock for all cart items...');
+      for (const item of items) {
+        await verifyProductStock(item.id);
+      }
+      
+      // CRITICAL: Ensure server cart is properly synced
+      console.log('🔄 [CHECKOUT] Ensuring server cart sync before order creation...');
+      const syncSuccess = await ensureServerCartSync();
+      if (!syncSuccess) {
+        setError('Failed to sync cart with server. Please try again.');
         setLoading(false);
         return;
       }
+      
+      // Use client-side cart validation instead of server validation
+      const validation = validateCart();
+      if (!validation.valid) {
+        setError('Cart contains invalid items. Please review your cart.');
+        setLoading(false);
+        return;
+      }
+      
+      console.log('✅ [CHECKOUT] Client cart validation passed, proceeding with order creation');
       if (!selectedAddress) {
         setError('Please select a shipping address');
         setLoading(false);
         return;
       }
+      
       const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
+      
+      // Prepare cart items for order creation
+      const cartItems = items.map(item => ({
+        product_id: item.id,
+        quantity: item.quantity,
+        unit_price_cents: item.discount_percent > 0 
+          ? Math.round(item.price_cents * (1 - item.discount_percent / 100))
+          : item.price_cents
+      }));
+      
+      console.log('📋 [CHECKOUT] Preparing order with cart items:', cartItems);
+      
       const orderData = {
         payment_method: 'cod',
         create_razorpay_order: false,
@@ -78,12 +267,17 @@ const CheckoutPage = () => {
         shipping_cents: 0, // Add your shipping calculation if needed
         tax_cents: 0, // Add your tax calculation if needed
         discount_cents: 0,
+        // Note: Not sending cart_items as backend will use synced server cart
       };
       console.log('📋 Creating order with validated cart...');
-      const response = await fetch(`${API_BASE}/api/orders`, {
+      console.log('🔍 [CHECKOUT] Full order data being sent:', JSON.stringify(orderData, null, 2));
+      console.log('🔍 [CHECKOUT] Request headers being sent:', {
+        'Content-Type': 'application/json',
+        'Authorization': localStorage.getItem('auth_token') ? 'Bearer [TOKEN_PRESENT]' : 'No token'
+      });
+      
+      const response = await makeAuthenticatedRequest(`${API_BASE}/api/orders`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
         body: JSON.stringify(orderData),
       });
       console.log('📡 Response status:', response.status);
@@ -95,6 +289,26 @@ const CheckoutPage = () => {
           setLoading(false);
           return;
         }
+        
+        // Handle insufficient stock errors
+        if (errorData.error && errorData.error.includes('Insufficient stock')) {
+          const productName = errorData.item?.title || errorData.error.split('for ')[1] || 'a product';
+          const available = errorData.available || 0;
+          const required = errorData.required || 0;
+          
+          // Store out-of-stock item info for potential removal
+          setOutOfStockItem({
+            name: productName,
+            available,
+            required,
+            item: errorData.item
+          });
+          
+          setError(`Sorry, "${productName}" is out of stock or has insufficient quantity. Available: ${available}, Required: ${required}. Please update your cart and try again.`);
+          setLoading(false);
+          return;
+        }
+        
         throw new Error(errorData.error || 'Order creation failed');
       }
       const order = await response.json();
@@ -125,7 +339,7 @@ const CheckoutPage = () => {
     }
   };
   const { user } = useAuth();
-  const { items, getCartTotal, getCartSubtotal, getTotalDiscount, clearCart, refreshCart } = useCart();
+  const { items, getCartTotal, getCartSubtotal, getTotalDiscount, clearCart, forceSync, isGuestMode, initializeAuthenticatedCart, removeFromCart, addToCart } = useCart();
   const navigate = useNavigate();
 
   // SIMPLIFIED: Use the cart context's discount calculation
@@ -141,6 +355,7 @@ const CheckoutPage = () => {
   const [selectedAddress, setSelectedAddress] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [outOfStockItem, setOutOfStockItem] = useState(null);
   const [showAddressForm, setShowAddressForm] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('razorpay');
   const [newAddress, setNewAddress] = useState({
@@ -160,9 +375,8 @@ const CheckoutPage = () => {
   const fetchAddresses = useCallback(async () => {
     try {
       const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
-      const response = await fetch(`${API_BASE}/api/addresses`, {
-        credentials: 'include'
-      });
+      const response = await makeAuthenticatedRequest(`${API_BASE}/api/addresses`);
+      
       if (response.ok) {
         const data = await response.json();
         setAddresses(data);
@@ -207,18 +421,25 @@ const CheckoutPage = () => {
     fetchAddresses();
   }, [user, items, navigate, fetchAddresses]);
 
+  // DISABLED: Don't auto-initialize cart during checkout to prevent clearing items
+  // Initialize authenticated cart if user is logged in but cart is in guest mode
+  // useEffect(() => {
+  //   if (user && isGuestMode && items.length > 0 && initializeAuthenticatedCart) {
+  //     console.log('🔐 [CHECKOUT] User is authenticated but cart is in guest mode, initializing...');
+  //     initializeAuthenticatedCart().catch(error => {
+  //       console.error('❌ [CHECKOUT] Failed to initialize authenticated cart:', error);
+  //     });
+  //   }
+  // }, [user, isGuestMode, items.length, initializeAuthenticatedCart]);
+
   const handleAddressSubmit = async (e) => {
     e.preventDefault();
     try {
       setLoading(true);
       const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
       
-      const response = await fetch(`${API_BASE}/api/addresses`, {
+      const response = await makeAuthenticatedRequest(`${API_BASE}/api/addresses`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
         body: JSON.stringify(newAddress)
       });
 
@@ -260,7 +481,13 @@ const CheckoutPage = () => {
       setLoading(true);
       setError('');
       
-      console.log('Creating COD order...');
+      console.log('[CHECKOUT] Creating COD order with cart items:', items);
+      console.log('[CHECKOUT] Cart items format:', items.map(item => ({
+        id: item.id,
+        title: item.title,
+        quantity: item.quantity,
+        price_cents: item.price_cents
+      })));
       
       const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
       
@@ -270,12 +497,16 @@ const CheckoutPage = () => {
         throw new Error('Cart contains invalid items. Please review your cart.');
       }
       
-      const response = await fetch(`${API_BASE}/api/orders`, {
+      // Ensure server cart is synced
+      const syncSuccess = await ensureServerCartSync();
+      if (!syncSuccess) {
+        setError('Failed to sync cart with server. Please try again.');
+        setLoading(false);
+        return;
+      }
+
+      const response = await makeAuthenticatedRequest(`${API_BASE}/api/orders`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
         body: JSON.stringify({
           payment_method: 'cod',
           shipping_address: selectedAddress ? {
@@ -301,6 +532,16 @@ const CheckoutPage = () => {
           return;
         }
         
+        // Handle insufficient stock errors
+        if (errorData.error && errorData.error.includes('Insufficient stock')) {
+          const productName = errorData.item?.title || errorData.error.split('for ')[1] || 'a product';
+          const available = errorData.available || 0;
+          const required = errorData.required || 0;
+          
+          setError(`Sorry, "${productName}" is out of stock or has insufficient quantity. Available: ${available}, Required: ${required}. Please update your cart and try again.`);
+          return;
+        }
+        
         throw new Error(errorData.error || 'Failed to create order');
       }
 
@@ -309,12 +550,8 @@ const CheckoutPage = () => {
 
       // Try to confirm COD order
       try {
-        const confirmResponse = await fetch(`${API_BASE}/api/orders/${order.id}/confirm-cod`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          credentials: 'include'
+        const confirmResponse = await makeAuthenticatedRequest(`${API_BASE}/api/orders/${order.id}/confirm-cod`, {
+          method: 'POST'
         });
 
         if (confirmResponse.ok) {
@@ -360,6 +597,8 @@ const CheckoutPage = () => {
       setLoading(true);
       setError('');
       
+      console.log('[CHECKOUT] Creating Razorpay order with cart items:', items);
+      
       const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
       
       const validation = validateCart();
@@ -367,12 +606,16 @@ const CheckoutPage = () => {
         throw new Error('Cart contains invalid items');
       }
       
-      const response = await fetch(`${API_BASE}/api/orders`, {
+      // Ensure server cart is synced
+      const syncSuccess = await ensureServerCartSync();
+      if (!syncSuccess) {
+        setError('Failed to sync cart with server. Please try again.');
+        setLoading(false);
+        return;
+      }
+
+      const response = await makeAuthenticatedRequest(`${API_BASE}/api/orders`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
         body: JSON.stringify({
           payment_method: 'razorpay',
           create_razorpay_order: true,
@@ -397,6 +640,17 @@ const CheckoutPage = () => {
           setError(`${errorData.message}`);
           return;
         }
+        
+        // Handle insufficient stock errors
+        if (errorData.error && errorData.error.includes('Insufficient stock')) {
+          const productName = errorData.item?.title || errorData.error.split('for ')[1] || 'a product';
+          const available = errorData.available || 0;
+          const required = errorData.required || 0;
+          
+          setError(`Sorry, "${productName}" is out of stock or has insufficient quantity. Available: ${available}, Required: ${required}. Please update your cart and try again.`);
+          return;
+        }
+        
         throw new Error(errorData.error || 'Failed to create order');
       }
 
@@ -446,12 +700,8 @@ const CheckoutPage = () => {
     try {
       const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
       
-      const response = await fetch(`${API_BASE}/api/orders/confirm-payment`, {
+      const response = await makeAuthenticatedRequest(`${API_BASE}/api/orders/confirm-payment`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
         body: JSON.stringify({
           razorpay_order_id: razorpayResponse.razorpay_order_id,
           razorpay_payment_id: razorpayResponse.razorpay_payment_id,
@@ -548,6 +798,34 @@ const CheckoutPage = () => {
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 whitespace-pre-line">
                 {error}
+                {outOfStockItem && (
+                  <div className="mt-3 flex gap-2">
+                    <button
+                      onClick={handleRemoveOutOfStockItem}
+                      disabled={loading}
+                      className="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 disabled:opacity-50"
+                    >
+                      {loading ? 'Removing...' : `Remove "${outOfStockItem.name}" from cart`}
+                    </button>
+                  </div>
+                )}
+                <div className="mt-3">
+                  <details className="text-sm">
+                    <summary className="cursor-pointer text-gray-600 hover:text-gray-800">Debug: Check actual stock levels</summary>
+                    <div className="mt-2 p-2 bg-gray-100 rounded text-xs">
+                      <p>Cart items being sent to backend:</p>
+                      {items.map(item => (
+                        <div key={item.id} className="mt-1 pl-2 border-l-2 border-gray-300">
+                          <div><strong>ID:</strong> {item.id}</div>
+                          <div><strong>Title:</strong> {item.title}</div>
+                          <div><strong>Quantity:</strong> {item.quantity}</div>
+                          <div><strong>Stock in Frontend:</strong> {item.stock_quantity}</div>
+                          <div><strong>Price:</strong> ₹{(item.price_cents / 100).toFixed(2)}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </details>
+                </div>
               </div>
             )}
 
