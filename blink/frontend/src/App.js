@@ -1,16 +1,18 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
 import { WishlistProvider } from './context/WishlistContext';
 import { AddressProvider } from './context/AddressContext';
 import CookieConsent from './components/CookieConsent';
 import CookiePolicy from './components/CookiePolicy';
+import Footer from './components/Footer';
 import Auth from './pages/Auth';
 import Login from './pages/Login';
 import SignUp from './pages/SignUp';
 import Home from './pages/Home';
 import Products from './pages/Products';
+import Deals from './pages/Deals';
 import Search from './pages/Search';
 import ProductPage from './pages/ProductPage';
 import CartPage from './pages/CartPage';
@@ -31,6 +33,20 @@ import AnalyticsDashboard from './pages/admin/AnalyticsDashboard';
 import UnauthorizedPage from './pages/UnauthorizedPage';
 import Logout from './pages/Logout';
 
+// Component to conditionally render Footer
+const ConditionalFooter = () => {
+  const location = useLocation();
+  const isAdminRoute = location.pathname.startsWith('/admin');
+  const isCheckoutRoute = location.pathname === '/checkout' || location.pathname === '/order-success';
+  
+  // Don't show footer on admin pages and checkout/order success pages
+  if (isAdminRoute || isCheckoutRoute) {
+    return null;
+  }
+  
+  return <Footer />;
+};
+
 function App() {
   return (
     <AuthProvider>
@@ -38,11 +54,12 @@ function App() {
         <WishlistProvider>
           <AddressProvider>
             <Router>
-          <Routes>
+              <Routes>
             {/* Regular User Routes */}
             <Route path="/" element={<Home />} />
             <Route path="/home" element={<Home />} />
             <Route path="/products" element={<Products />} />
+            <Route path="/deals" element={<Deals />} />
             <Route path="/search" element={<Search />} />
             <Route path="/product/:id" element={<ProductPage />} />
             <Route path="/cart" element={<CartPage />} />
@@ -75,9 +92,12 @@ function App() {
             <Route path="/admin/logout" element={<Logout />} />
           </Routes>
               
-              {/* Cookie Consent Banner - appears on all pages */}
-              <CookieConsent />
-            </Router>
+          {/* Conditional Footer - appears on all pages except admin and checkout */}
+          <ConditionalFooter />
+          
+          {/* Cookie Consent Banner - appears on all pages */}
+          <CookieConsent />
+        </Router>
           </AddressProvider>
         </WishlistProvider>
       </CartProvider>

@@ -643,7 +643,8 @@ export async function createOrder(req, res) {
       discount_cents = 0,
       payment_method = null,
       create_razorpay_order = false,
-      shipping_address = null
+      shipping_address = null,
+      cart_items: bodyCartItems = null // optional client-provided fallback
     } = req.body || {};
 
     // Find or create customer with better error handling
@@ -773,8 +774,8 @@ export async function createOrder(req, res) {
     
     console.log('✅ Active cart confirmed:', cart.id);
 
-    // Fetch cart items
-    const { data: cartItems, error: itemsError } = await supabaseAdmin
+    // Fetch cart items from DB
+    let { data: cartItems, error: itemsError } = await supabaseAdmin
       .from('cart_items')
       .select('*')
       .eq('cart_id', cart.id);
@@ -784,11 +785,22 @@ export async function createOrder(req, res) {
       return res.status(500).json({ error: 'Database error while fetching cart items' });
     }
     
-    console.log('📦 Cart items found:', cartItems?.length || 0);
-    
+    console.log('📦 Cart items found in DB:', cartItems?.length || 0);
+
+    // Fallback: if DB cart empty but client sent cart_items, use them
+    if ((!cartItems || cartItems.length === 0) && Array.isArray(bodyCartItems) && bodyCartItems.length > 0) {
+      console.log('🛟 Falling back to client-provided cart_items (count:', bodyCartItems.length, ')');
+      cartItems = bodyCartItems.map(ci => ({
+        product_id: ci.product_id || ci.id,
+        quantity: Number(ci.quantity) || 1,
+        // Preserve unit_price_cents if provided (for auditing); price will be recalculated anyway
+        unit_price_cents: ci.unit_price_cents || null
+      }));
+    }
+
     if (!cartItems || cartItems.length === 0) {
-      console.error('❌ Cart is empty for cart_id:', cart.id);
-      return res.status(400).json({ 
+      console.error('❌ No cart items available (DB empty, no fallback) for cart_id:', cart.id);
+      return res.status(400).json({
         error: 'Cart is empty. Please add items to your cart before placing an order.',
         code: 'EMPTY_CART',
         redirect: '/products'
@@ -797,7 +809,7 @@ export async function createOrder(req, res) {
 
     // Continue with the rest of your existing order creation logic...
     // Fetch products with discount information
-    const productIds = [...new Set(cartItems.map(item => item.product_id))];
+  const productIds = [...new Set((cartItems || []).map(item => item.product_id))];
     const { data: products, error: productsError } = await supabaseAdmin
       .from('products')
       .select('id, title, price_cents, discount_percent, stock_quantity')
