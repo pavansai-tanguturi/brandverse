@@ -81,21 +81,11 @@ const Navigation = ({ showSearch = true }) => {
 
           {/* User Actions */}
           <div className="flex items-center space-x-2 md:space-x-3 flex-shrink-0">
-            {/* Mobile Search Icon */}
-            {showSearch && (
-              <button 
-                onClick={() => navigate('/search')}
-                className="md:hidden flex items-center justify-center bg-white/10 backdrop-blur-lg rounded-xl p-2 cursor-pointer hover:bg-white/20 transition-all"
-              >
-                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </button>
-            )}
+            {/* Note: Mobile search icon is placed next to Cart below to keep layout compact */}
 
             {/* User Account */}
             {user ? (
-              <div className="flex items-center space-x-1 sm:space-x-2">
+              <div className="hidden md:flex items-center space-x-1 sm:space-x-2">
                 <Link 
                   to="/dashboard" 
                   className="flex items-center space-x-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 rounded-xl px-3 sm:px-4 py-2 text-white transition-all shadow-lg"
@@ -111,7 +101,7 @@ const Navigation = ({ showSearch = true }) => {
             ) : (
               <Link 
                 to="/login" 
-                className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white px-4 sm:px-6 py-2 rounded-xl transition-all shadow-lg text-sm font-medium"
+                className="hidden md:flex bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white px-4 sm:px-6 py-2 rounded-xl transition-all shadow-lg text-sm font-medium"
               >
                 Login
               </Link>
@@ -127,6 +117,19 @@ const Navigation = ({ showSearch = true }) => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                 </svg>
                 <span className="text-white text-sm font-medium">Orders</span>
+              </button>
+            )}
+
+            {/* Mobile Search Icon (small screens, next to cart) */}
+            {showSearch && (
+              <button 
+                onClick={() => navigate('/search')}
+                className="md:hidden flex items-center justify-center bg-white/10 backdrop-blur-lg rounded-xl p-2 cursor-pointer hover:bg-white/20 transition-all"
+                aria-label="Search"
+              >
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
               </button>
             )}
 

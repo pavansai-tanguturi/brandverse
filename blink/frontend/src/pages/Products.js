@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useWishlist } from '../context/WishlistContext';
 import { CartIcon, CustomerIcon } from '../components/icons';
 import MobileBottomNav from '../components/MobileBottomNav';
 import logo from '../assets/logos.png';
@@ -10,6 +11,7 @@ import locationIcon from '../assets/location.png';
 function Products() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { state: wishlistState, addToWishlist, removeFromWishlist } = useWishlist();
   const [searchParams, setSearchParams] = useSearchParams();
   const [locationName, setLocationName] = useState('Fetching location...');
   
@@ -217,6 +219,24 @@ function Products() {
     setSearchParams({});
   };
 
+  // Wishlist helper functions
+  const isInWishlist = (productId) => {
+    if (!wishlistState || !wishlistState.items) return false;
+    const inWishlist = wishlistState.items.some(item => item.id === productId);
+    console.log(`Product ${productId} in wishlist:`, inWishlist);
+    return inWishlist;
+  };
+
+  const handleWishlistToggle = async (e, product) => {
+    e.stopPropagation(); // Prevent navigation to product page
+    console.log('Toggling wishlist for product:', product);
+    if (isInWishlist(product.id)) {
+      await removeFromWishlist(product.id);
+    } else {
+      await addToWishlist(product);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50 pb-20 lg:pb-0">
       {/* Navigation Header */}
@@ -262,18 +282,21 @@ function Products() {
 
             {/* User Actions */}
             <div className="flex items-center space-x-2 md:space-x-4">
-              {user ? (
-                <Link to="/dashboard" className="flex items-center space-x-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 rounded-xl px-4 py-2 text-white transition-all shadow-lg">
-                  <div className="bg-white/20 rounded-full p-1">
-                    <CustomerIcon width={16} height={16} color="white" />
-                  </div>
-                  <span className="hidden md:inline text-sm">Dashboard</span>
-                </Link>
-              ) : (
-                <Link to="/login" className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white px-6 py-2 rounded-xl transition-all shadow-lg">
-                  Login
-                </Link>
-              )}
+              {/* Login/Dashboard - Hidden on mobile */}
+              <div className="hidden md:flex">
+                {user ? (
+                  <Link to="/dashboard" className="flex items-center space-x-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 rounded-xl px-4 py-2 text-white transition-all shadow-lg">
+                    <div className="bg-white/20 rounded-full p-1">
+                      <CustomerIcon width={16} height={16} color="white" />
+                    </div>
+                    <span className="hidden md:inline text-sm">Dashboard</span>
+                  </Link>
+                ) : (
+                  <Link to="/login" className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white px-6 py-2 rounded-xl transition-all shadow-lg">
+                    Login
+                  </Link>
+                )}
+              </div>
 
               {/* Cart */}
               <div className="flex items-center space-x-2 bg-white/10 backdrop-blur-lg rounded-xl px-3 py-2 cursor-pointer hover:bg-white/20 transition-all" onClick={() => navigate('/cart')}>
@@ -535,13 +558,33 @@ function Products() {
                           {product.discount_percent}% OFF
                         </div>
                       )}
+                      {/* Wishlist Button */}
+                      <button
+                        onClick={(e) => handleWishlistToggle(e, product)}
+                        className={`absolute top-1 right-1 p-1.5 rounded-full shadow-md transition-all transform hover:scale-110 ${
+                          isInWishlist(product.id) 
+                            ? 'bg-red-50 hover:bg-red-100 ring-2 ring-red-200' 
+                            : 'bg-white/95 hover:bg-white'
+                        }`}
+                        aria-label={isInWishlist(product.id) ? "Remove from wishlist" : "Add to wishlist"}
+                      >
+                        {isInWishlist(product.id) ? (
+                          <svg className="w-4 h-4 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" />
+                          </svg>
+                        ) : (
+                          <svg className="w-4 h-4 text-gray-600 hover:text-red-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                          </svg>
+                        )}
+                      </button>
                       {product.stock_quantity <= 5 && product.stock_quantity > 0 && (
-                        <div className="absolute top-1 right-1 bg-amber-500 text-white px-1.5 py-0.5 rounded text-xs font-bold">
+                        <div className="absolute bottom-1 right-1 bg-amber-500 text-white px-1.5 py-0.5 rounded text-xs font-bold">
                           {product.stock_quantity} left
                         </div>
                       )}
                       {product.stock_quantity <= 0 && (
-                        <div className="absolute top-1 right-1 bg-rose-500 text-white px-1.5 py-0.5 rounded text-xs font-bold">
+                        <div className="absolute bottom-1 right-1 bg-rose-500 text-white px-1.5 py-0.5 rounded text-xs font-bold">
                           Out of Stock
                         </div>
                       )}

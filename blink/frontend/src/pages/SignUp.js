@@ -236,7 +236,6 @@ function SignUp() {
 
   return (
     <>
-      <Navigation />
       <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50 pt-24 pb-20">
         <div className="max-w-md mx-auto px-4 sm:px-6">
           {/* Sign Up Card */}

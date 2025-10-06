@@ -147,18 +147,21 @@ function Deals() {
 
             {/* User Actions */}
             <div className="flex items-center space-x-2 md:space-x-4">
-              {user ? (
-                <Link to="/dashboard" className="flex items-center space-x-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 rounded-xl px-4 py-2 text-white transition-all shadow-lg">
-                  <div className="bg-white/20 rounded-full p-1">
-                    <CustomerIcon width={16} height={16} color="white" />
-                  </div>
-                  <span className="hidden md:inline text-sm">Dashboard</span>
-                </Link>
-              ) : (
-                <Link to="/login" className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white px-6 py-2 rounded-xl transition-all shadow-lg">
-                  Login
-                </Link>
-              )}
+              {/* Login/Dashboard - Hidden on mobile */}
+              <div className="hidden md:flex">
+                {user ? (
+                  <Link to="/dashboard" className="flex items-center space-x-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 rounded-xl px-4 py-2 text-white transition-all shadow-lg">
+                    <div className="bg-white/20 rounded-full p-1">
+                      <CustomerIcon width={16} height={16} color="white" />
+                    </div>
+                    <span className="hidden md:inline text-sm">Dashboard</span>
+                  </Link>
+                ) : (
+                  <Link to="/login" className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white px-6 py-2 rounded-xl transition-all shadow-lg">
+                    Login
+                  </Link>
+                )}
+              </div>
 
               {/* Cart */}
               <div className="flex items-center space-x-2 bg-white/10 backdrop-blur-lg rounded-xl px-3 py-2 cursor-pointer hover:bg-white/20 transition-all" onClick={() => navigate('/cart')}>
