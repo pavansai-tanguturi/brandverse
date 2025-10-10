@@ -1,9 +1,10 @@
 // src/pages/Products.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useWishlist } from '../context/WishlistContext';
-import { CartIcon, CustomerIcon } from '../components/icons';
+import { useCart } from '../context/CartContext';
+import ModernNavbar from '../components/ModernNavbar';
 import MobileBottomNav from '../components/MobileBottomNav';
 import logo from '../assets/logos.png';
 import locationIcon from '../assets/location.png';
@@ -12,8 +13,15 @@ function Products() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { state: wishlistState, addToWishlist, removeFromWishlist } = useWishlist();
+  const { addToCart } = useCart();
   const [searchParams, setSearchParams] = useSearchParams();
   const [locationName, setLocationName] = useState('Fetching location...');
+  
+  // Refs for click-outside detection
+  const categoryRef = useRef(null);
+  const priceRef = useRef(null);
+  const stockRef = useRef(null);
+  const sortRef = useRef(null);
   
   // Product state
   const [products, setProducts] = useState([]);
@@ -24,13 +32,18 @@ function Products() {
   const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
   const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || 'all');
   const [sortBy, setSortBy] = useState('name');
-  const [showFilters, setShowFilters] = useState(false);
   
   // Flipkart-style filter states
   const [priceRange, setPriceRange] = useState([0, 100000]);
   const [selectedBrands, setSelectedBrands] = useState([]);
   const [selectedRatings, setSelectedRatings] = useState([]);
   const [availability, setAvailability] = useState('all');
+  
+  // Collapsible filter sections
+  const [isCategoryOpen, setIsCategoryOpen] = useState(false);
+  const [isPriceOpen, setIsPriceOpen] = useState(false);
+  const [isStockOpen, setIsStockOpen] = useState(false);
+  const [isSortOpen, setIsSortOpen] = useState(false);
   
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -78,6 +91,15 @@ function Products() {
   useEffect(() => {
     let filtered = [...products];
 
+    // URL-driven quick filters
+    const urlMaxPriceRaw = searchParams.get('maxPrice');
+    const urlMaxPrice = urlMaxPriceRaw ? parseInt(urlMaxPriceRaw, 10) : null;
+    const hasMaxPrice = typeof urlMaxPrice === 'number' && !Number.isNaN(urlMaxPrice) && urlMaxPrice > 0;
+    const urlDiscountRaw = searchParams.get('discount');
+    const urlDiscount = urlDiscountRaw ? parseInt(urlDiscountRaw, 10) : 0;
+    const urlTag = (searchParams.get('tag') || '').toLowerCase();
+    const urlSort = (searchParams.get('sort') || '').toLowerCase();
+
     // Search filter
     if (searchQuery) {
       filtered = filtered.filter(product =>
@@ -109,21 +131,41 @@ function Products() {
       filtered = filtered.filter(product => product.stock_quantity <= 0);
     }
 
-    // Price range filter
+    // Price range filter combined with url maxPrice
     filtered = filtered.filter(product => {
       const price = product.price_cents / 100;
-      return price >= priceRange[0] && price <= priceRange[1];
+      const upper = hasMaxPrice ? Math.min(priceRange[1], urlMaxPrice) : priceRange[1];
+      return price >= priceRange[0] && price <= upper;
     });
 
-    // Sort products
+    // Discount/tag filter
+    const minDiscount = Math.max(0, urlDiscount, urlTag === 'great-deal' ? 30 : 0);
+    if (minDiscount > 0) {
+      filtered = filtered.filter(p => (p.discount_percent || 0) >= minDiscount);
+    }
+
+    // Sort products (URL param overrides local dropdown when present)
+    const effectiveSort = urlSort || sortBy;
     filtered.sort((a, b) => {
-      switch (sortBy) {
+      switch (effectiveSort) {
         case 'price-low':
           return a.price_cents - b.price_cents;
         case 'price-high':
           return b.price_cents - a.price_cents;
         case 'discount':
           return (b.discount_percent || 0) - (a.discount_percent || 0);
+        case 'new': {
+          const aDate = a.created_at ? new Date(a.created_at).getTime() : (a.id || 0);
+          const bDate = b.created_at ? new Date(b.created_at).getTime() : (b.id || 0);
+          return bDate - aDate;
+        }
+        case 'popularity': {
+          const aScore = a.total_sales || a.sold_count || 0;
+          const bScore = b.total_sales || b.sold_count || 0;
+          if (aScore !== bScore) return bScore - aScore;
+          // tie-breaker by discount
+          return (b.discount_percent || 0) - (a.discount_percent || 0);
+        }
         case 'name':
         default:
           return (a.title || '').localeCompare(b.title || '');
@@ -132,12 +174,13 @@ function Products() {
 
     setFilteredProducts(filtered);
     setCurrentPage(1);
-  }, [products, searchQuery, selectedCategory, sortBy, priceRange, availability]);
+  }, [products, searchQuery, selectedCategory, sortBy, priceRange, availability, searchParams]);
 
   // Sync local state with URL search params
   useEffect(() => {
     const urlQuery = searchParams.get('q') || '';
     const urlCategory = searchParams.get('category') || 'all';
+    const urlSort = (searchParams.get('sort') || '').toLowerCase();
     
     if (urlQuery !== searchQuery) {
       setSearchQuery(urlQuery);
@@ -145,7 +188,34 @@ function Products() {
     if (urlCategory !== selectedCategory) {
       setSelectedCategory(urlCategory);
     }
+    // Sync dropdown sort state for supported sorts
+    if (['price-low', 'price-high', 'discount', 'name'].includes(urlSort) && urlSort !== sortBy) {
+      setSortBy(urlSort);
+    }
   }, [searchParams]);
+
+  // Click-outside detection for dropdowns
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (categoryRef.current && !categoryRef.current.contains(event.target)) {
+        setIsCategoryOpen(false);
+      }
+      if (priceRef.current && !priceRef.current.contains(event.target)) {
+        setIsPriceOpen(false);
+      }
+      if (stockRef.current && !stockRef.current.contains(event.target)) {
+        setIsStockOpen(false);
+      }
+      if (sortRef.current && !sortRef.current.contains(event.target)) {
+        setIsSortOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   // Handle search
   const handleSearch = (e) => {
@@ -239,95 +309,10 @@ function Products() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50 pb-20 lg:pb-0">
-      {/* Navigation Header */}
-      <header className="bg-gradient-to-r from-emerald-800 via-teal-700 to-emerald-800 shadow-2xl sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16 md:h-20">
-            
-            {/* Logo and Brand */}
-            <div className="flex items-center space-x-3 cursor-pointer" onClick={() => navigate('/')}>
-              <img
-                src={logo}
-                className="h-12 w-auto object-contain rounded-lg"
-                alt="Akepatimart"
-              />
-            </div>
-
-            {/* Location Display - Hidden on small screens */}
-            <div className="hidden md:flex items-center space-x-2 bg-white/10 backdrop-blur-lg rounded-xl px-4 py-2 cursor-pointer hover:bg-white/20 transition-all" onClick={() => navigate('/delivery-locations')}>
-              <img src={locationIcon} className="h-5 w-5" alt="location" />
-              <div className="flex flex-col">
-                <span className="text-gray-300 text-xs uppercase tracking-wide">Deliver to</span>
-                <span className="text-white text-sm font-medium">{locationName}</span>
-              </div>
-            </div>
-
-            {/* Search Bar - Responsive */}
-            <form className="flex-1 max-w-md mx-4 hidden md:block" onSubmit={handleSearch}>
-              <div className="relative">
-                <input 
-                  type="text" 
-                  placeholder="Search products..." 
-                  className="w-full bg-white/10 backdrop-blur-lg border border-white/20 rounded-xl px-4 py-3 pl-12 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-                <button type="submit" className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-300 hover:text-white">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                </button>
-              </div>
-            </form>
-
-            {/* User Actions */}
-            <div className="flex items-center space-x-2 md:space-x-4">
-              {/* Login/Dashboard - Hidden on mobile */}
-              <div className="hidden md:flex">
-                {user ? (
-                  <Link to="/dashboard" className="flex items-center space-x-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 rounded-xl px-4 py-2 text-white transition-all shadow-lg">
-                    <div className="bg-white/20 rounded-full p-1">
-                      <CustomerIcon width={16} height={16} color="white" />
-                    </div>
-                    <span className="hidden md:inline text-sm">Dashboard</span>
-                  </Link>
-                ) : (
-                  <Link to="/login" className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white px-6 py-2 rounded-xl transition-all shadow-lg">
-                    Login
-                  </Link>
-                )}
-              </div>
-
-              {/* Cart */}
-              <div className="flex items-center space-x-2 bg-white/10 backdrop-blur-lg rounded-xl px-3 py-2 cursor-pointer hover:bg-white/20 transition-all" onClick={() => navigate('/cart')}>
-                <CartIcon width={20} height={20} color="white" strokeWidth={2} />
-                <span className="hidden md:inline text-white text-sm">Cart</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Mobile Search Bar */}
-          <form className="md:hidden pb-4" onSubmit={handleSearch}>
-            <div className="relative">
-              <input 
-                type="text" 
-                placeholder="Search products..." 
-                className="w-full bg-white/10 backdrop-blur-lg border border-white/20 rounded-xl px-4 py-3 pl-12 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-              <button type="submit" className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-300">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </button>
-            </div>
-          </form>
-        </div>
-      </header>
+      <ModernNavbar showSearch={true} />
 
       {/* Breadcrumb */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-4 bg-white border-b border-gray-200">
         <nav className="flex items-center space-x-2 text-sm">
           <Link to="/" className="text-emerald-600 hover:text-emerald-800">Home</Link>
           <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -337,199 +322,298 @@ function Products() {
         </nav>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
-        <div className="flex flex-col lg:flex-row gap-6">
-          
-          {/* Flipkart-style Filters Sidebar */}
-          <div className="lg:w-1/4">
-            {/* Mobile Filter Toggle */}
-            <div className="lg:hidden mb-4">
-              <button
-                onClick={() => setShowFilters(!showFilters)}
-                className="w-full flex items-center justify-between bg-white rounded-lg px-4 py-3 shadow-sm border border-gray-200"
-              >
-                <div className="flex items-center space-x-2">
-                  <svg className="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-                  </svg>
-                  <span className="font-semibold text-gray-900">FILTERS</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  {selectedCategory !== 'all' && (
-                    <span className="bg-emerald-100 text-emerald-800 px-2 py-1 rounded text-xs font-medium">
-                      Active
-                    </span>
-                  )}
-                  <svg className={`w-5 h-5 transform transition-transform ${showFilters ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                  </svg>
-                </div>
-              </button>
-            </div>
+      {/* Horizontal Filter Bar - Gromuse Style */}
+   <div className="max-w-7xl mx-auto px-4 py-3">
+  <div className="flex flex-wrap items-center gap-3 relative">
+    
+    {/* (moved) Clear All Button - will render at the right end of the row */}
 
-            <div className={`space-y-4 ${showFilters ? 'block' : 'hidden lg:block'}`}>
-              
-              {/* Filters Header */}
-              <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-bold text-lg text-gray-900">Filters</h3>
-                  <button 
-                    onClick={clearAllFilters}
-                    className="text-emerald-600 hover:text-emerald-800 text-sm font-medium"
-                  >
-                    CLEAR ALL
-                  </button>
-                </div>
-                
-                {/* Active Filters Count */}
-                <div className="flex items-center space-x-2 text-sm text-gray-600">
-                  <span>{filteredProducts.length} Products</span>
-                  <span className="text-gray-300">•</span>
-                  <span>of {products.length}</span>
-                </div>
-              </div>
+    {/* Category Filter */}
+    <div className="relative" ref={categoryRef}>
+      <button
+        onClick={() => {
+          setIsCategoryOpen(!isCategoryOpen);
+          setIsPriceOpen(false);
+          setIsStockOpen(false);
+          setIsSortOpen(false);
+        }}
+        className={`flex items-center gap-2 px-4 py-2 rounded-full border-2 transition-all ${
+          selectedCategory !== 'all'
+            ? 'bg-emerald-600 text-white border-emerald-600 shadow-md'
+            : 'bg-white text-gray-700 border-gray-300 hover:border-emerald-500 hover:shadow-sm'
+        }`}
+      >
+        <span className="font-medium text-sm whitespace-nowrap">
+          {selectedCategory === 'all'
+            ? 'All Categories'
+            : categories.find(c => c.slug === selectedCategory)?.name || 'Category'}
+        </span>
+        <svg
+          className={`w-4 h-4 transition-transform duration-200 ${
+            isCategoryOpen ? 'rotate-180' : ''
+          }`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
 
-              {/* Categories Filter */}
-              <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
-                <h3 className="font-semibold text-gray-900 mb-3 flex items-center justify-between">
-                  <span>CATEGORIES</span>
-                  <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                  </svg>
-                </h3>
-                <div className="space-y-2 max-h-60 overflow-y-auto">
-                  <button
-                    onClick={() => setSelectedCategory('all')}
-                    className={`w-full flex items-center justify-between px-2 py-2 rounded transition-all ${
-                      selectedCategory === 'all'
-                        ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-                        : 'hover:bg-gray-50 text-gray-700'
-                    }`}
-                  >
-                    <span className="text-sm">All Categories</span>
-                    <span className="text-xs bg-gray-200 px-2 py-1 rounded-full">{products.length}</span>
-                  </button>
-                  {categories.map((category) => (
-                    <button
-                      key={category.id}
-                      onClick={() => setSelectedCategory(category.slug)}
-                      className={`w-full flex items-center justify-between px-2 py-2 rounded transition-all ${
-                        selectedCategory === category.slug
-                          ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-                          : 'hover:bg-gray-50 text-gray-700'
-                      }`}
-                    >
-                      <span className="text-sm">{category.name}</span>
-                      <span className="text-xs bg-gray-200 px-2 py-1 rounded-full">
-                        {products.filter(p => p.category?.slug === category.slug).length}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Price Range Filter */}
-              <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
-                <h3 className="font-semibold text-gray-900 mb-3">PRICE</h3>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">₹{priceRange[0]}</span>
-                    <span className="text-gray-600">₹{priceRange[1]}</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="0"
-                    max="100000"
-                    step="100"
-                    value={priceRange[1]}
-                    onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value)])}
-                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                  />
-                  <div className="flex space-x-2">
-                    {[500, 1000, 2000, 5000].map((price) => (
-                      <button
-                        key={price}
-                        onClick={() => setPriceRange([0, price])}
-                        className="flex-1 text-xs py-1 px-2 border border-gray-300 rounded hover:border-emerald-500 hover:text-emerald-600 transition-colors"
-                      >
-                        Under ₹{price}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Availability Filter */}
-              <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
-                <h3 className="font-semibold text-gray-900 mb-3">AVAILABILITY</h3>
-                <div className="space-y-2">
-                  {[
-                    { value: 'all', label: 'All Products', count: products.length },
-                    { value: 'in-stock', label: 'In Stock', count: products.filter(p => p.stock_quantity > 0).length },
-                    { value: 'out-of-stock', label: 'Out of Stock', count: products.filter(p => p.stock_quantity <= 0).length }
-                  ].map((option) => (
-                    <button
-                      key={option.value}
-                      onClick={() => setAvailability(option.value)}
-                      className={`w-full flex items-center justify-between px-2 py-2 rounded transition-all ${
-                        availability === option.value
-                          ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-                          : 'hover:bg-gray-50 text-gray-700'
-                      }`}
-                    >
-                      <span className="text-sm">{option.label}</span>
-                      <span className="text-xs bg-gray-200 px-2 py-1 rounded-full">{option.count}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Sort Options for Mobile */}
-              <div className="lg:hidden bg-white rounded-lg p-4 shadow-sm border border-gray-200">
-                <h3 className="font-semibold text-gray-900 mb-3">SORT BY</h3>
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white text-sm"
+      {isCategoryOpen && (
+        <div className="absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-xl shadow-lg min-w-[250px] p-2 z-50">
+          <button
+            onClick={() => {
+              setSelectedCategory('all');
+              setIsCategoryOpen(false);
+            }}
+            className={`w-full text-left px-4 py-2 rounded-lg transition-all ${
+              selectedCategory === 'all'
+                ? 'bg-emerald-50 text-emerald-700 font-semibold'
+                : 'text-gray-700 hover:bg-gray-50'
+            }`}
+          >
+            All Products ({products.length})
+          </button>
+          {categories
+            .filter(category => {
+              // compute count for this category
+              const count = products.filter(p => p.category?.slug === category.slug).length;
+              // Skip placeholder category with slug 'all', categories with no items,
+              // or categories whose name looks like "All" to avoid duplicate entries
+              return (
+                category.slug !== 'all' &&
+                count > 0 &&
+                !/^all/i.test(category.name || '')
+              );
+            })
+            .map(category => {
+              const count = products.filter(p => p.category?.slug === category.slug).length;
+              return (
+                <button
+                  key={category.id}
+                  onClick={() => {
+                    setSelectedCategory(category.slug);
+                    setIsCategoryOpen(false);
+                  }}
+                  className={`w-full text-left px-4 py-2 rounded-lg transition-all ${
+                    selectedCategory === category.slug
+                      ? 'bg-emerald-50 text-emerald-700 font-semibold'
+                      : 'text-gray-700 hover:bg-gray-50'
+                  }`}
                 >
-                  <option value="name">Name A-Z</option>
-                  <option value="price-low">Price: Low to High</option>
-                  <option value="price-high">Price: High to Low</option>
-                  <option value="discount">Best Discount</option>
-                </select>
-              </div>
-            </div>
-          </div>
+                  {category.name} ({count})
+                </button>
+              );
+            })}
+        </div>
+      )}
+    </div>
 
-          {/* Main Content */}
-          <div className="lg:w-3/4">
+    {/* Price Filter */}
+    <div className="relative" ref={priceRef}>
+      <button
+        onClick={() => {
+          setIsPriceOpen(!isPriceOpen);
+          setIsCategoryOpen(false);
+          setIsStockOpen(false);
+          setIsSortOpen(false);
+        }}
+        className={`flex items-center gap-2 px-4 py-2 rounded-full border-2 transition-all ${
+          priceRange[0] > 0 || priceRange[1] < 100000
+            ? 'bg-emerald-600 text-white border-emerald-600 shadow-md'
+            : 'bg-white text-gray-700 border-gray-300 hover:border-emerald-500 hover:shadow-sm'
+        }`}
+      >
+        <span className="font-medium text-sm whitespace-nowrap">
+          {priceRange[1] < 100000 ? `₹${priceRange[0]} - ₹${priceRange[1]}` : 'Price'}
+        </span>
+        <svg
+          className={`w-4 h-4 transition-transform duration-200 ${isPriceOpen ? 'rotate-180' : ''}`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {isPriceOpen && (
+        <div className="absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-xl shadow-lg w-[300px] p-4 z-50">
+          <label className="block text-sm font-semibold text-gray-700 mb-3">Price Range</label>
+          <div className="flex justify-between text-sm text-gray-600 mb-2">
+            <span>₹{priceRange[0]}</span>
+            <span>₹{priceRange[1]}</span>
+          </div>
+          <input
+            type="range"
+            min="0"
+            max="100000"
+            step="100"
+            value={priceRange[1]}
+            onChange={e => setPriceRange([priceRange[0], parseInt(e.target.value)])}
+            className="w-full h-2 bg-gray-200 rounded-lg accent-emerald-600"
+          />
+
+          <div className="mt-4 grid grid-cols-2 gap-2">
+            {[500, 1000, 2000, 5000].map(val => (
+              <button
+                key={val}
+                onClick={() => setPriceRange([0, val])}
+                className={`px-3 py-2 text-sm rounded-lg border transition-all ${
+                  priceRange[1] === val
+                    ? 'bg-emerald-100 border-emerald-500 text-emerald-700 font-semibold'
+                    : 'border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-emerald-400'
+                }`}
+              >
+                Under ₹{val}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+
+    {/* Stock Filter */}
+    <div className="relative" ref={stockRef}>
+      <button
+        onClick={() => {
+          setIsStockOpen(!isStockOpen);
+          setIsCategoryOpen(false);
+          setIsPriceOpen(false);
+          setIsSortOpen(false);
+        }}
+        className={`flex items-center gap-2 px-4 py-2 rounded-full border-2 transition-all ${
+          availability !== 'all'
+            ? 'bg-emerald-600 text-white border-emerald-600 shadow-md'
+            : 'bg-white text-gray-700 border-gray-300 hover:border-emerald-500 hover:shadow-sm'
+        }`}
+      >
+        <span className="font-medium text-sm whitespace-nowrap">
+          {availability === 'in-stock'
+            ? 'In Stock'
+            : availability === 'out-of-stock'
+            ? 'Out of Stock'
+            : 'Stock'}
+        </span>
+        <svg
+          className={`w-4 h-4 transition-transform duration-200 ${isStockOpen ? 'rotate-180' : ''}`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {isStockOpen && (
+        <div className="absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-xl shadow-lg w-[250px] p-2 z-50">
+          {[{ value: 'all', label: 'All Products', count: products.length },
+            { value: 'in-stock', label: 'In Stock', count: products.filter(p => p.stock_quantity > 0).length },
+            { value: 'out-of-stock', label: 'Out of Stock', count: products.filter(p => p.stock_quantity <= 0).length }].map(option => (
+            <button
+              key={option.value}
+              onClick={() => {
+                setAvailability(option.value);
+                setIsStockOpen(false);
+              }}
+              className={`w-full text-left px-4 py-2 rounded-lg transition-all ${
+                availability === option.value
+                  ? 'bg-emerald-50 text-emerald-700 font-semibold'
+                  : 'text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              {option.label} ({option.count})
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+
+    {/* Sort Filter */}
+    <div className="relative" ref={sortRef}>
+      <button
+        onClick={() => {
+          setIsSortOpen(!isSortOpen);
+          setIsCategoryOpen(false);
+          setIsPriceOpen(false);
+          setIsStockOpen(false);
+        }}
+        className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-gray-300 bg-white text-gray-700 hover:border-emerald-500 hover:shadow-sm transition-all"
+      >
+        <span className="font-medium text-sm whitespace-nowrap">
+          Sort
+        </span>
+        <svg
+          className={`w-4 h-4 transition-transform duration-200 ${isSortOpen ? 'rotate-180' : ''}`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {isSortOpen && (
+        <div className="absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-xl shadow-lg w-[250px] p-2 z-50">
+          {[{ value: 'name', label: 'Name: A-Z' },
+            { value: 'price-low', label: 'Price: Low to High' },
+            { value: 'price-high', label: 'Price: High to Low' },
+            { value: 'discount', label: 'Best Discount' }].map(option => (
+            <button
+              key={option.value}
+              onClick={() => {
+                setSortBy(option.value);
+                setIsSortOpen(false);
+              }}
+              className={`w-full text-left px-4 py-2 rounded-lg transition-all ${
+                sortBy === option.value
+                  ? 'bg-emerald-50 text-emerald-700 font-semibold'
+                  : 'text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+
+    {/* Clear All Button (moved to right) */}
+    <button
+      onClick={() => {
+        setSelectedCategory('all');
+        setPriceRange([0, 100000]);
+        setAvailability('all');
+        setSortBy('name');
+      }}
+      className="ml-auto flex items-center gap-2 px-4 py-2 rounded-full border-2 border-gray-300 bg-white text-gray-700 hover:border-emerald-500 hover:shadow-sm transition-all"
+    >
+      Clear All
+    </button>
+  </div>
+</div>
+
+
+
+
+      {/* Main Layout - Full Width */}
+      <div className="w-full">
+        
+          {/* Main Content - Full Width */}
+          <div className="flex-1 pb-16">
             
+            {/* Products Content Area */}
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
             {/* Results Header */}
-            <div className="bg-white rounded-lg p-4 mb-4 shadow-sm border border-gray-200">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div>
-                  <h1 className="text-lg font-bold text-gray-900">
-                    {searchQuery ? `"${searchQuery}"` : 'All Products'}
-                  </h1>
-                  <p className="text-gray-600 text-sm mt-1">
-                    Showing {indexOfFirstProduct + 1}-{Math.min(indexOfLastProduct, filteredProducts.length)} of {filteredProducts.length} results
-                  </p>
-                </div>
-                
-                {/* Sort Options - Desktop */}
-                <div className="hidden lg:flex items-center space-x-3">
-                  <label className="text-sm text-gray-600 font-medium">Sort by:</label>
-                  <select
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value)}
-                    className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white text-sm"
-                  >
-                    <option value="name">Name A-Z</option>
-                    <option value="price-low">Price: Low to High</option>
-                    <option value="price-high">Price: High to Low</option>
-                    <option value="discount">Best Discount</option>
-                  </select>
-                </div>
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">
+                  {searchQuery ? `"${searchQuery}"` : getBreadcrumbText()}
+                </h1>
+                <p className="text-gray-600 text-sm mt-1">
+                  {filteredProducts.length} {filteredProducts.length === 1 ? 'product' : 'products'} found
+                </p>
               </div>
             </div>
 
@@ -578,6 +662,7 @@ function Products() {
                           </svg>
                         )}
                       </button>
+
                       {product.stock_quantity <= 5 && product.stock_quantity > 0 && (
                         <div className="absolute bottom-1 right-1 bg-amber-500 text-white px-1.5 py-0.5 rounded text-xs font-bold">
                           {product.stock_quantity} left
@@ -625,9 +710,15 @@ function Products() {
                             ? 'bg-gray-200 text-gray-500 cursor-not-allowed' 
                             : 'bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white shadow-sm'
                         }`}
-                        onClick={(e) => {
+                        onClick={async (e) => {
                           e.stopPropagation();
-                          navigate(`/product/${product.id}`);
+                          if (product.stock_quantity <= 0) return;
+                          try {
+                            await addToCart(product, 1);
+                            navigate('/cart');
+                          } catch (err) {
+                            console.error('Error adding to cart:', err);
+                          }
                         }}
                         disabled={product.stock_quantity <= 0}
                       >
@@ -690,9 +781,9 @@ function Products() {
                 </button>
               </div>
             )}
+            </div>
           </div>
         </div>
-      </div>
 
       {/* Mobile Bottom Navigation */}
       <MobileBottomNav />

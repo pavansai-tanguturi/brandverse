@@ -1,7 +1,6 @@
 // src/pages/SignUp.js
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import Navigation from '../components/Navigation';
 import MobileBottomNav from '../components/MobileBottomNav';
 
 function SignUp() {

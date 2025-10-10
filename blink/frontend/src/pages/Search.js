@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import Navigation from '../components/Navigation';
+import ModernNavbar from '../components/ModernNavbar';
 import MobileBottomNav from '../components/MobileBottomNav';
 
 const Search = () => {
@@ -139,7 +139,7 @@ const Search = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50 pb-20">
-      <Navigation showSearch={false} />
+      <ModernNavbar showSearch={true} />
       
       <div className="container mx-auto px-4 py-6 pt-24">
         {/* Search Header */}

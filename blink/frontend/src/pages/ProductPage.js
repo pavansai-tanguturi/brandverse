@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
-import Navigation from '../components/Navigation';
+import ModernNavbar from '../components/ModernNavbar';
 import MobileBottomNav from '../components/MobileBottomNav';
 import '../styles/App.css';
 
@@ -209,7 +209,7 @@ const ProductPage = () => {
     setBuyingNow(true);
     try {
       await addToCart(product, quantity, selectedSize);
-      navigate('/cart');
+      navigate('/checkout');
     } catch (error) {
       console.error('Error adding to cart:', error);
     } finally {
@@ -220,7 +220,7 @@ const ProductPage = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-white">
-        <Navigation showSearch={true} />
+        <ModernNavbar showSearch={true} />
         <div className="flex items-center justify-center min-h-screen pt-20">
           <div className="text-center">
             <div className="w-16 h-16 border-4 border-gray-300 border-t-blue-500 rounded-full animate-spin mx-auto mb-4"></div>
@@ -234,7 +234,7 @@ const ProductPage = () => {
   if (!product) {
     return (
       <div className="min-h-screen bg-white">
-        <Navigation showSearch={true} />
+        <ModernNavbar showSearch={true} />
         <div className="container mx-auto px-4 py-8 pt-20">
           <div className="text-center max-w-md mx-auto">
             <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -258,7 +258,7 @@ const ProductPage = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      <Navigation showSearch={true} />
+      <ModernNavbar showSearch={true} />
       
       {/* Breadcrumb */}
       <div className="bg-gray-50 border-b border-gray-200">

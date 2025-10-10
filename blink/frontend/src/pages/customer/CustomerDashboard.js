@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import Navigation from '../../components/Navigation';
+import ModernNavbar from '../../components/ModernNavbar';
 import MobileBottomNav from '../../components/MobileBottomNav';
 import AddressManager from '../../components/AddressManager';
 import { useAuth } from '../../context/AuthContext';
 import { useWishlist } from '../../context/WishlistContext';
 import { useCart } from '../../context/CartContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 // Helper function to get auth headers
 const getAuthHeaders = () => {
@@ -234,6 +234,7 @@ const OrderDetailsModal = ({ order, onClose, getStatusColor, navigate }) => {
 const CustomerDashboard = () => {
   const { user, loading, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const { items: wishlistItems, removeFromWishlist } = useWishlist();
   const { addToCart } = useCart();
   const [activeTab, setActiveTab] = useState('orders');
@@ -360,7 +361,14 @@ const CustomerDashboard = () => {
       fetchUserProfile();
       fetchOrders();
     }
-  }, [user, loading, navigate, fetchUserProfile]);
+    
+    // Check URL parameter for tab
+    const params = new URLSearchParams(location.search);
+    const tabParam = params.get('tab');
+    if (tabParam && ['orders', 'wishlist', 'settings', 'addresses'].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [user, loading, navigate, fetchUserProfile, location.search]);
 
   const handleLogout = async () => {
     try {
@@ -396,7 +404,7 @@ const CustomerDashboard = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50">
-        <Navigation />
+        <ModernNavbar showSearch={true} />
         <div className="flex items-center justify-center pt-32">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
         </div>
@@ -410,7 +418,7 @@ const CustomerDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50 pb-20">
-      <Navigation />
+      <ModernNavbar showSearch={true} />
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8 pt-24">
         {/* Header */}
@@ -482,7 +490,7 @@ const CustomerDashboard = () => {
                 ].map((tab) => (
                   <button
                     key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
+                    onClick={() => navigate(`/dashboard?tab=${tab.id}`)}
                     className={`w-full flex items-center justify-between p-3 rounded-xl transition-all duration-200 ${
                       activeTab === tab.id
                         ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg'

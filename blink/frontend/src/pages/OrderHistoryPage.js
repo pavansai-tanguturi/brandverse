@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import Navigation from '../components/Navigation';
+import ModernNavbar from '../components/ModernNavbar';
 import MobileBottomNav from '../components/MobileBottomNav';
 
 const OrderHistoryPage = () => {
@@ -126,7 +126,7 @@ const OrderHistoryPage = () => {
   if (!user) {
     return (
       <>
-        <Navigation />
+        <ModernNavbar showSearch={true} />
         <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50 pt-24 px-4 pb-20">
           <div className="max-w-4xl mx-auto text-center">
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
@@ -153,7 +153,7 @@ const OrderHistoryPage = () => {
 
   return (
     <>
-      <Navigation />
+      <ModernNavbar showSearch={true} />
       <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50 pt-24 px-4 pb-20">
         <div className="max-w-6xl mx-auto">
           {/* Header Section */}

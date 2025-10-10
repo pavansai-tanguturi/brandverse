@@ -318,7 +318,7 @@ const Footer = () => {
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="text-sm text-gray-400 text-center md:text-left">
               <p>© {currentYear} <span className="text-emerald-400 font-semibold">AkepatiMart</span>. All rights reserved.</p>
-              <p className="text-xs mt-1">Made with ❤️ in India | Developed by <a href="https://brandversetech.com/" target="_blank" rel="noopener noreferrer" className="text-emerald-400 hover:text-emerald-300 underline">Brandverse Technologies</a></p>
+              <p className="text-xs mt-1">Made with ❤️ in India <a href="https://brandversetech.com/" target="_blank" rel="noopener noreferrer" className="text-emerald-400 hover:text-emerald-300 underline"></a></p>
             </div>
             
             <div className="flex flex-wrap items-center justify-center gap-4 text-sm">
