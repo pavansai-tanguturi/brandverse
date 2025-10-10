@@ -323,7 +323,7 @@ const Footer = () => {
             
             <div className="flex flex-wrap items-center justify-center gap-4 text-sm">
               <Link to="/privacy-policy" className="text-gray-400 hover:text-emerald-400 transition-colors">
-                Privacy Policy
+                Privacy Policy 
               </Link>
               <span className="text-gray-600">•</span>
               <Link to="/terms-conditions" className="text-gray-400 hover:text-emerald-400 transition-colors">
