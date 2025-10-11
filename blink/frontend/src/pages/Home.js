@@ -27,7 +27,8 @@ function Home() {
   const [showDeliveryMessage, setShowDeliveryMessage] = useState(true);
   const categoriesRef = useRef(null);
   const [banners, setBanners] = useState([]);
-  // Local category carousel banners from public folder
+
+  // Local category carousel banners from public folder (Carousel 1)
   const localCategoryBanners = [
     { key: 'dairy', src: '/dairy.png', title: 'Dairy Deals', link: '/products?category=dairy' },
     { key: 'basmati', src: '/basmati.png', title: 'Basmati Rice', link: '/products?category=basmati' },
@@ -39,16 +40,61 @@ function Home() {
     { key: 'cleaning', src: '/cleaning.png', title: 'Home Cleaning', link: '/products?category=cleaning' }
   ];
   const [localBannerIndex, setLocalBannerIndex] = useState(0);
+
+  // Second carousel images (Carousel 2)
+  const localCategoryBanners2 = [
+    { key: 'fruits', src: '/fruits.png', title: 'Fresh Fruits', link: '/products?category=fruits' },
+    { key: 'snacks', src: '/snacks.png', title: 'Snacks & Munchies', link: '/products?category=snacks' },
+    { key: 'beverages', src: '/beverages.png', title: 'Beverages', link: '/products?category=beverages' },
+    { key: 'bakery', src: '/bakery.png', title: 'Bakery', link: '/products?category=bakery' },
+    { key: 'personalcare', src: '/personalcare.png', title: 'Personal Care', link: '/products?category=personalcare' },
+    { key: 'babycare', src: '/babycare.png', title: 'Baby Care', link: '/products?category=babycare' },
+    { key: 'gourmet', src: '/gourmet.png', title: 'Gourmet Foods', link: '/products?category=gourmet' },
+    { key: 'stationery', src: '/stationery.png', title: 'Stationery', link: '/products?category=stationery' }
+  ];
+  const [localBannerIndex2, setLocalBannerIndex2] = useState(0);
+
+
+  // Ensure localBannerIndex stays in bounds for grouped slides (Carousel 1)
+  useEffect(() => {
+    const maxIndex = Math.ceil(localCategoryBanners.length / 3) - 1;
+    if (localBannerIndex > maxIndex) {
+      setLocalBannerIndex(0);
+    }
+  }, [localCategoryBanners.length, localBannerIndex]);
   const localBannerTimerRef = useRef(null);
   const [isBannerPaused, setIsBannerPaused] = useState(false);
   const touchStartXRef = useRef(null);
   const SWIPE_THRESHOLD = 40;
 
+  // Ensure localBannerIndex2 stays in bounds for grouped slides (Carousel 2)
+  useEffect(() => {
+    const maxIndex2 = Math.ceil(localCategoryBanners2.length / 3) - 1;
+    if (localBannerIndex2 > maxIndex2) {
+      setLocalBannerIndex2(0);
+    }
+  }, [localCategoryBanners2.length, localBannerIndex2]);
+  const localBannerTimerRef2 = useRef(null);
+  const [isBannerPaused2, setIsBannerPaused2] = useState(false);
+  const touchStartXRef2 = useRef(null);
+
+
+  // Carousel navigation for grouped slides (Carousel 1)
+  const groupCount = Math.ceil(localCategoryBanners.length / 3);
   const handlePrevLocalBanner = () => {
-    setLocalBannerIndex((prev) => (prev - 1 + localCategoryBanners.length) % localCategoryBanners.length);
+    setLocalBannerIndex((prev) => (prev - 1 + groupCount) % groupCount);
   };
   const handleNextLocalBanner = () => {
-    setLocalBannerIndex((prev) => (prev + 1) % localCategoryBanners.length);
+    setLocalBannerIndex((prev) => (prev + 1) % groupCount);
+  };
+
+  // Carousel navigation for grouped slides (Carousel 2)
+  const groupCount2 = Math.ceil(localCategoryBanners2.length / 3);
+  const handlePrevLocalBanner2 = () => {
+    setLocalBannerIndex2((prev) => (prev - 1 + groupCount2) % groupCount2);
+  };
+  const handleNextLocalBanner2 = () => {
+    setLocalBannerIndex2((prev) => (prev + 1) % groupCount2);
   };
 
   // Spotlight quick filters under Top picks
@@ -180,17 +226,30 @@ function Home() {
     return () => clearInterval(interval);
   }, [banners.length]);
 
-  // Autoplay for local category carousel with pause support
+
+  // Autoplay for local category carousel with pause support (Carousel 1)
   useEffect(() => {
     if (localCategoryBanners.length === 0) return;
     if (localBannerTimerRef.current) clearInterval(localBannerTimerRef.current);
     if (!isBannerPaused) {
       localBannerTimerRef.current = setInterval(() => {
-        setLocalBannerIndex((prev) => (prev + 1) % localCategoryBanners.length);
+        setLocalBannerIndex((prev) => (prev + 1) % groupCount);
       }, 4000);
     }
     return () => localBannerTimerRef.current && clearInterval(localBannerTimerRef.current);
-  }, [isBannerPaused]);
+  }, [isBannerPaused, groupCount]);
+
+  // Autoplay for local category carousel with pause support (Carousel 2)
+  useEffect(() => {
+    if (localCategoryBanners2.length === 0) return;
+    if (localBannerTimerRef2.current) clearInterval(localBannerTimerRef2.current);
+    if (!isBannerPaused2) {
+      localBannerTimerRef2.current = setInterval(() => {
+        setLocalBannerIndex2((prev) => (prev + 1) % groupCount2);
+      }, 4000);
+    }
+    return () => localBannerTimerRef2.current && clearInterval(localBannerTimerRef2.current);
+  }, [isBannerPaused2, groupCount2]);
 
   const checkAdminAccess = useCallback(() => {
     if (user?.role === 'admin') {
@@ -273,8 +332,7 @@ function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50 pb-16 lg:pb-0">
       <ModernNavbar showSearch={true} />
-
-      {/* Compact delivery/status strip */}
+        {/* Compact delivery/status strip */}
       {!checkingDelivery && showDeliveryMessage && (
         <div className={`mx-4 my-3 px-3 py-2 rounded-md text-sm ${deliveryAvailable ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
           <div className="flex items-center gap-2">
@@ -285,78 +343,7 @@ function Home() {
           </div>
         </div>
       )}
-
-      {/* Category carousel (local images) */}
-      <div className="max-w-7xl mx-auto px-4">
-        <div
-          className="relative rounded-xl overflow-hidden shadow-sm mb-4"
-          onMouseEnter={() => setIsBannerPaused(true)}
-          onMouseLeave={() => setIsBannerPaused(false)}
-          onTouchStart={(e) => {
-            setIsBannerPaused(true);
-            touchStartXRef.current = e.touches?.[0]?.clientX ?? null;
-          }}
-          onTouchEnd={(e) => {
-            const endX = e.changedTouches?.[0]?.clientX ?? null;
-            const startX = touchStartXRef.current;
-            if (startX != null && endX != null) {
-              const delta = endX - startX;
-              if (Math.abs(delta) > SWIPE_THRESHOLD) {
-                if (delta < 0) handleNextLocalBanner(); else handlePrevLocalBanner();
-              }
-            }
-            touchStartXRef.current = null;
-            // Resume autoplay shortly after swipe ends
-            setTimeout(() => setIsBannerPaused(false), 150);
-          }}
-        >
-          {/* Slides */}
-          <div className="relative w-full h-[360px] md:h-[424px] bg-gray-50">
-            {localCategoryBanners.map((b, idx) => (
-              <img
-                key={b.key}
-                src={b.src}
-                alt={b.title}
-                className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${idx === localBannerIndex ? 'opacity-100' : 'opacity-0'}`}
-                onClick={() => navigate(b.link)}
-                draggable={false}
-                onDragStart={(e) => e.preventDefault()}
-                role="button"
-              />
-            ))}
-          </div>
-
-          {/* Arrows */}
-          <button
-            aria-label="Previous"
-            className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/70 hover:bg-white text-gray-800 rounded-full p-2 shadow"
-            onClick={handlePrevLocalBanner}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"/></svg>
-          </button>
-          <button
-            aria-label="Next"
-            className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/70 hover:bg-white text-gray-800 rounded-full p-2 shadow"
-            onClick={handleNextLocalBanner}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"/></svg>
-          </button>
-
-          {/* Dots */}
-          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5">
-            {localCategoryBanners.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => setLocalBannerIndex(i)}
-                className={`w-2.5 h-2.5 rounded-full ${i === localBannerIndex ? 'bg-emerald-500' : 'bg-gray-300'}`}
-                aria-label={`Go to slide ${i+1}`}
-              />
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Category Navigation */}
+        {/* Category Navigation */}
       <div className="bg-white py-6 border-b border-gray-100">
   <div className="max-w-7xl mx-auto px-4 flex items-center justify-between overflow-x-auto scrollbar-hide">
     {categories.map((cat) => (
@@ -392,6 +379,289 @@ function Home() {
     ))}
   </div>
 </div>
+    
+
+
+
+      {/* Combined Category Carousels Section */}
+      <div className="max-w-7xl mx-auto px-4">
+        {/* Section Heading (shared) */}
+        <div className="py-4">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Featured & More Categories</h2>
+          <p className="text-gray-600 text-base mb-4">Browse top picks, deals, and discover more essentials</p>
+        </div>
+        {/* Carousel 1 */}
+        <div
+          className="relative rounded-2xl overflow-hidden shadow-md mb-6"
+          onMouseEnter={() => setIsBannerPaused(true)}
+          onMouseLeave={() => setIsBannerPaused(false)}
+          onTouchStart={(e) => {
+            setIsBannerPaused(true);
+            touchStartXRef.current = e.touches?.[0]?.clientX ?? null;
+          }}
+          onTouchEnd={(e) => {
+            const endX = e.changedTouches?.[0]?.clientX ?? null;
+            const startX = touchStartXRef.current;
+            if (startX != null && endX != null) {
+              const delta = endX - startX;
+              if (Math.abs(delta) > SWIPE_THRESHOLD) {
+                if (delta < 0) handleNextLocalBanner();
+                else handlePrevLocalBanner();
+              }
+            }
+            touchStartXRef.current = null;
+            setTimeout(() => setIsBannerPaused(false), 150);
+          }}
+        >
+          {/* Slides - grouped banners */}
+          <div className="relative w-full bg-gray-50 min-h-[240px]">
+            {(() => {
+              const groups = [];
+              for (let i = 0; i < localCategoryBanners.length; i += 3) {
+                groups.push(localCategoryBanners.slice(i, i + 3));
+              }
+              return groups.map((group, groupIndex) => (
+                <div
+                  key={groupIndex}
+                  className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
+                    groupIndex === localBannerIndex ? "opacity-100 z-10" : "opacity-0 z-0"
+                  }`}
+                >
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 w-full h-full">
+                    {group.map((item) => (
+                      <div
+                        key={item.key}
+                        className="relative rounded-xl overflow-hidden shadow hover:shadow-lg transition-transform transform hover:-translate-y-1 cursor-pointer"
+                        onClick={() => navigate(item.link)}
+                        role="button"
+                      >
+                        <img
+                          src={item.src}
+                          alt={item.title}
+                          className="w-full h-[220px] md:h-[260px] object-cover"
+                          draggable={false}
+                          onDragStart={(e) => e.preventDefault()}
+                        />
+                        <div className="absolute inset-0 flex items-end justify-between p-3 bg-gradient-to-t from-black/60 to-transparent">
+                          <div className="text-white text-lg font-semibold max-w-[70%] leading-tight drop-shadow">
+                            {item.title}
+                          </div>
+                          <button
+                            onClick={() => navigate(item.link)}
+                            className="bg-white text-gray-800 font-medium text-sm px-3 py-1.5 rounded-full shadow hover:bg-emerald-500 hover:text-white transition"
+                          >
+                            Order Now
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ));
+            })()}
+          </div>
+
+          {/* Arrows */}
+          <button
+            aria-label="Previous"
+            className="absolute left-3 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-gray-800 rounded-full p-2 shadow-md"
+            onClick={handlePrevLocalBanner}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              className="w-5 h-5"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M15 19l-7-7 7-7"
+              />
+            </svg>
+          </button>
+
+          <button
+            aria-label="Next"
+            className="absolute right-3 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-gray-800 rounded-full p-2 shadow-md"
+            onClick={handleNextLocalBanner}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              className="w-5 h-5"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M9 5l7 7-7 7"
+              />
+            </svg>
+          </button>
+
+          {/* Dots */}
+          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-2">
+            {(() => {
+              const groups = [];
+              for (let i = 0; i < localCategoryBanners.length; i += 3) {
+                groups.push(localCategoryBanners.slice(i, i + 3));
+              }
+              return groups.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setLocalBannerIndex(i)}
+                  className={`w-3 h-3 rounded-full transition ${
+                    i === localBannerIndex ? "bg-emerald-500" : "bg-gray-300"
+                  }`}
+                  aria-label={`Go to slide ${i + 1}`}
+                />
+              ));
+            })()}
+          </div>
+        </div>
+
+        {/* Carousel 2 (immediately below Carousel 1, same section) */}
+        <div
+          className="relative rounded-2xl overflow-hidden shadow-md mb-6"
+          onMouseEnter={() => setIsBannerPaused2(true)}
+          onMouseLeave={() => setIsBannerPaused2(false)}
+          onTouchStart={(e) => {
+            setIsBannerPaused2(true);
+            touchStartXRef2.current = e.touches?.[0]?.clientX ?? null;
+          }}
+          onTouchEnd={(e) => {
+            const endX = e.changedTouches?.[0]?.clientX ?? null;
+            const startX = touchStartXRef2.current;
+            if (startX != null && endX != null) {
+              const delta = endX - startX;
+              if (Math.abs(delta) > SWIPE_THRESHOLD) {
+                if (delta < 0) handleNextLocalBanner2();
+                else handlePrevLocalBanner2();
+              }
+            }
+            touchStartXRef2.current = null;
+            setTimeout(() => setIsBannerPaused2(false), 150);
+          }}
+        >
+          {/* Slides - grouped banners */}
+          <div className="relative w-full bg-gray-50 min-h-[240px]">
+            {(() => {
+              const groups2 = [];
+              for (let i = 0; i < localCategoryBanners2.length; i += 3) {
+                groups2.push(localCategoryBanners2.slice(i, i + 3));
+              }
+              return groups2.map((group, groupIndex) => (
+                <div
+                  key={groupIndex}
+                  className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
+                    groupIndex === localBannerIndex2 ? "opacity-100 z-10" : "opacity-0 z-0"
+                  }`}
+                >
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 w-full h-full">
+                    {group.map((item) => (
+                      <div
+                        key={item.key}
+                        className="relative rounded-xl overflow-hidden shadow hover:shadow-lg transition-transform transform hover:-translate-y-1 cursor-pointer"
+                        onClick={() => navigate(item.link)}
+                        role="button"
+                      >
+                        <img
+                          src={item.src}
+                          alt={item.title}
+                          className="w-full h-[220px] md:h-[260px] object-cover"
+                          draggable={false}
+                          onDragStart={(e) => e.preventDefault()}
+                        />
+                        <div className="absolute inset-0 flex items-end justify-between p-3 bg-gradient-to-t from-black/60 to-transparent">
+                          <div className="text-white text-lg font-semibold max-w-[70%] leading-tight drop-shadow">
+                            {item.title}
+                          </div>
+                          <button
+                            onClick={() => navigate(item.link)}
+                            className="bg-white text-gray-800 font-medium text-sm px-3 py-1.5 rounded-full shadow hover:bg-emerald-500 hover:text-white transition"
+                          >
+                            Order Now
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ));
+            })()}
+          </div>
+
+          {/* Arrows */}
+          <button
+            aria-label="Previous"
+            className="absolute left-3 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-gray-800 rounded-full p-2 shadow-md"
+            onClick={handlePrevLocalBanner2}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              className="w-5 h-5"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M15 19l-7-7 7-7"
+              />
+            </svg>
+          </button>
+
+          <button
+            aria-label="Next"
+            className="absolute right-3 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-gray-800 rounded-full p-2 shadow-md"
+            onClick={handleNextLocalBanner2}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              className="w-5 h-5"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M9 5l7 7-7 7"
+              />
+            </svg>
+          </button>
+
+          {/* Dots */}
+          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-2">
+            {(() => {
+              const groups2 = [];
+              for (let i = 0; i < localCategoryBanners2.length; i += 3) {
+                groups2.push(localCategoryBanners2.slice(i, i + 3));
+              }
+              return groups2.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setLocalBannerIndex2(i)}
+                  className={`w-3 h-3 rounded-full transition ${
+                    i === localBannerIndex2 ? "bg-emerald-500" : "bg-gray-300"
+                  }`}
+                  aria-label={`Go to slide ${i + 1}`}
+                />
+              ));
+            })()}
+          </div>
+        </div>
+      </div>
+
+    
 
 
       {/* Standalone Spotlight Chips Section */}
