@@ -29,26 +29,26 @@ function Home() {
 
   // Local category carousel banners (Carousel 1)
   const localCategoryBanners = [
-    { key: 'dairy', src: '/dairy.png', title: 'Dairy Deals', link: '/products?category=dairy' },
-    { key: 'basmati', src: '/basmati.png', title: 'Basmati Rice', link: '/products?category=basmati' },
-    { key: 'veggies', src: '/veggies.png', title: 'Fresh Veggies', link: '/products?category=veggies' },
-    { key: 'cooking', src: '/cooking.png', title: 'Cooking Essentials', link: '/products?category=cooking' },
-    { key: 'pet', src: '/pet.png', title: 'Pet Care', link: '/products?category=pet' },
-    { key: 'meat', src: '/meat.png', title: 'Fresh Meat', link: '/products?category=meat' },
-    { key: 'skincare', src: '/skincare.png', title: 'Skincare', link: '/products?category=skincare' },
-    { key: 'cleaning', src: '/cleaning.png', title: 'Home Cleaning', link: '/products?category=cleaning' },
+    { key: 'dairy', src: 'carousel1/dairy.png', title: 'Dairy Deals', link: '/products?category=dairy' },
+    { key: 'basmati', src: 'carousel1/basmati.png', title: 'Basmati Rice', link: '/products?category=basmati' },
+    { key: 'veggies', src: 'carousel1/veggies.png', title: 'Fresh Veggies', link: '/products?category=veggies' },
+    { key: 'cooking', src: 'carousel1/cooking.png', title: 'Cooking Essentials', link: '/products?category=cooking' },
+    { key: 'pet', src: 'carousel1/pet.png', title: 'Pet Care', link: '/products?category=pet' },
+    { key: 'meat', src: 'carousel1/meat.png', title: 'Fresh Meat', link: '/products?category=meat' },
+    { key: 'skincare', src: 'carousel1/skincare.png', title: 'Skincare', link: '/products?category=skincare' },
+    { key: 'cleaning', src: 'carousel1/cleaning.png', title: 'Home Cleaning', link: '/products?category=cleaning' },
   ];
 
   // Second carousel images (Carousel 2)
   const localCategoryBanners2 = [
-    { key: 'fruits', src: '/fruits.png', title: 'Fresh Fruits', link: '/products?category=fruits' },
-    { key: 'snacks', src: '/snacks.png', title: 'Snacks & Munchies', link: '/products?category=snacks' },
-    { key: 'beverages', src: '/beverages.png', title: 'Beverages', link: '/products?category=beverages' },
-    { key: 'bakery', src: '/bakery.png', title: 'Bakery', link: '/products?category=bakery' },
-    { key: 'personalcare', src: '/personalcare.png', title: 'Personal Care', link: '/products?category=personalcare' },
-    { key: 'babycare', src: '/babycare.png', title: 'Baby Care', link: '/products?category=babycare' },
-    { key: 'gourmet', src: '/gourmet.png', title: 'Gourmet Foods', link: '/products?category=gourmet' },
-    { key: 'stationery', src: '/stationery.png', title: 'Stationery', link: '/products?category=stationery' },
+    { key: 'fruits', src: 'carousel2/fruits.png', title: 'Fresh Fruits', link: '/products?category=fruits' },
+    { key: 'snacks', src: 'carousel2/snacks.png', title: 'Snacks & Munchies', link: '/products?category=snacks' },
+    { key: 'beverages', src: 'carousel2/beverages.png', title: 'Beverages', link: '/products?category=beverages' },
+    { key: 'bakery', src: 'carousel2/bakery.png', title: 'Bakery', link: '/products?category=bakery' },
+    { key: 'personalcare', src: 'carousel2/personalcare.png', title: 'Personal Care', link: '/products?category=personalcare' },
+    { key: 'babycare', src: 'carousel2/babycare.png', title: 'Baby Care', link: '/products?category=babycare' },
+    { key: 'gourmet', src: 'carousel2/gourmet.png', title: 'Gourmet Foods', link: '/products?category=gourmet' },
+    { key: 'stationery', src: 'carousel2/stationery.png', title: 'Stationery', link: '/products?category=stationery' },
   ];
 
   // Spotlight quick filters
@@ -241,9 +241,19 @@ function Home() {
       >
         <div className="w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center">
           <img
-            src={cat.image_url}
+            src={`/categories/${
+              cat.slug === 'beauty' ? 'beauty.png' :
+              cat.slug === 'books' ? 'books.png' :
+              cat.slug === 'clothing' ? 'clothing.png' :
+              cat.slug === 'electronics' ? 'electronics.png' :
+              cat.slug === 'food-beverage' ? 'food-beverage.png' :
+              cat.slug === 'home-garden' ? 'home-garden.png' :
+              cat.slug === 'sports' ? 'sports.png' :
+              cat.slug === 'toys-games' ? 'toys-games.png' :
+              cat.image_url
+            }`}
             alt={cat.name}
-            className="w-full h-full object-contain"
+            className="w-full h-full object-contain rounded-full"
             loading="lazy"
           />
         </div>
@@ -269,16 +279,16 @@ function Home() {
 </div>
 
 {/* Combined Category Carousels Section */}
-<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<div className="w-full"> {/* Changed max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 to w-full to remove outer padding and max width */}
   {/* Section Heading (shared) */}
-  <div className="py-4 sm:py-6">
-    <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Featured & More Categories</h2>
-    <p className="text-gray-600 text-sm sm:text-base mb-4">Browse top picks, deals, and discover more essentials</p>
+  <div className="py-2 sm:py-3 px-0"> {/* Minimized vertical padding, removed horizontal padding */}
+    <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-0 px-4 sm:px-6 lg:px-8">Featured & More Categories</h2> {/* Added back horizontal padding to text only */}
+    <p className="text-gray-600 text-sm sm:text-base mb-0 px-4 sm:px-6 lg:px-8">Browse top picks, deals, and discover more essentials</p> {/* Added back horizontal padding to text only */}
   </div>
 
   {/* Carousel 1 */}
   <div
-    className="relative rounded-2xl overflow-hidden shadow-md mb-6 sm:mb-8"
+    className="relative rounded-none overflow-hidden shadow-none mb-0" // Removed rounded, shadow, and mb (margin-bottom)
     onMouseEnter={() => setIsBannerPaused(true)}
     onMouseLeave={() => setIsBannerPaused(false)}
     onTouchStart={(e) => {
@@ -300,7 +310,7 @@ function Home() {
     }}
   >
     {/* Slides - single banner on mobile, grid on larger screens */}
-    <div className="relative w-full bg-gray-50 min-h-[180px] sm:min-h-[220px] md:min-h-[240px]">
+    <div className="relative w-full bg-white min-h-[180px] sm:min-h-[220px] md:min-h-[240px]"> {/* Changed bg-gray-50 to bg-white for a cleaner look */}
       {(() => {
         // On mobile, each banner is its own slide; on larger screens, group by 2 (sm) or 3 (lg)
         const groups = [];
@@ -312,12 +322,12 @@ function Home() {
             key={groupIndex}
             className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
               groupIndex === localBannerIndex ? "opacity-100 z-10" : "opacity-0 z-0"
-            } sm:grid sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 lg:gap-4 sm:p-4`}
+            } sm:grid sm:grid-cols-2 sm:gap-0 lg:grid-cols-3 lg:gap-0 p-0`} // Removed all gap and padding for maximum density
           >
             {group.map((item) => (
               <div
                 key={item.key}
-                className="relative w-full h-full rounded-xl overflow-hidden shadow sm:hover:shadow-lg sm:transition-transform sm:transform sm:hover:-translate-y-1 cursor-pointer"
+                className="relative w-full h-full rounded-none overflow-hidden shadow-none sm:hover:shadow-md sm:transition-transform sm:transform sm:hover:-translate-y-0.5 cursor-pointer" // Removed rounded, shadow, subtle hover effect
                 onClick={() => navigate(item.link)}
                 role="button"
               >
@@ -333,12 +343,12 @@ function Home() {
                   <div className="text-white text-base sm:text-lg font-semibold max-w-[80%] sm:max-w-[70%] leading-tight drop-shadow">
                     {item.title}
                   </div>
-                  <button
+                  {/* <button
                     onClick={() => navigate(item.link)}
-                    className="mt-2 sm:mt-0 bg-emerald-500 text-white font-medium text-sm px-4 py-2 rounded-full shadow hover:bg-emerald-600 transition"
+                    className="mt-2 sm:mt-0 bg-emerald-500 text-white font-medium text-sm px-4 py-2 rounded-full shadow hover:bg-emerald-600 transition whitespace-nowrap"
                   >
                     Shop Now
-                  </button>
+                  </button> */}
                 </div>
               </div>
             ))}
@@ -350,7 +360,7 @@ function Home() {
     {/* Arrows - hidden on mobile */}
     <button
       aria-label="Previous"
-      className="hidden sm:block absolute left-3 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-gray-800 rounded-full p-2 shadow-md"
+      className="hidden sm:block absolute left-0 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-gray-800 rounded-none p-3 shadow-none" // Removed rounded, shadow, increased padding for click area
       onClick={handlePrevLocalBanner}
     >
       <svg
@@ -365,7 +375,7 @@ function Home() {
     </button>
     <button
       aria-label="Next"
-      className="hidden sm:block absolute right-3 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-gray-800 rounded-full p-2 shadow-md"
+      className="hidden sm:block absolute right-0 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-gray-800 rounded-none p-3 shadow-none" // Removed rounded, shadow, increased padding for click area
       onClick={handleNextLocalBanner}
     >
       <svg
@@ -380,7 +390,7 @@ function Home() {
     </button>
 
     {/* Dots - hidden on large screens */}
-    <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-2 lg:hidden">
+    <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex gap-1 lg:hidden"> {/* Reduced bottom margin and gap */}
       {(() => {
         const groups = [];
         for (let i = 0; i < localCategoryBanners.length; i += window.innerWidth >= 640 ? (window.innerWidth >= 1024 ? 3 : 2) : 1) {
@@ -390,7 +400,7 @@ function Home() {
           <button
             key={i}
             onClick={() => setLocalBannerIndex(i)}
-            className={`w-2 h-2 sm:w-3 sm:h-3 rounded-full transition ${
+            className={`w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full transition ${ // Slightly smaller dots
               i === localBannerIndex ? "bg-emerald-500" : "bg-gray-300"
             }`}
             aria-label={`Go to slide ${i + 1}`}
@@ -399,10 +409,12 @@ function Home() {
       })()}
     </div>
   </div>
+  
+  <hr className="border-gray-200" /> {/* Added a divider for visual separation since margins are removed */}
 
   {/* Carousel 2 */}
   <div
-    className="relative rounded-2xl overflow-hidden shadow-md mb-6 sm:mb-8"
+    className="relative rounded-none overflow-hidden shadow-none mb-0" // Removed rounded, shadow, and mb (margin-bottom)
     onMouseEnter={() => setIsBannerPaused2(true)}
     onMouseLeave={() => setIsBannerPaused2(false)}
     onTouchStart={(e) => {
@@ -424,7 +436,7 @@ function Home() {
     }}
   >
     {/* Slides - single banner on mobile, grid on larger screens */}
-    <div className="relative w-full bg-gray-50 min-h-[180px] sm:min-h-[220px] md:min-h-[240px]">
+    <div className="relative w-full bg-white min-h-[180px] sm:min-h-[220px] md:min-h-[240px]"> {/* Changed bg-gray-50 to bg-white for a cleaner look */}
       {(() => {
         // On mobile, each banner is its own slide; on larger screens, group by 2 (sm) or 3 (lg)
         const groups2 = [];
@@ -436,12 +448,12 @@ function Home() {
             key={groupIndex}
             className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
               groupIndex === localBannerIndex2 ? "opacity-100 z-10" : "opacity-0 z-0"
-            } sm:grid sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 lg:gap-4 sm:p-4`}
+            } sm:grid sm:grid-cols-2 sm:gap-0 lg:grid-cols-3 lg:gap-0 p-0`} // Removed all gap and padding for maximum density
           >
             {group.map((item) => (
               <div
                 key={item.key}
-                className="relative w-full h-full rounded-xl overflow-hidden shadow sm:hover:shadow-lg sm:transition-transform sm:transform sm:hover:-translate-y-1 cursor-pointer"
+                className="relative w-full h-full rounded-none overflow-hidden shadow-none sm:hover:shadow-md sm:transition-transform sm:transform sm:hover:-translate-y-0.5 cursor-pointer" // Removed rounded, shadow, subtle hover effect
                 onClick={() => navigate(item.link)}
                 role="button"
               >
@@ -457,12 +469,12 @@ function Home() {
                   <div className="text-white text-base sm:text-lg font-semibold max-w-[80%] sm:max-w-[70%] leading-tight drop-shadow">
                     {item.title}
                   </div>
-                  <button
+                  {/* <button
                     onClick={() => navigate(item.link)}
-                    className="mt-2 sm:mt-0 bg-emerald-500 text-white font-medium text-sm px-4 py-2 rounded-full shadow hover:bg-emerald-600 transition"
+                    className="mt-2 sm:mt-0 bg-emerald-500 text-white font-medium text-sm px-4 py-2 rounded-full shadow hover:bg-emerald-600 transition whitespace-nowrap"
                   >
                     Shop Now
-                  </button>
+                  </button> */}
                 </div>
               </div>
             ))}
@@ -474,7 +486,7 @@ function Home() {
     {/* Arrows - hidden on mobile */}
     <button
       aria-label="Previous"
-      className="hidden sm:block absolute left-3 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-gray-800 rounded-full p-2 shadow-md"
+      className="hidden sm:block absolute left-0 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-gray-800 rounded-none p-3 shadow-none" // Removed rounded, shadow, increased padding for click area
       onClick={handlePrevLocalBanner2}
     >
       <svg
@@ -489,7 +501,7 @@ function Home() {
     </button>
     <button
       aria-label="Next"
-      className="hidden sm:block absolute right-3 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-gray-800 rounded-full p-2 shadow-md"
+      className="hidden sm:block absolute right-0 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-gray-800 rounded-none p-3 shadow-none" // Removed rounded, shadow, increased padding for click area
       onClick={handleNextLocalBanner2}
     >
       <svg
@@ -504,7 +516,7 @@ function Home() {
     </button>
 
     {/* Dots - hidden on large screens */}
-    <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-2 lg:hidden">
+    <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex gap-1 lg:hidden"> {/* Reduced bottom margin and gap */}
       {(() => {
         const groups2 = [];
         for (let i = 0; i < localCategoryBanners2.length; i += window.innerWidth >= 640 ? (window.innerWidth >= 1024 ? 3 : 2) : 1) {
@@ -514,7 +526,7 @@ function Home() {
           <button
             key={i}
             onClick={() => setLocalBannerIndex2(i)}
-            className={`w-2 h-2 sm:w-3 sm:h-3 rounded-full transition ${
+            className={`w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full transition ${ // Slightly smaller dots
               i === localBannerIndex2 ? "bg-emerald-500" : "bg-gray-300"
             }`}
             aria-label={`Go to slide ${i + 1}`}
