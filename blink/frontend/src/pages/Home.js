@@ -281,10 +281,18 @@ function Home() {
 {/* Combined Category Carousels Section */}
 <div className="w-full"> {/* Changed max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 to w-full to remove outer padding and max width */}
   {/* Section Heading (shared) */}
-  <div className="py-2 sm:py-3 px-0"> {/* Minimized vertical padding, removed horizontal padding */}
-    <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-0 px-4 sm:px-6 lg:px-8">Featured & More Categories</h2> {/* Added back horizontal padding to text only */}
-    <p className="text-gray-600 text-sm sm:text-base mb-0 px-4 sm:px-6 lg:px-8">Browse top picks, deals, and discover more essentials</p> {/* Added back horizontal padding to text only */}
-  </div>
+ <div className="bg-white py-2 sm:py-3 px-0">
+  {/* Heading */}
+  <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-0 px-4 sm:px-6 lg:px-8">
+    Featured & More Categories
+  </h2>
+
+  {/* Subtext */}
+  <p className="text-gray-600 text-sm sm:text-base mb-0 px-4 sm:px-6 lg:px-8">
+    Browse top picks, deals, and discover more essentials
+  </p>
+</div>
+
 
   {/* Carousel 1 */}
   <div
