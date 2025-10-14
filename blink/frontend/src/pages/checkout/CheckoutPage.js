@@ -362,57 +362,62 @@ const CheckoutPage = () => {
   return (
    <div className="min-h-screen bg-gray-50">
   {/* Modern Header */}
-  <header className="bg-white shadow-sm sticky top-0 z-50">
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div className="flex items-center justify-between h-16 md:h-20">
-        <Link to="/" className="flex items-center space-x-3 cursor-pointer">
-          <img src={logo} className="h-10 w-auto object-contain" alt="Logo" />
-        </Link>
-        {/* Progress Steps - Desktop */}
-        <div className="hidden md:flex items-center space-x-4">
-          {[
-            { num: 1, label: 'Bag', icon: '🛍️' },
-            { num: 2, label: 'Address', icon: '📍' },
-            { num: 3, label: 'Payment', icon: '💳' },
-          ].map((item, idx) => (
-            <React.Fragment key={item.num}>
-              <div className="flex items-center">
-                <div
-                  className={`flex items-center space-x-2 px-3 py-1 rounded-full transition-all ${
-                    step >= item.num ? 'bg-emerald-50 text-emerald-600' : 'text-gray-400'
+ <header className="bg-gradient-to-r from-emerald-50 to-white shadow-sm sticky top-0 z-50">
+  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="flex items-center justify-between h-16 md:h-20">
+      <Link to="/" className="flex items-center space-x-3 cursor-pointer">
+        <img src={logo} className="h-10 w-auto object-contain" alt="Logo" />
+      </Link>
+
+      {/* Progress Steps - Desktop */}
+      <div className="hidden md:flex items-center space-x-4">
+        {[
+          { num: 1, label: 'Bag', icon: '🛍️' },
+          { num: 2, label: 'Address', icon: '📍' },
+          { num: 3, label: 'Payment', icon: '💳' },
+        ].map((item, idx) => (
+          <React.Fragment key={item.num}>
+            <div className="flex items-center">
+              <div
+                className={`flex items-center space-x-2 px-3 py-1 rounded-full transition-all ${
+                  step >= item.num
+                    ? 'bg-emerald-100 text-emerald-700 border border-emerald-200'
+                    : 'bg-gray-50 text-gray-400 border border-gray-200'
+                }`}
+              >
+                <span
+                  className={`text-sm font-bold ${
+                    step === item.num ? 'scale-110' : ''
                   }`}
                 >
-                  <span
-                    className={`text-sm font-bold ${
-                      step === item.num ? 'scale-110' : ''
-                    }`}
-                  >
-                    {item.num}
-                  </span>
-                  <span className="text-xs font-medium">{item.label}</span>
-                </div>
+                  {item.num}
+                </span>
+                <span className="text-xs font-medium">{item.label}</span>
               </div>
-              {idx < 2 && (
-                <div
-                  className={`w-12 h-0.5 ${
-                    step > item.num ? 'bg-emerald-500' : 'bg-gray-200'
-                  }`}
-                />
-              )}
-            </React.Fragment>
-          ))}
-        </div>
-        <div className="flex items-center space-x-3">
-          <div className="text-right hidden md:block">
-            <p className="text-gray-500 text-xs">Secure Checkout</p>
-            <p className="text-gray-900 font-semibold">
-              ₹{(getCartTotal() / 100).toFixed(2)}
-            </p>
-          </div>
+            </div>
+            {idx < 2 && (
+              <div
+                className={`w-12 h-0.5 ${
+                  step > item.num ? 'bg-emerald-500' : 'bg-gray-200'
+                }`}
+              />
+            )}
+          </React.Fragment>
+        ))}
+      </div>
+
+      <div className="flex items-center space-x-3">
+        <div className="text-right hidden md:block">
+          <p className="text-gray-500 text-xs">Secure Checkout</p>
+          <p className="text-gray-900 font-semibold">
+            ₹{(getCartTotal() / 100).toFixed(2)}
+          </p>
         </div>
       </div>
     </div>
-  </header>
+  </div>
+</header>
+
 
   {/* Mobile Progress */}
   <div className="md:hidden bg-white py-2 shadow-sm">
