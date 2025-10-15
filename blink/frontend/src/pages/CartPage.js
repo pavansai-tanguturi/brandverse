@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import ModernNavbar from '../components/ModernNavbar';
 import MobileBottomNav from '../components/MobileBottomNav';
 import CartIcon from '../components/CartIcon';
+import { TrashIcon } from '@heroicons/react/24/solid'
 
 const CartPage = () => {
   const navigate = useNavigate();
@@ -20,7 +21,8 @@ const CartPage = () => {
     getTotalDiscount,
     updateQuantity,
     removeFromCart,
-    clearCart
+    clearCart,
+    addToCart
   } = useCart();
 
   const [isClearing, setIsClearing] = useState(false);
@@ -45,6 +47,26 @@ const CartPage = () => {
     }
   };
 
+  const handleBuyNow = async (product) => {
+    // Buy this single product: clear cart, add this product, then go to checkout
+    try {
+      setUpdatingItems(prev => new Set(prev).add(product.id));
+      await clearCart();
+      // addToCart expects (product, quantity)
+      await addToCart(product, product.quantity || 1);
+      navigate('/checkout');
+    } catch (err) {
+      console.error('Buy now failed', err);
+      alert('Failed to start checkout for this item.');
+    } finally {
+      setUpdatingItems(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(product.id);
+        return newSet;
+      });
+    }
+  };
+
   const handleCheckout = () => {
     if (!user) navigate('/login?redirect=/checkout');
     else navigate('/checkout');
@@ -56,7 +78,7 @@ const CartPage = () => {
     <>
       <ModernNavbar showSearch={true} />
       <div className="min-h-screen bg-gray-50 pb-24">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24">
+        <div className="max-w-7xl mx-auto px-4 pt-4 sm:px-6 lg:px-8 ">
           
           {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
@@ -67,13 +89,28 @@ const CartPage = () => {
               )}
             </div>
             {itemCount > 0 && (
-              <button
-                className="px-4 py-2 bg-rose-100 text-rose-600 rounded-lg hover:bg-rose-200 flex items-center gap-2"
-                onClick={handleClearCart}
-                disabled={isClearing}
-              >
-                {isClearing ? 'Clearing...' : 'Empty Cart'}
-              </button>
+             <button
+  className="
+    px-3 sm:px-4 md:px-5 
+    py-2 sm:py-2.5 md:py-3
+    bg-rose-100 
+    text-rose-600 
+    rounded-lg 
+    hover:bg-rose-200 
+    active:bg-rose-300 
+    focus:outline-none 
+    focus:ring-2 focus:ring-rose-400 focus:ring-offset-1 
+    transition-all duration-200 
+    flex items-center justify-center gap-2
+    disabled:opacity-50 disabled:cursor-not-allowed"
+  onClick={handleClearCart}
+  disabled={isClearing}
+>
+  <TrashIcon className="w-5 h-5 sm:w-6 sm:h-6" />
+  <span className="text-sm sm:text-base font-medium">
+    {isClearing ? 'Clearing...' : 'Empty Cart'}
+  </span>
+</button>
             )}
           </div>
 
@@ -130,30 +167,41 @@ const CartPage = () => {
                           </div>
                         </div>
 
-                        <div className="flex items-center justify-between mt-4">
+                        <div className="flex items-start justify-between mt-4 flex-col sm:flex-row sm:items-center gap-3">
                           <div className="flex items-center gap-2">
                             <button
-                              className="px-2 py-1 bg-gray-100 rounded disabled:opacity-50"
+                              className="px-3 py-2 bg-gray-100 rounded-lg disabled:opacity-50"
                               onClick={() => handleQuantityChange(item.id, item.quantity - 1)}
                               disabled={item.quantity <= 1 || isUpdating}
                             >
                               -
                             </button>
-                            <span className="w-8 text-center">{isUpdating ? '...' : item.quantity}</span>
+                            <span className="w-10 text-center">{isUpdating ? '...' : item.quantity}</span>
                             <button
-                              className="px-2 py-1 bg-gray-100 rounded disabled:opacity-50"
+                              className="px-3 py-2 bg-gray-100 rounded-lg disabled:opacity-50"
                               onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
                               disabled={item.quantity >= item.stock_quantity || isUpdating}
                             >
                               +
                             </button>
                           </div>
-                          <button
-                            className="text-rose-600 hover:text-rose-800 text-sm"
-                            onClick={() => removeFromCart(item.id)}
-                          >
-                            Remove
-                          </button>
+
+                          <div className="w-full sm:w-auto flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                            <button
+                              className="w-full sm:w-auto px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-sm font-medium"
+                              onClick={() => handleBuyNow(item)}
+                              disabled={updatingItems.has(item.id)}
+                            >
+                              {updatingItems.has(item.id) ? 'Processing...' : 'Buy Now'}
+                            </button>
+
+                            <button
+                              className="w-full sm:w-auto px-4 py-2 bg-white border border-gray-300 text-rose-600 rounded-lg hover:bg-rose-50 text-sm font-medium"
+                              onClick={() => removeFromCart(item.id)}
+                            >
+                              Remove
+                            </button>
+                          </div>
                         </div>
                       </div>
 

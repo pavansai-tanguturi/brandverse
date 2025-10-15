@@ -486,11 +486,15 @@ const CheckoutPage = () => {
                       </h3>
                       <div className="flex items-center space-x-2 mt-2">
                         <span className="text-emerald-600 font-semibold">
-                          ₹{(item.unit_price_cents / 100).toFixed(2)}
+                          ₹{(
+                            item.discount_percent > 0
+                              ? ((item.price_cents || 0) * (1 - item.discount_percent / 100) / 100)
+                              : ((item.price_cents || 0) / 100)
+                          ).toFixed(2)}
                         </span>
                         {item.discount_percent > 0 && (
                           <span className="text-gray-400 line-through text-xs">
-                            ₹{(item.price_cents / 100).toFixed(2)}
+                            ₹{((item.price_cents || 0) / 100).toFixed(2)}
                           </span>
                         )}
                       </div>
