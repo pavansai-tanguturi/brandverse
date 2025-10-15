@@ -516,6 +516,174 @@ export async function deleteImage(req, res) {
 }
 
 // FIXED SEARCH FUNCTION - NO JOINS
+// Helper function to calculate Levenshtein distance for spell checking
+function levenshteinDistance(str1, str2) {
+  const matrix = [];
+  
+  for (let i = 0; i <= str2.length; i++) {
+    matrix[i] = [i];
+  }
+  
+  for (let j = 0; j <= str1.length; j++) {
+    matrix[0][j] = j;
+  }
+  
+  for (let i = 1; i <= str2.length; i++) {
+    for (let j = 1; j <= str1.length; j++) {
+      if (str2.charAt(i - 1) === str1.charAt(j - 1)) {
+        matrix[i][j] = matrix[i - 1][j - 1];
+      } else {
+        matrix[i][j] = Math.min(
+          matrix[i - 1][j - 1] + 1, // substitution
+          matrix[i][j - 1] + 1,     // insertion
+          matrix[i - 1][j] + 1      // deletion
+        );
+      }
+    }
+  }
+  
+  return matrix[str2.length][str1.length];
+}
+
+// Phonetic pattern replacements for sound-based matching
+const phoneticPatterns = [
+  // Common sound replacements
+  { pattern: /ph/g, replacement: 'f' },
+  { pattern: /ck/g, replacement: 'k' },
+  { pattern: /qu/g, replacement: 'kw' },
+  { pattern: /x/g, replacement: 'ks' },
+  { pattern: /z/g, replacement: 's' },
+  { pattern: /c([eiy])/g, replacement: 's$1' }, // ce, ci, cy -> se, si, sy
+  { pattern: /c([aou])/g, replacement: 'k$1' }, // ca, co, cu -> ka, ko, ku
+  { pattern: /gh/g, replacement: '' }, // silent gh
+  { pattern: /kn/g, replacement: 'n' }, // silent k
+  { pattern: /wr/g, replacement: 'r' }, // silent w
+];
+
+// Generate phonetic variants of a word
+function generatePhoneticVariants(word) {
+  let variants = [word.toLowerCase()];
+  
+  // Apply phonetic transformations
+  for (const { pattern, replacement } of phoneticPatterns) {
+    const transformed = word.toLowerCase().replace(pattern, replacement);
+    if (transformed !== word.toLowerCase()) {
+      variants.push(transformed);
+    }
+  }
+  
+  // Generate common kid-mistake patterns
+  const kidPatterns = [
+    // Double letters (common in kid writing)
+    word => word.replace(/(.)\1+/g, '$1'), // remove doubled letters
+    word => word.replace(/([aeiou])/g, '$1$1'), // double vowels
+    // Common letter swaps
+    word => word.replace(/ei/g, 'ie').replace(/ie/g, 'ei'),
+    word => word.replace(/ys/g, 's').replace(/ies/g, 's'), // toys -> tays
+    word => word.replace(/oo/g, 'u').replace(/u/g, 'oo'), // book -> buk
+    // Missing letters
+    word => word.replace(/ing$/g, 'in'), // running -> runnin
+    word => word.replace(/ed$/g, 'd'), // played -> playd
+  ];
+  
+  kidPatterns.forEach(patternFn => {
+    try {
+      const variant = patternFn(word.toLowerCase());
+      if (variant !== word.toLowerCase() && !variants.includes(variant)) {
+        variants.push(variant);
+      }
+    } catch (e) {
+      // Skip if pattern fails
+    }
+  });
+  
+  return variants;
+}
+
+// Advanced similarity scoring
+function calculateSimilarityScore(word1, word2) {
+  const len1 = word1.length;
+  const len2 = word2.length;
+  
+  // Exact match
+  if (word1 === word2) return 1.0;
+  
+  // Length difference penalty
+  const lengthDiff = Math.abs(len1 - len2);
+  const maxLen = Math.max(len1, len2);
+  const lengthScore = 1 - (lengthDiff / maxLen) * 0.3;
+  
+  // Levenshtein distance
+  const distance = levenshteinDistance(word1, word2);
+  const distanceScore = 1 - (distance / maxLen);
+  
+  // Common prefix/suffix bonus
+  let prefixBonus = 0;
+  let suffixBonus = 0;
+  
+  // Check common prefix
+  for (let i = 0; i < Math.min(len1, len2); i++) {
+    if (word1[i] === word2[i]) {
+      prefixBonus += 0.1;
+    } else {
+      break;
+    }
+  }
+  
+  // Check common suffix
+  for (let i = 1; i <= Math.min(len1, len2); i++) {
+    if (word1[len1 - i] === word2[len2 - i]) {
+      suffixBonus += 0.1;
+    } else {
+      break;
+    }
+  }
+  
+  return Math.min(1.0, lengthScore * 0.3 + distanceScore * 0.5 + prefixBonus * 0.1 + suffixBonus * 0.1);
+}
+
+// Helper function to find similar words using multiple strategies
+function findSimilarWords(searchWord, wordList, maxResults = 3) {
+  const suggestions = new Map();
+  const lowerSearchWord = searchWord.toLowerCase();
+  
+  // Generate variants of the search word
+  const searchVariants = generatePhoneticVariants(searchWord);
+  
+  for (const word of wordList) {
+    const lowerWord = word.toLowerCase();
+    let bestScore = 0;
+    
+    // Check direct similarity
+    const directScore = calculateSimilarityScore(lowerSearchWord, lowerWord);
+    bestScore = Math.max(bestScore, directScore);
+    
+    // Check against phonetic variants
+    for (const variant of searchVariants) {
+      const variantScore = calculateSimilarityScore(variant, lowerWord);
+      bestScore = Math.max(bestScore, variantScore * 0.9); // Slight penalty for variant matches
+    }
+    
+    // Check if word variants match search word
+    const wordVariants = generatePhoneticVariants(word);
+    for (const wordVariant of wordVariants) {
+      const reverseScore = calculateSimilarityScore(lowerSearchWord, wordVariant);
+      bestScore = Math.max(bestScore, reverseScore * 0.9);
+    }
+    
+    // Only include if score is above threshold
+    if (bestScore > 0.6 && bestScore < 1.0) {
+      suggestions.set(word, bestScore);
+    }
+  }
+  
+  // Sort by score and return top results
+  return Array.from(suggestions.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, maxResults)
+    .map(([word]) => word);
+}
+
 export async function searchProducts(req, res) {
   try {
     const { q } = req.query;
@@ -527,12 +695,56 @@ export async function searchProducts(req, res) {
     const searchTerm = q.trim();
     console.log(`Searching for: "${searchTerm}"`);
     
-    // First get products without joins - this avoids the relationship error
+    // Get all categories and product titles for spell checking
+    const { data: categoriesForSpelling } = await supabaseAdmin
+      .from('categories')
+      .select('name');
+    
+    const { data: productsForSpelling } = await supabaseAdmin
+      .from('products')
+      .select('title')
+      .eq('is_active', true);
+    
+    // Create word lists for spell checking
+    const categoryNames = (categoriesForSpelling || []).map(c => c.name);
+    const productTitles = (productsForSpelling || []).map(p => p.title);
+    const allWords = [
+      ...categoryNames,
+      ...productTitles.flatMap(title => title.split(' ')),
+      // Common product keywords
+      'toys', 'clothing', 'shoes', 'electronics', 'books', 'games', 'sports', 'beauty', 'home', 'kitchen'
+    ].filter(word => word && word.length > 2);
+    
+    // Find suggestions for misspelled words
+    const searchWords = searchTerm.split(' ');
+    const suggestions = [];
+    let correctedSearchTerm = searchTerm;
+    
+    for (const word of searchWords) {
+      if (word.length > 2) {
+        const similarWords = findSimilarWords(word, allWords, 2);
+        if (similarWords.length > 0) {
+          suggestions.push({
+            original: word,
+            suggestions: similarWords
+          });
+          
+          // Use the best suggestion for automatic correction
+          correctedSearchTerm = correctedSearchTerm.replace(word, similarWords[0]);
+        }
+      }
+    }
+    
+    // Try original search term first
+    let searchTermToUse = searchTerm;
+    let didYouMean = null;
+    
+    // First search in product titles with original term
     const { data: products, error: searchError } = await supabaseAdmin
       .from('products')
       .select('*')
       .eq('is_active', true)
-      .ilike('title', `%${searchTerm}%`)
+      .or(`title.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`)
       .order('created_at', { ascending: false })
       .limit(20);
 
@@ -542,46 +754,172 @@ export async function searchProducts(req, res) {
     }
 
     let results = products || [];
-    console.log(`Found ${results.length} products matching search`);
+    console.log(`Found ${results.length} products matching search in titles/descriptions`);
+
+    // Also search by category names with original term
+    const { data: categories, error: catError } = await supabaseAdmin
+      .from('categories')
+      .select('id, name, slug')
+      .ilike('name', `%${searchTerm}%`);
+
+    if (!catError && categories && categories.length > 0) {
+      console.log(`Found ${categories.length} matching categories`);
+      
+      // Get products from matching categories
+      const categoryIds = categories.map(cat => cat.id);
+      const { data: categoryProducts, error: catProductsError } = await supabaseAdmin
+        .from('products')
+        .select('*')
+        .eq('is_active', true)
+        .in('category_id', categoryIds)
+        .limit(20);
+
+      if (!catProductsError && categoryProducts) {
+        // Merge with existing results, avoiding duplicates
+        const existingIds = new Set(results.map(p => p.id));
+        const newProducts = categoryProducts.filter(p => !existingIds.has(p.id));
+        results = [...results, ...newProducts];
+        console.log(`Added ${newProducts.length} products from category matches`);
+      }
+    }
+    
+    // If no results and we have suggestions, try with corrected term
+    if (results.length === 0 && correctedSearchTerm !== searchTerm && suggestions.length > 0) {
+      console.log(`No results for "${searchTerm}", trying corrected term: "${correctedSearchTerm}"`);
+      searchTermToUse = correctedSearchTerm;
+      didYouMean = correctedSearchTerm;
+      
+      // Search with corrected term
+      const { data: correctedProducts } = await supabaseAdmin
+        .from('products')
+        .select('*')
+        .eq('is_active', true)
+        .or(`title.ilike.%${correctedSearchTerm}%,description.ilike.%${correctedSearchTerm}%`)
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if (correctedProducts) {
+        results = correctedProducts;
+        console.log(`Found ${results.length} products with corrected search term`);
+      }
+      
+      // Also search corrected term in categories
+      const { data: correctedCategories } = await supabaseAdmin
+        .from('categories')
+        .select('id, name, slug')
+        .ilike('name', `%${correctedSearchTerm}%`);
+
+      if (correctedCategories && correctedCategories.length > 0) {
+        const categoryIds = correctedCategories.map(cat => cat.id);
+        const { data: correctedCategoryProducts } = await supabaseAdmin
+          .from('products')
+          .select('*')
+          .eq('is_active', true)
+          .in('category_id', categoryIds)
+          .limit(20);
+
+        if (correctedCategoryProducts) {
+          const existingIds = new Set(results.map(p => p.id));
+          const newProducts = correctedCategoryProducts.filter(p => !existingIds.has(p.id));
+          results = [...results, ...newProducts];
+          console.log(`Added ${newProducts.length} products from corrected category matches`);
+        }
+      }
+    }
 
     if (results.length === 0) {
       console.log('No matches found, trying fuzzy search...');
       
-      // Try fuzzy search without joins
+      // Enhanced fuzzy search with multiple strategies
       const words = searchTerm.split(' ').filter(word => word.length > 2);
-      const fuzzyQueries = [];
+      const allFuzzyResults = [];
       
       for (const word of words) {
-        // Try partial matches
         if (word.length >= 3) {
-          fuzzyQueries.push(
-            supabaseAdmin
-              .from('products')
-              .select('*')
-              .eq('is_active', true)
-              .or(`title.ilike.%${word.substring(1)}%,title.ilike.%${word.substring(0, word.length-1)}%`)
-              .limit(10)
-          );
+          console.log(`Trying fuzzy search for word: "${word}"`);
+          
+          // Strategy 1: Partial substring matches
+          const patterns = [
+            word.substring(1), // Remove first char: "clothes" -> "lothes"
+            word.substring(0, word.length-1), // Remove last char: "clothes" -> "clothe"
+            word.substring(0, word.length-2), // Remove last 2 chars: "clothes" -> "cloth"
+          ];
+          
+          // Strategy 2: Add common suffixes for better matching
+          const variations = [
+            word + 'ing', // "cloth" -> "clothing"
+            word + 'es',  // "cloth" -> "clothes"
+            word + 's',   // "shoe" -> "shoes"
+          ];
+          
+          // If word ends with 's', try without it
+          if (word.endsWith('s') && word.length > 3) {
+            variations.push(word.slice(0, -1)); // "clothes" -> "clothe"
+            variations.push(word.slice(0, -1) + 'ing'); // "clothes" -> "clothing"
+          }
+          
+          // Combine all patterns
+          const allPatterns = [...patterns, ...variations];
+          
+          console.log(`Testing patterns for "${word}":`, allPatterns);
+          
+          // Search in categories with all patterns
+          for (const pattern of allPatterns) {
+            try {
+              const { data: catResults, error: catError } = await supabaseAdmin
+                .from('categories')
+                .select('id, name, slug')
+                .ilike('name', `%${pattern}%`);
+              
+              if (!catError && catResults && catResults.length > 0) {
+                console.log(`Pattern "${pattern}" matched categories:`, catResults.map(c => c.name));
+                
+                // Get products from these categories
+                const categoryIds = catResults.map(cat => cat.id);
+                const { data: categoryProducts } = await supabaseAdmin
+                  .from('products')
+                  .select('*')
+                  .eq('is_active', true)
+                  .in('category_id', categoryIds)
+                  .limit(10);
+                
+                if (categoryProducts) {
+                  allFuzzyResults.push(...categoryProducts);
+                }
+              }
+            } catch (error) {
+              console.error(`Error with pattern "${pattern}":`, error);
+            }
+          }
+          
+          // Also search in product titles with patterns
+          for (const pattern of allPatterns) {
+            try {
+              const { data: productResults } = await supabaseAdmin
+                .from('products')
+                .select('*')
+                .eq('is_active', true)
+                .ilike('title', `%${pattern}%`)
+                .limit(5);
+              
+              if (productResults) {
+                allFuzzyResults.push(...productResults);
+              }
+            } catch (error) {
+              console.error(`Error searching products with pattern "${pattern}":`, error);
+            }
+          }
         }
       }
       
-      if (fuzzyQueries.length > 0) {
-        const fuzzyResults = await Promise.allSettled(fuzzyQueries);
-        const allFuzzyData = [];
-        
-        for (const result of fuzzyResults) {
-          if (result.status === 'fulfilled' && result.value.data) {
-            allFuzzyData.push(...result.value.data);
-          }
-        }
-        
+      if (allFuzzyResults.length > 0) {
         // Remove duplicates by ID
-        const uniqueResults = allFuzzyData.filter((product, index, self) => 
+        const uniqueResults = allFuzzyResults.filter((product, index, self) => 
           index === self.findIndex(p => p.id === product.id)
         );
         
         results = uniqueResults.slice(0, 20);
-        console.log(`Found ${results.length} fuzzy matches`);
+        console.log(`Found ${results.length} fuzzy matches from ${allFuzzyResults.length} total results`);
       }
     }
 
@@ -657,7 +995,17 @@ export async function searchProducts(req, res) {
     }));
 
     console.log(`Returning ${enriched.length} enriched search results`);
-    res.json(enriched);
+    
+    // Prepare response with suggestions
+    const response = {
+      products: enriched,
+      searchTerm: searchTerm,
+      suggestions: suggestions.length > 0 ? suggestions : null,
+      didYouMean: didYouMean,
+      correctedResults: didYouMean !== null
+    };
+    
+    res.json(response);
     
   } catch (error) {
     console.error('Search error:', error);

@@ -1,20 +1,23 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import ModernNavbar from '../components/ModernNavbar';
-import MobileBottomNav from '../components/MobileBottomNav';
+import React, { useState, useEffect, useRef } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import ModernNavbar from "../components/ModernNavbar";
+import MobileBottomNav from "../components/MobileBottomNav";
 
 const Search = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [sortOption, setSortOption] = useState('relevance');
+  const [sortOption, setSortOption] = useState("relevance");
+  const [spellingSuggestions, setSpellingSuggestions] = useState(null);
+  const [didYouMean, setDidYouMean] = useState(null);
+  const [correctedResults, setCorrectedResults] = useState(false);
   const loadingTimeout = useRef(null);
   const searchInputRef = useRef(null);
 
@@ -22,14 +25,15 @@ const Search = () => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const API_BASE_URL = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
+        const API_BASE_URL =
+          import.meta.env.VITE_API_BASE || "http://localhost:3001";
         const response = await fetch(`${API_BASE_URL}/api/categories`);
         if (response.ok) {
           const data = await response.json();
-          setCategories([{ id: 'all', name: 'All Categories' }, ...data]);
+          setCategories([{ id: "all", name: "All Categories" }, ...data]);
         }
       } catch (error) {
-        console.error('Error fetching categories:', error);
+        console.error("Error fetching categories:", error);
       }
     };
     fetchCategories();
@@ -38,22 +42,25 @@ const Search = () => {
   // Get initial search query and category from URL params
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
-    const query = urlParams.get('q') || '';
-    const category = urlParams.get('category') || 'all';
+    const query = urlParams.get("q") || "";
+    const category = urlParams.get("category") || "all";
     setSearchQuery(query);
     setSelectedCategory(category);
-    if (query || category !== 'all') {
+    if (query || category !== "all") {
       performSearch(query, category);
     }
   }, [location.search]);
 
   // Validate search query
-  const isValidQuery = (q) => /^[a-zA-Z0-9\s.,'-]+$/.test(q) || q === '';
+  const isValidQuery = (q) => /^[a-zA-Z0-9\s.,'-]+$/.test(q) || q === "";
 
   // Debounce search API calls
   const searchDebounce = useRef(null);
-  const performSearch = async (query = searchQuery, category = selectedCategory) => {
-    if (!query.trim() && category === 'all') {
+  const performSearch = async (
+    query = searchQuery,
+    category = selectedCategory,
+  ) => {
+    if (!query.trim() && category === "all") {
       setProducts([]);
       setHasSearched(true);
       setLoading(false);
@@ -67,28 +74,52 @@ const Search = () => {
     setShowSuggestions(false);
 
     try {
-      const API_BASE_URL = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
+      const API_BASE_URL =
+        import.meta.env.VITE_API_BASE || "http://localhost:3001";
       const queryParams = new URLSearchParams();
-      if (query.trim()) queryParams.set('q', query);
-      if (category !== 'all') queryParams.set('category', category);
-      if (sortOption) queryParams.set('sort', sortOption);
+      if (query.trim()) queryParams.set("q", query);
+      if (category !== "all") queryParams.set("category", category);
+      if (sortOption) queryParams.set("sort", sortOption);
 
-      const response = await fetch(`${API_BASE_URL}/api/products/search?${queryParams.toString()}`);
+      const response = await fetch(
+        `${API_BASE_URL}/api/products/search?${queryParams.toString()}`,
+      );
 
       if (!response.ok) {
-        console.error('Search failed:', response.status);
+        console.error("Search failed:", response.status);
         setProducts([]);
         setLoading(false);
         return;
       }
 
       let data = await response.json();
-      if (query.length === 1 && query.trim()) {
-        data = data.filter(product => product.title?.toLowerCase().startsWith(query.toLowerCase()));
+
+      // Handle new response format with suggestions
+      if (data.products) {
+        // New format with spell checking
+        let products = data.products;
+        if (query.length === 1 && query.trim()) {
+          products = products.filter((product) =>
+            product.title?.toLowerCase().startsWith(query.toLowerCase()),
+          );
+        }
+        setProducts(products);
+
+        // Handle spelling suggestions
+        setSpellingSuggestions(data.suggestions || null);
+        setDidYouMean(data.didYouMean || null);
+        setCorrectedResults(data.correctedResults || false);
+      } else {
+        // Fallback for old format
+        if (query.length === 1 && query.trim()) {
+          data = data.filter((product) =>
+            product.title?.toLowerCase().startsWith(query.toLowerCase()),
+          );
+        }
+        setProducts(data);
       }
-      setProducts(data);
     } catch (error) {
-      console.error('Error searching products:', error);
+      console.error("Error searching products:", error);
       setProducts([]);
     } finally {
       if (loadingTimeout.current) clearTimeout(loadingTimeout.current);
@@ -104,14 +135,17 @@ const Search = () => {
     }
 
     try {
-      const API_BASE_URL = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
-      const response = await fetch(`${API_BASE_URL}/api/products/search/suggestions?q=${encodeURIComponent(query)}`);
+      const API_BASE_URL =
+        import.meta.env.VITE_API_BASE || "http://localhost:3001";
+      const response = await fetch(
+        `${API_BASE_URL}/api/products/search/suggestions?q=${encodeURIComponent(query)}`,
+      );
       if (response.ok) {
         const data = await response.json();
         setSuggestions(data.slice(0, 5));
       }
     } catch (error) {
-      console.error('Error fetching suggestions:', error);
+      console.error("Error fetching suggestions:", error);
     }
   };
 
@@ -119,7 +153,7 @@ const Search = () => {
   useEffect(() => {
     if (searchDebounce.current) clearTimeout(searchDebounce.current);
 
-    if (searchQuery.trim() || selectedCategory !== 'all') {
+    if (searchQuery.trim() || selectedCategory !== "all") {
       getSuggestions(searchQuery);
       setShowSuggestions(true);
       searchDebounce.current = setTimeout(() => {
@@ -135,10 +169,11 @@ const Search = () => {
 
   const handleSearch = (e) => {
     e.preventDefault();
-    if (searchQuery.trim() || selectedCategory !== 'all') {
+    if (searchQuery.trim() || selectedCategory !== "all") {
       const queryParams = new URLSearchParams();
-      if (searchQuery.trim()) queryParams.set('q', searchQuery);
-      if (selectedCategory !== 'all') queryParams.set('category', selectedCategory);
+      if (searchQuery.trim()) queryParams.set("q", searchQuery);
+      if (selectedCategory !== "all")
+        queryParams.set("category", selectedCategory);
       navigate(`/search?${queryParams.toString()}`);
       setShowSuggestions(false);
     }
@@ -147,8 +182,9 @@ const Search = () => {
   const handleSuggestionClick = (suggestion) => {
     setSearchQuery(suggestion);
     const queryParams = new URLSearchParams();
-    queryParams.set('q', suggestion);
-    if (selectedCategory !== 'all') queryParams.set('category', selectedCategory);
+    queryParams.set("q", suggestion);
+    if (selectedCategory !== "all")
+      queryParams.set("category", selectedCategory);
     navigate(`/search?${queryParams.toString()}`);
     setShowSuggestions(false);
     searchInputRef.current?.focus();
@@ -157,8 +193,8 @@ const Search = () => {
   const handleCategoryChange = (categoryId) => {
     setSelectedCategory(categoryId);
     const queryParams = new URLSearchParams();
-    if (searchQuery.trim()) queryParams.set('q', searchQuery);
-    if (categoryId !== 'all') queryParams.set('category', categoryId);
+    if (searchQuery.trim()) queryParams.set("q", searchQuery);
+    if (categoryId !== "all") queryParams.set("category", categoryId);
     navigate(`/search?${queryParams.toString()}`);
   };
 
@@ -172,8 +208,16 @@ const Search = () => {
   };
 
   const popularSearches = [
-    "Milk", "Bread", "Eggs", "Rice", "Fruits",
-    "Vegetables", "Snacks", "Beverages", "Dairy", "Cleaning"
+    "Milk",
+    "Bread",
+    "Eggs",
+    "Rice",
+    "Fruits",
+    "Vegetables",
+    "Snacks",
+    "Beverages",
+    "Dairy",
+    "Cleaning",
   ];
 
   return (
@@ -183,12 +227,19 @@ const Search = () => {
       <div className="container mx-auto px-4 py-6 pt-24">
         {/* Search Header */}
         <div className="max-w-7xl mx-auto mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2 text-center">Search Products</h1>
-          <p className="text-gray-600 text-center mb-8">Explore our wide range of products by name or category</p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2 text-center">
+            Search Products
+          </h1>
+          <p className="text-gray-600 text-center mb-8">
+            Explore our wide range of products by name or category
+          </p>
 
           {/* Search Form and Filters */}
           <div className="bg-white rounded-2xl p-4 shadow-md mb-8">
-            <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-4 items-center">
+            <form
+              onSubmit={handleSearch}
+              className="flex flex-col sm:flex-row gap-4 items-center"
+            >
               <div className="relative flex-1 w-full">
                 <input
                   ref={searchInputRef}
@@ -200,8 +251,18 @@ const Search = () => {
                   onFocus={() => searchQuery && setShowSuggestions(true)}
                 />
                 <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                    />
                   </svg>
                 </div>
 
@@ -215,8 +276,18 @@ const Search = () => {
                         className="px-4 py-2 hover:bg-emerald-50 cursor-pointer border-b border-gray-100 last:border-b-0"
                       >
                         <div className="flex items-center space-x-2">
-                          <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                          <svg
+                            className="w-4 h-4 text-gray-400"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                            />
                           </svg>
                           <span className="text-gray-700">{suggestion}</span>
                         </div>
@@ -264,7 +335,9 @@ const Search = () => {
           {/* Popular Searches */}
           {!hasSearched && (
             <div className="text-center mb-8">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Popular Searches</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                Popular Searches
+              </h3>
               <div className="flex flex-wrap justify-center gap-3">
                 {popularSearches.map((search, index) => (
                   <button
@@ -285,7 +358,9 @@ const Search = () => {
           {loading && (
             <div className="flex flex-col items-center justify-center py-16">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mb-4"></div>
-              <span className="text-gray-600 text-lg">Searching products...</span>
+              <span className="text-gray-600 text-lg">
+                Searching products...
+              </span>
             </div>
           )}
 
@@ -296,19 +371,99 @@ const Search = () => {
                   <h2 className="text-xl font-bold text-gray-900 mb-2">
                     {!isValidQuery(searchQuery) ? (
                       <div className="flex items-center space-x-2 text-amber-600">
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.35 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                        <svg
+                          className="w-5 h-5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.35 16.5c-.77.833.192 2.5 1.732 2.5z"
+                          />
                         </svg>
                         <span>Please enter a valid search term</span>
                       </div>
-                    ) : products.length > 0 
-                      ? `Found ${products.length} result${products.length !== 1 ? 's' : ''} for "${searchQuery || selectedCategory !== 'all' ? categories.find(c => c.id === selectedCategory)?.name : 'All'}"`
-                      : `No results found for "${searchQuery || selectedCategory !== 'all' ? categories.find(c => c.id === selectedCategory)?.name : 'All'}"`
-                    }
+                    ) : products.length > 0 ? (
+                      `Found ${products.length} result${products.length !== 1 ? "s" : ""} for "${searchQuery || selectedCategory !== "all" ? categories.find((c) => c.id === selectedCategory)?.name : "All"}"`
+                    ) : (
+                      `No results found for "${searchQuery || selectedCategory !== "all" ? categories.find((c) => c.id === selectedCategory)?.name : "All"}"`
+                    )}
                   </h2>
                   {products.length > 0 && (
-                    <p className="text-gray-600">Browse our matching products</p>
+                    <p className="text-gray-600">
+                      Browse our matching products
+                    </p>
                   )}
+
+                  {/* Did You Mean? Section */}
+                  {correctedResults && didYouMean && (
+                    <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                      <div className="flex items-center space-x-2 text-blue-800">
+                        <svg
+                          className="w-5 h-5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        </svg>
+                        <span className="text-sm">
+                          Showing results for <strong>"{didYouMean}"</strong>
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Spelling Suggestions (when no results found) */}
+                  {products.length === 0 &&
+                    spellingSuggestions &&
+                    spellingSuggestions.length > 0 && (
+                      <div className="mt-4 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                        <div className="flex items-start space-x-2 text-yellow-800">
+                          <svg
+                            className="w-5 h-5 mt-0.5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.35 16.5c-.77.833.192 2.5 1.732 2.5z"
+                            />
+                          </svg>
+                          <div>
+                            <p className="text-sm font-medium">Did you mean?</p>
+                            <div className="flex flex-wrap gap-2 mt-1">
+                              {spellingSuggestions.map((suggestion, index) => (
+                                <button
+                                  key={index}
+                                  onClick={() => {
+                                    setSearchQuery(suggestion.suggestions[0]);
+                                    performSearch(
+                                      suggestion.suggestions[0],
+                                      selectedCategory,
+                                    );
+                                  }}
+                                  className="text-sm text-blue-600 hover:text-blue-800 underline"
+                                >
+                                  {suggestion.suggestions[0]}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                 </div>
               </div>
 
@@ -317,7 +472,8 @@ const Search = () => {
                   {products.map((product) => {
                     const originalPrice = (product.price_cents || 0) / 100;
                     const discountPercent = product.discount_percent || 0;
-                    const finalPrice = originalPrice * (1 - discountPercent / 100);
+                    const finalPrice =
+                      originalPrice * (1 - discountPercent / 100);
 
                     return (
                       <div
@@ -327,7 +483,10 @@ const Search = () => {
                       >
                         <div className="relative overflow-hidden">
                           <img
-                            src={product.image_url || 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?auto=format&fit=crop&w=600&q=80'}
+                            src={
+                              product.image_url ||
+                              "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?auto=format&fit=crop&w=600&q=80"
+                            }
                             alt={product.title}
                             className="w-full h-40 sm:h-48 object-cover group-hover:scale-105 transition-transform duration-300"
                           />
@@ -348,7 +507,7 @@ const Search = () => {
                             {product.title}
                           </h3>
                           <p className="text-xs text-gray-500 mb-2">
-                            {product.category_name || 'General'}
+                            {product.category_name || "General"}
                           </p>
                           <div className="space-y-2">
                             {discountPercent > 0 ? (
@@ -362,7 +521,8 @@ const Search = () => {
                                   </span>
                                 </div>
                                 <span className="text-emerald-600 text-xs font-semibold">
-                                  Save ₹{(originalPrice - finalPrice).toFixed(2)}
+                                  Save ₹
+                                  {(originalPrice - finalPrice).toFixed(2)}
                                 </span>
                               </div>
                             ) : (
@@ -379,38 +539,54 @@ const Search = () => {
                     );
                   })}
                 </div>
-              ) : hasSearched && (isValidQuery(searchQuery) || selectedCategory !== 'all') && (
-                <div className="text-center py-16">
-                  <div className="bg-white rounded-lg p-8 shadow-sm border border-gray-200 max-w-md mx-auto">
-                    <div className="w-20 h-20 mx-auto mb-4 bg-amber-100 rounded-full flex items-center justify-center">
-                      <svg className="w-10 h-10 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                      </svg>
-                    </div>
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2">No products found</h3>
-                    <p className="text-gray-600 mb-6">
-                      We couldn't find any products matching your criteria. Try different keywords or categories.
-                    </p>
-                    <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                      <button
-                        onClick={() => navigate('/products')}
-                        className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-lg transition-all duration-300 font-medium"
-                      >
-                        Browse All Products
-                      </button>
-                      <button
-                        onClick={() => {
-                          setSearchQuery('');
-                          setSelectedCategory('all');
-                          navigate('/search');
-                        }}
-                        className="bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 hover:border-gray-400 px-6 py-3 rounded-lg transition-all duration-300 font-medium"
-                      >
-                        Clear Filters
-                      </button>
+              ) : (
+                hasSearched &&
+                (isValidQuery(searchQuery) || selectedCategory !== "all") && (
+                  <div className="text-center py-16">
+                    <div className="bg-white rounded-lg p-8 shadow-sm border border-gray-200 max-w-md mx-auto">
+                      <div className="w-20 h-20 mx-auto mb-4 bg-amber-100 rounded-full flex items-center justify-center">
+                        <svg
+                          className="w-10 h-10 text-amber-600"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                          />
+                        </svg>
+                      </div>
+                      <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                        No products found
+                      </h3>
+                      <p className="text-gray-600 mb-6">
+                        We couldn't find any products matching your criteria.
+                        Try different keywords or categories.
+                      </p>
+                      <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                        <button
+                          onClick={() => navigate("/products")}
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-lg transition-all duration-300 font-medium"
+                        >
+                          Browse All Products
+                        </button>
+                        <button
+                          onClick={() => {
+                            setSearchQuery("");
+                            setSelectedCategory("all");
+                            navigate("/search");
+                          }}
+                          className="bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 hover:border-gray-400 px-6 py-3 rounded-lg transition-all duration-300 font-medium"
+                        >
+                          Clear Filters
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
+                )
               )}
             </>
           )}
@@ -419,11 +595,23 @@ const Search = () => {
             <div className="text-center py-16">
               <div className="bg-white rounded-lg p-8 shadow-sm border border-gray-200 max-w-md mx-auto">
                 <div className="w-20 h-20 mx-auto mb-4 bg-emerald-100 rounded-full flex items-center justify-center">
-                  <svg className="w-10 h-10 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  <svg
+                    className="w-10 h-10 text-emerald-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                    />
                   </svg>
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">Start your search</h3>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                  Start your search
+                </h3>
                 <p className="text-gray-600 mb-4">
                   Enter keywords or select a category to find products
                 </p>

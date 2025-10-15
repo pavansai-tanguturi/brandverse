@@ -1,16 +1,16 @@
-import React from 'react';
-import { useCookieConsent } from '../hooks/useCookieConsent';
+import React from "react";
+import { useCookieConsent } from "../hooks/useCookieConsent";
 
-const CookiePreferencesButton = ({ className = '', variant = 'link' }) => {
+const CookiePreferencesButton = ({ className = "", variant = "link" }) => {
   const { resetConsent } = useCookieConsent();
 
   const handleOpenPreferences = () => {
     resetConsent();
     // Scroll to top to ensure banner is visible
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  if (variant === 'button') {
+  if (variant === "button") {
     return (
       <button
         onClick={handleOpenPreferences}

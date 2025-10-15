@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { useAddress } from '../context/AddressContext';
-import { useAuth } from '../context/AuthContext';
+import React, { useState, useEffect } from "react";
+import { useAddress } from "../context/AddressContext";
+import { useAuth } from "../context/AuthContext";
 
 const AddressManager = () => {
   const { user } = useAuth();
@@ -12,23 +12,23 @@ const AddressManager = () => {
     createAddress,
     updateAddress,
     deleteAddress,
-    setDefaultAddress
+    setDefaultAddress,
   } = useAddress();
 
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingAddress, setEditingAddress] = useState(null);
-  const [actionError, setActionError] = useState('');
+  const [actionError, setActionError] = useState("");
   const [formData, setFormData] = useState({
     is_default: false,
-    full_name: '',
-    phone: '',
-    address_line_1: '',
-    address_line_2: '',
-    city: '',
-    state: '',
-    postal_code: '',
-    country: 'India',
-    landmark: ''
+    full_name: "",
+    phone: "",
+    address_line_1: "",
+    address_line_2: "",
+    city: "",
+    state: "",
+    postal_code: "",
+    country: "India",
+    landmark: "",
   });
 
   useEffect(() => {
@@ -39,15 +39,15 @@ const AddressManager = () => {
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: type === "checkbox" ? checked : value,
     }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setActionError(''); // Clear any previous errors
+    setActionError(""); // Clear any previous errors
     try {
       if (editingAddress) {
         await updateAddress(editingAddress.id, formData);
@@ -58,22 +58,22 @@ const AddressManager = () => {
       setShowAddForm(false);
       resetForm();
     } catch (error) {
-      setActionError('Error saving address: ' + error.message);
+      setActionError("Error saving address: " + error.message);
     }
   };
 
   const resetForm = () => {
     setFormData({
       is_default: false,
-      full_name: '',
-      phone: '',
-      address_line_1: '',
-      address_line_2: '',
-      city: '',
-      state: '',
-      postal_code: '',
-      country: 'India',
-      landmark: ''
+      full_name: "",
+      phone: "",
+      address_line_1: "",
+      address_line_2: "",
+      city: "",
+      state: "",
+      postal_code: "",
+      country: "India",
+      landmark: "",
     });
   };
 
@@ -84,27 +84,27 @@ const AddressManager = () => {
   };
 
   const handleDelete = async (addressId) => {
-    if (window.confirm('Are you sure you want to delete this address?')) {
-      setActionError(''); // Clear any previous errors
+    if (window.confirm("Are you sure you want to delete this address?")) {
+      setActionError(""); // Clear any previous errors
       try {
         await deleteAddress(addressId);
       } catch (error) {
-        setActionError('Error deleting address: ' + error.message);
+        setActionError("Error deleting address: " + error.message);
       }
     }
   };
 
   const handleSetDefault = async (addressId) => {
-    setActionError(''); // Clear any previous errors
+    setActionError(""); // Clear any previous errors
     try {
       await setDefaultAddress(addressId);
     } catch (error) {
-      setActionError('Error setting default address: ' + error.message);
+      setActionError("Error setting default address: " + error.message);
     }
   };
 
   const formatAddress = (address) => {
-    return `${address.address_line_1}${address.address_line_2 ? ', ' + address.address_line_2 : ''}, ${address.city}, ${address.state} ${address.postal_code}`;
+    return `${address.address_line_1}${address.address_line_2 ? ", " + address.address_line_2 : ""}, ${address.city}, ${address.state} ${address.postal_code}`;
   };
 
   if (loading) {
@@ -125,7 +125,9 @@ const AddressManager = () => {
             <h3 className="text-2xl font-bold text-gray-900 mb-2">
               Manage Addresses
             </h3>
-            <p className="text-gray-600">Add and manage your delivery addresses</p>
+            <p className="text-gray-600">
+              Add and manage your delivery addresses
+            </p>
           </div>
           <button
             onClick={() => {
@@ -159,7 +161,7 @@ const AddressManager = () => {
               <p className="text-red-700 font-medium">{actionError}</p>
             </div>
             <button
-              onClick={() => setActionError('')}
+              onClick={() => setActionError("")}
               className="text-red-500 hover:text-red-700 font-bold text-xl"
             >
               ×
@@ -172,7 +174,7 @@ const AddressManager = () => {
       {showAddForm && (
         <div className="bg-white border border-gray-200 rounded-lg p-6">
           <h4 className="text-md font-semibold text-gray-900 mb-4">
-            {editingAddress ? 'Edit Address' : 'Add New Address'}
+            {editingAddress ? "Edit Address" : "Add New Address"}
           </h4>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -311,7 +313,10 @@ const AddressManager = () => {
                 onChange={handleInputChange}
                 className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300 rounded"
               />
-              <label htmlFor="is_default" className="ml-2 block text-sm text-gray-900">
+              <label
+                htmlFor="is_default"
+                className="ml-2 block text-sm text-gray-900"
+              >
                 Set as default address
               </label>
             </div>
@@ -321,7 +326,7 @@ const AddressManager = () => {
                 type="submit"
                 className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
               >
-                {editingAddress ? 'Update Address' : 'Save Address'}
+                {editingAddress ? "Update Address" : "Save Address"}
               </button>
               <button
                 type="button"
@@ -346,7 +351,9 @@ const AddressManager = () => {
             <div className="bg-gradient-to-br from-orange-100 to-orange-200 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6">
               <span className="text-4xl">📍</span>
             </div>
-            <h4 className="text-2xl font-bold text-gray-900 mb-3">No addresses saved</h4>
+            <h4 className="text-2xl font-bold text-gray-900 mb-3">
+              No addresses saved
+            </h4>
             <p className="text-gray-500 mb-8 text-lg max-w-md mx-auto">
               Add your first delivery address to start shopping with ease
             </p>
@@ -370,19 +377,25 @@ const AddressManager = () => {
                     {address.is_default && (
                       <span className="px-3 py-1 bg-gradient-to-r from-blue-100 to-blue-200 text-blue-700 rounded-full text-sm font-semibold border border-blue-300">
                         ⭐ Default
-                      </span>  
+                      </span>
                     )}
                   </div>
-                  <h5 className="font-bold text-gray-900 text-lg mb-2">{address.full_name}</h5>
-                  <p className="text-gray-600 leading-relaxed mb-2">{formatAddress(address)}</p>
+                  <h5 className="font-bold text-gray-900 text-lg mb-2">
+                    {address.full_name}
+                  </h5>
+                  <p className="text-gray-600 leading-relaxed mb-2">
+                    {formatAddress(address)}
+                  </p>
                   {address.phone && (
                     <p className="text-gray-600 flex items-center gap-2 mb-1">
-                      <span className="text-orange-500">📞</span> {address.phone}
+                      <span className="text-orange-500">📞</span>{" "}
+                      {address.phone}
                     </p>
                   )}
                   {address.landmark && (
                     <p className="text-gray-500 flex items-center gap-2">
-                      <span className="text-orange-500">🏛️</span> {address.landmark}
+                      <span className="text-orange-500">🏛️</span>{" "}
+                      {address.landmark}
                     </p>
                   )}
                 </div>
