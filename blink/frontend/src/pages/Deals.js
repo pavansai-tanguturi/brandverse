@@ -127,35 +127,29 @@ function Deals() {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6">
-        {/* Results Header */}
-        <div className="bg-white rounded-lg p-4 mb-4 mt-4 shadow-sm border border-gray-200">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div>
-              <h1 className="text-lg font-bold text-gray-900 flex items-center space-x-2">
-                <span>Deals & Offers</span>
-              </h1>
-              <p className="text-gray-600 text-sm mt-1">
-                Showing {indexOfFirstProduct + 1}-
-                {Math.min(indexOfLastProduct, filteredProducts.length)} of{" "}
-                {filteredProducts.length} deals
-              </p>
-            </div>
-            {/* Sort Options */}
-            <div className="flex items-center space-x-3">
-              <label className="text-sm text-gray-600 font-medium">
-                Sort by:
-              </label>
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white text-sm"
-              >
-                <option value="discount">Best Discount</option>
-                <option value="price-low">Price: Low to High</option>
-                <option value="price-high">Price: High to Low</option>
-                <option value="name">Name A-Z</option>
-              </select>
-            </div>
+        {/* Minimal Filter Header */}
+        <div className="flex items-center justify-between py-4 border-b border-gray-100">
+          <div className="flex items-center gap-3">
+            <h1 className="text-xl font-semibold text-gray-900">Deals</h1>
+            <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+              {filteredProducts.length}
+            </span>
+          </div>
+          
+          <div className="flex items-center gap-2 bg-gray-50 hover:bg-gray-100 px-3 py-2 rounded-lg border border-gray-200 transition-colors">
+            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.414A1 1 0 013 6.707V4z" />
+            </svg>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="bg-transparent border-0 text-sm text-gray-700 font-medium focus:outline-none cursor-pointer"
+            >
+              <option value="discount">Best Discount</option>
+              <option value="price-low">Price: Low to High</option>
+              <option value="price-high">Price: High to Low</option>
+              <option value="name">Name A-Z</option>
+            </select>
           </div>
         </div>
 

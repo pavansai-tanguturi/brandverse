@@ -351,13 +351,13 @@ const OrderSuccessPage = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <button
                 onClick={() => navigate("/dashboard?tab=orders")}
-                className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
+                className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl font-medium"
               >
                 Track Your Order
               </button>
               <button
                 onClick={() => navigate("/")}
-                className="px-6 py-3 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition font-medium"
+                className="px-6 py-3 border border-emerald-600 text-emerald-600 rounded-lg hover:bg-emerald-50 transition font-medium"
               >
                 Continue Shopping
               </button>
@@ -374,7 +374,7 @@ const OrderSuccessPage = () => {
                 onClick={() =>
                   (window.location.href = "mailto:subashakepati@gmail.com")
                 }
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
+                className="px-6 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl font-medium"
               >
                 Email Support
               </button>

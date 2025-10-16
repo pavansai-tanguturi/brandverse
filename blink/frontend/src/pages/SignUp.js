@@ -260,8 +260,8 @@ function SignUp() {
 
   return (
     <>
-      <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50 pt-24 pb-20">
-        <div className="max-w-md mx-auto px-4 sm:px-6">
+      <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50 flex items-center justify-center py-8">
+        <div className="max-w-md w-full mx-auto px-4 sm:px-6">
           {/* Sign Up Card */}
           <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-8">
             {/* Header */}
@@ -289,37 +289,6 @@ function SignUp() {
                   ? "Enter the 6-digit code sent to your email"
                   : "Join us today and start shopping"}
               </p>
-            </div>
-
-            {/* Progress Steps */}
-            <div className="flex items-center justify-center mb-8">
-              <div className="flex items-center">
-                <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${
-                    !otpStep
-                      ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg"
-                      : "bg-emerald-100 text-emerald-600"
-                  }`}
-                >
-                  1
-                </div>
-                <div
-                  className={`w-12 h-1 mx-2 ${
-                    otpStep
-                      ? "bg-gradient-to-r from-emerald-500 to-teal-600"
-                      : "bg-gray-200"
-                  }`}
-                />
-                <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${
-                    otpStep
-                      ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg"
-                      : "bg-gray-200 text-gray-500"
-                  }`}
-                >
-                  2
-                </div>
-              </div>
             </div>
 
             {/* Messages */}
@@ -554,20 +523,6 @@ function SignUp() {
                 </p>
               </div>
             )}
-
-            {/* Security Note */}
-            <div className="mt-8 p-4 bg-gray-50 rounded-xl border border-gray-200">
-              <div className="flex items-center space-x-2 text-sm text-gray-600">
-                <svg
-                  className="w-4 h-4 text-emerald-600"
-                  fill="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z" />
-                </svg>
-                <span>Your information is secure and encrypted</span>
-              </div>
-            </div>
           </div>
 
           {/* Back to Home */}
@@ -594,7 +549,6 @@ function SignUp() {
           </div>
         </div>
       </div>
-      <MobileBottomNav />
     </>
   );
 }
