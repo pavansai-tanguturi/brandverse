@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import React, { useState, useEffect, useCallback } from 'react';
 import ModernNavbar from '../../components/ModernNavbar';
 import MobileBottomNav from '../../components/MobileBottomNav';
@@ -6,6 +7,17 @@ import { useAuth } from '../../context/AuthContext';
 import { useWishlist } from '../../context/WishlistContext';
 import { useCart } from '../../context/CartContext';
 import { useNavigate, useLocation } from 'react-router-dom';
+=======
+import React, { useState, useEffect, useCallback } from "react";
+import ModernNavbar from "../../components/ModernNavbar";
+import MobileBottomNav from "../../components/MobileBottomNav";
+import AddressManager from "../../components/AddressManager";
+import OrderHistoryContent from "../../components/OrderHistoryContent";
+import { useAuth } from "../../context/AuthContext";
+import { useWishlist } from "../../context/WishlistContext";
+import { useCart } from "../../context/CartContext";
+import { useNavigate, useLocation } from "react-router-dom";
+>>>>>>> a1bd95f92f8725c9ba567a7fdb4d7b6178aba021
 
 // Helper function to get auth headers
 const getAuthHeaders = () => {
@@ -364,8 +376,16 @@ const CustomerDashboard = () => {
     
     // Check URL parameter for tab
     const params = new URLSearchParams(location.search);
+<<<<<<< HEAD
     const tabParam = params.get('tab');
     if (tabParam && ['orders', 'wishlist', 'settings', 'addresses'].includes(tabParam)) {
+=======
+    const tabParam = params.get("tab");
+    if (
+      tabParam &&
+      ["orders", , "settings", "addresses"].includes(tabParam)
+    ) {
+>>>>>>> a1bd95f92f8725c9ba567a7fdb4d7b6178aba021
       setActiveTab(tabParam);
     }
   }, [user, loading, navigate, fetchUserProfile, location.search]);
@@ -441,10 +461,163 @@ const CustomerDashboard = () => {
 
         {/* Main Content */}
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+<<<<<<< HEAD
           {/* Sidebar Navigation */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 sticky top-24">
               <h2 className="text-lg font-semibold text-gray-900 mb-4">Account Menu</h2>
+=======
+          {/* Mobile Menu Dropdown */}
+          {/* Mobile Account Menu - Opens inline below navbar */}
+          {isMobileMenuOpen && (
+            <div className="lg:hidden bg-transparent z-20 animate-slideDown">
+              <div className="mx-3 mt-2 rounded-2xl bg-white shadow-lg border border-gray-200 overflow-hidden">
+                <div className="p-4">
+                  {/* Header */}
+                  <h2 className="text-lg font-semibold text-gray-900 mb-4 text-center">
+                    Account Menu
+                  </h2>
+
+                  {/* Navigation Tabs */}
+                  <nav className="space-y-2">
+                    {[
+                      {
+                        id: "orders",
+                        name: "My Orders",
+                        icon: (
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="w-5 h-5"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            strokeWidth={1.8}
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2m-4 0V3m0 2v2"
+                            />
+                          </svg>
+                        ),
+                        count: orders.length,
+                      },
+                    
+                      {
+                        id: "settings",
+                        name: "Profile Settings",
+                        icon: (
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="w-5 h-5"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            strokeWidth={1.8}
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0A1.724 1.724 0 0016 5.5a1.724 1.724 0 002.325.817c1.756-.426 1.756 2.924 0 3.35A1.724 1.724 0 0018.5 12a1.724 1.724 0 00.817 2.325c1.756.426 1.756 2.924 0 3.35A1.724 1.724 0 0016 20.5a1.724 1.724 0 00-2.325.817c-.426 1.756-2.924 1.756-3.35 0A1.724 1.724 0 008 20.5a1.724 1.724 0 00-2.325.817c-1.756.426-1.756-2.924 0-3.35A1.724 1.724 0 005.5 12a1.724 1.724 0 00-.817-2.325c-1.756-.426-1.756-2.924 0-3.35A1.724 1.724 0 008 5.5a1.724 1.724 0 002.325-.817z"
+                            />
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                            />
+                          </svg>
+                        ),
+                      },
+                      {
+                        id: "addresses",
+                        name: "My Addresses",
+                        icon: (
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="w-5 h-5"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            strokeWidth={1.8}
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M12 11c1.657 0 3-1.343 3-3S13.657 5 12 5s-3 1.343-3 3 1.343 3 3 3zm0 1c-3 0-9 1.5-9 4.5V19h18v-2.5c0-3-6-4.5-9-4.5z"
+                            />
+                          </svg>
+                        ),
+                      },
+                    ].map((tab) => (
+                      <button
+                        key={tab.id}
+                        onClick={() => {
+                          navigate(`/dashboard?tab=${tab.id}`);
+                          setIsMobileMenuOpen(false);
+                        }}
+                        className={`w-full flex items-center justify-between p-3 rounded-xl transition-all duration-200 cursor-pointer ${
+                          activeTab === tab.id
+                            ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-md"
+                            : "text-gray-700 hover:bg-gray-50 hover:text-emerald-600"
+                        }`}
+                      >
+                        <div className="flex items-center space-x-3">
+                          <span>{tab.icon}</span>
+                          <span className="font-medium">{tab.name}</span>
+                        </div>
+                        {tab.count !== undefined && (
+                          <span
+                            className={`px-2 py-1 rounded-full text-xs font-medium ${
+                              activeTab === tab.id
+                                ? "bg-white/20 text-white"
+                                : "bg-emerald-100 text-emerald-800"
+                            }`}
+                          >
+                            {tab.count}
+                          </span>
+                        )}
+                      </button>
+                    ))}
+
+                    {/* Logout Button */}
+                    <div className="mt-6 pt-6 border-t border-gray-200">
+                      <button
+                        onClick={() => {
+                          handleLogout();
+                          setIsMobileMenuOpen(false);
+                        }}
+                        className="w-full flex items-center justify-center space-x-2 p-3 text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded-xl transition-all duration-200 font-medium"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="w-5 h-5"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          strokeWidth={1.8}
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H7a2 2 0 01-2-2V7a2 2 0 012-2h4a2 2 0 012 2v1"
+                          />
+                        </svg>
+                        <span>Logout</span>
+                      </button>
+                    </div>
+                  </nav>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Sidebar Navigation - Desktop */}
+          <div className="hidden lg:block lg:col-span-1">
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 sticky top-20">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                Account Menu
+              </h2>
+>>>>>>> a1bd95f92f8725c9ba567a7fdb4d7b6178aba021
               <nav className="space-y-2">
                 {[
                   { 
@@ -533,6 +706,7 @@ const CustomerDashboard = () => {
           <div className="lg:col-span-3">
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
               {/* Orders Tab */}
+<<<<<<< HEAD
               {activeTab === 'orders' && (
                 <div>
                   <div className="flex items-center justify-between mb-6">
@@ -623,6 +797,9 @@ const CustomerDashboard = () => {
                   )}
                 </div>
               )}
+=======
+              {activeTab === "orders" && <OrderHistoryContent />}
+>>>>>>> a1bd95f92f8725c9ba567a7fdb4d7b6178aba021
 
               {/* Wishlist Tab */}
               {activeTab === 'wishlist' && (

@@ -6,6 +6,11 @@ import { useAuth } from '../context/AuthContext';
 const MobileBottomNav = () => {
   const location = useLocation();
   const { user } = useAuth();
+<<<<<<< HEAD
+=======
+  const { items, itemCount } = useCart();
+  
+>>>>>>> a1bd95f92f8725c9ba567a7fdb4d7b6178aba021
 
   const navItems = [
     { 
@@ -72,7 +77,96 @@ const MobileBottomNav = () => {
           />
         </svg>
       ),
+<<<<<<< HEAD
       path: user ? '/dashboard' : '/login'
+=======
+      path: "/products",
+    },
+
+    {
+      id: "deals",
+      label: "Deals",
+      icon: (
+        <svg
+          className="w-6 h-6"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
+          />
+        </svg>
+      ),
+      path: "/deals",
+    },
+
+    {
+      id: "wishlist",
+      label: "Wishlist",
+      icon: (
+        <svg
+          className="w-6 h-6"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+          />
+        </svg>
+      ),
+      path: "/dashboard?tab=wishlist",
+    },
+    {
+      id: user ? "Profile" : "login",
+      label: user ? "Profile" : "Login",
+      icon: (
+        <svg
+          className="w-6 h-6"
+          viewBox="0 0 24 24"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <g id="SVGRepo_bgCarrier"></g>
+          <g
+            id="SVGRepo_tracerCarrier"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          ></g>
+          <g id="SVGRepo_iconCarrier">
+            <path
+              strokeWidth={2}
+              d="M12.12 12.78C12.05 12.77 11.96 12.77 11.88 12.78C10.12 12.72 8.71997 11.28 8.71997 9.50998C8.71997 7.69998 10.18 6.22998 12 6.22998C13.81 6.22998 15.28 7.69998 15.28 9.50998C15.27 11.28 13.88 12.72 12.12 12.78Z"
+              stroke="currentColor"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            ></path>
+            <path
+              strokeWidth={2}
+              d="M18.74 19.3801C16.96 21.0101 14.6 22.0001 12 22.0001C9.40001 22.0001 7.04001 21.0101 5.26001 19.3801C5.36001 18.4401 5.96001 17.5201 7.03001 16.8001C9.77001 14.9801 14.25 14.9801 16.97 16.8001C18.04 17.5201 18.64 18.4401 18.74 19.3801Z"
+              stroke="currentColor"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            ></path>
+            <path
+              strokeWidth={2}
+              d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z"
+              stroke="currentColor"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            ></path>
+          </g>
+        </svg>
+      ),
+      path: user ? "/dashboard" : "/login",
+>>>>>>> a1bd95f92f8725c9ba567a7fdb4d7b6178aba021
     },
   ];
 
@@ -99,6 +193,10 @@ const MobileBottomNav = () => {
                 : 'bg-transparent'
             }`}>
               {item.icon}
+<<<<<<< HEAD
+=======
+              {/* Show badge only when cart has items */}
+>>>>>>> a1bd95f92f8725c9ba567a7fdb4d7b6178aba021
             </div>
             <span className={`text-xs mt-1 font-medium ${
               isActive(item.path) 

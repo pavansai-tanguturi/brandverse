@@ -322,12 +322,22 @@ function Home() {
                 role="button"
               >
                 <img
+<<<<<<< HEAD
                   src={item.src}
                   alt={item.title}
                   className="w-full h-[180px] sm:h-[200px] md:h-[220px] lg:h-[260px] object-cover"
                   draggable={false}
                   onDragStart={(e) => e.preventDefault()}
+=======
+                  src={cat.image_url || `/categories/${cat.slug}.png`}
+                  alt={cat.name}
+                  className="w-full h-full object-contain rounded-full"
+>>>>>>> a1bd95f92f8725c9ba567a7fdb4d7b6178aba021
                   loading="lazy"
+                  onError={(e) => {
+                    // Fallback to local image if database image fails
+                    e.target.src = `/categories/${cat.slug}.png`;
+                  }}
                 />
                 <div className="absolute inset-0 flex flex-col sm:flex-row sm:items-end sm:justify-between p-3 sm:p-4 bg-gradient-to-t from-black/70 to-transparent">
                   <div className="text-white text-base sm:text-lg font-semibold max-w-[80%] sm:max-w-[70%] leading-tight drop-shadow">
