@@ -319,8 +319,6 @@ const CheckoutPage = () => {
 
       const order = await response.json();
 
-      console.log("Order created successfully:", order);
-
       // Clear cart immediately after successful order creation
       clearCart();
 
@@ -337,7 +335,6 @@ const CheckoutPage = () => {
 
           if (confirmResponse.ok) {
             const result = await confirmResponse.json();
-            console.log("COD order confirmed:", result);
             navigate("/order-success", {
               state: {
                 order: result.order || order,

@@ -323,8 +323,6 @@ const AdminProducts = () => {
         : `${API_BASE}/api/products`;
       const method = isEditing ? "PATCH" : "POST";
 
-      console.log("Sending request:", { method, url, body });
-
       const response = await fetch(url, {
         method,
         headers: getAuthHeaders(),
@@ -333,7 +331,6 @@ const AdminProducts = () => {
       });
 
       const data = await handleApiResponse(response);
-      console.log("Product response:", data);
 
       // Handle image upload if there are files
       if (imageFiles.length > 0) {
@@ -345,10 +342,6 @@ const AdminProducts = () => {
         }
 
         const replaceParam = isEditing ? "?replace=false" : "";
-        console.log("Uploading images:", {
-          productId,
-          imageCount: imageFiles.length,
-        });
 
         const imgResponse = await fetch(
           `${API_BASE}/api/products/${productId}/images${replaceParam}`,
@@ -361,7 +354,6 @@ const AdminProducts = () => {
         );
 
         await handleApiResponse(imgResponse);
-        console.log("Images uploaded successfully");
       }
 
       setMessage(`Product ${isEditing ? "updated" : "created"} successfully`);

@@ -233,9 +233,6 @@ const AdminDashboard = () => {
     async (attempt = 0) => {
       // Don't fetch if user is not authenticated or not admin
       if (!user || !user.isAdmin) {
-        console.log(
-          "[AdminDashboard] User not authenticated or not admin, skipping fetch",
-        );
         setLoading(false);
         return;
       }
@@ -243,11 +240,6 @@ const AdminDashboard = () => {
       try {
         setLoading(true);
         setError(null);
-        console.log("[AdminDashboard] Fetching analytics summary", {
-          API_BASE,
-          user: { email: user.email, isAdmin: user.isAdmin },
-          attempt,
-        });
 
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT);
@@ -277,7 +269,6 @@ const AdminDashboard = () => {
         }
 
         const data = await response.json();
-        console.log("Successfully received analytics data:", data);
 
         setSummary(transformApiData(data));
         setRetryCount(0);
@@ -301,18 +292,12 @@ const AdminDashboard = () => {
 
   // Single effect to handle data fetching
   useEffect(() => {
-    console.log("[AdminDashboard] Auth state or user changed", {
-      authLoading,
-      user: user ? { email: user.email, isAdmin: user.isAdmin } : null,
-    });
 
     // Only fetch if auth is complete and user is admin
     if (!authLoading) {
       if (user && user.isAdmin) {
-        console.log("[AdminDashboard] Fetching summary data");
         fetchSummary();
       } else {
-        console.log("[AdminDashboard] User not admin or not authenticated");
         setLoading(false);
       }
     }

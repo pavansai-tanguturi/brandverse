@@ -348,13 +348,11 @@ function Products() {
     const inWishlist = wishlistState.items.some(
       (item) => item.id === productId,
     );
-    console.log(`Product ${productId} in wishlist:`, inWishlist);
     return inWishlist;
   };
 
   const handleWishlistToggle = async (e, product) => {
     e.stopPropagation(); // Prevent navigation to product page
-    console.log("Toggling wishlist for product:", product);
     if (isInWishlist(product.id)) {
       await removeFromWishlist(product.id);
     } else {

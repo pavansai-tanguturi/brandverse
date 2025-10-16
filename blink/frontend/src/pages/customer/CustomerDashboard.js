@@ -353,7 +353,6 @@ const CustomerDashboard = () => {
         navigate("/login");
       }
     } catch (err) {
-      console.error("Error fetching user profile:", err);
       setError("Failed to load profile data");
     }
   }, [user, navigate]);
@@ -377,7 +376,6 @@ const CustomerDashboard = () => {
         setError("Failed to load orders");
       }
     } catch (err) {
-      console.error("Error fetching orders:", err);
       setError("Failed to load orders");
     } finally {
       setLoadingData(false);
@@ -415,7 +413,6 @@ const CustomerDashboard = () => {
         return false;
       }
     } catch (err) {
-      console.error("Error updating profile:", err);
       setError("Failed to update profile");
       return false;
     } finally {
@@ -451,7 +448,6 @@ const CustomerDashboard = () => {
       await logout();
       navigate("/");
     } catch (error) {
-      console.error("Logout error:", error);
     }
   };
 
@@ -1113,10 +1109,6 @@ const CustomerDashboard = () => {
                                       await addToCart(item, 1);
                                       alert("Item added to cart!");
                                     } catch (error) {
-                                      console.error(
-                                        "Error adding to cart:",
-                                        error,
-                                      );
                                       alert("Error adding to cart");
                                     }
                                   }}
