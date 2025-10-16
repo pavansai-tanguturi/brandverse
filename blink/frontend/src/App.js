@@ -21,6 +21,7 @@ import Deals from "./pages/Deals";
 import Search from "./pages/Search";
 import ProductPage from "./pages/ProductPage";
 import CartPage from "./pages/CartPage";
+import Wishlist from "./pages/Wishlist";
 import CheckoutPage from "./pages/checkout/CheckoutPage";
 import OrderSuccessPage from "./pages/checkout/OrderSuccessPage";
 import OrderHistoryPage from "./pages/OrderHistoryPage";
@@ -69,6 +70,7 @@ function App() {
                 <Route path="/search" element={<Search />} />
                 <Route path="/product/:id" element={<ProductPage />} />
                 <Route path="/cart" element={<CartPage />} />
+                <Route path="/wishlist" element={<Wishlist />} />
                 <Route path="/checkout" element={<CheckoutPage />} />
                 <Route path="/order-success" element={<OrderSuccessPage />} />
                 <Route path="/orders" element={<OrderHistoryPage />} />

@@ -319,9 +319,6 @@ const CheckoutPage = () => {
 
       const order = await response.json();
 
-      // Clear cart immediately after successful order creation
-      clearCart();
-
       // Handle different payment methods
       if (paymentMethod === "cod") {
         // Try to confirm COD order
@@ -406,9 +403,9 @@ const CheckoutPage = () => {
             {/* Progress Steps - Desktop */}
             <div className="hidden md:flex items-center space-x-4">
               {[
-                { num: 1, label: "Bag", icon: "🛍️" },
-                { num: 2, label: "Address", icon: "📍" },
-                { num: 3, label: "Payment", icon: "💳" },
+                { num: 1, label: "Bag" },
+                { num: 2, label: "Address" },
+                { num: 3, label: "Payment" },
               ].map((item, idx) => (
                 <React.Fragment key={item.num}>
                   <div className="flex items-center">

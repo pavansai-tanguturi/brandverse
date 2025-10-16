@@ -91,7 +91,7 @@ const MobileBottomNav = () => {
           />
         </svg>
       ),
-      path: "/dashboard?tab=wishlist",
+      path: "/wishlist",
     },
     {
       id: user ? "Profile" : "login",
