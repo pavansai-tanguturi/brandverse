@@ -6,8 +6,6 @@ import { useWishlist } from "../context/WishlistContext";
 import { useCart } from "../context/CartContext";
 import ModernNavbar from "../components/ModernNavbar";
 import MobileBottomNav from "../components/MobileBottomNav";
-import logo from "../assets/logos.png";
-import locationIcon from "../assets/location.png";
 
 function Products() {
   const navigate = useNavigate();
@@ -33,11 +31,16 @@ function Products() {
   const [filteredProducts, setFilteredProducts] = useState([]);
 
   // Search and filters
-  const [searchQuery, setSearchQuery] = useState(searchParams.get("q") || "");
+  const [searchQuery, setSearchQuery] = useState(searchParams.get("search") || searchParams.get("q") || "");
   const [selectedCategory, setSelectedCategory] = useState(
     searchParams.get("category") || "all",
   );
   const [sortBy, setSortBy] = useState("name");
+
+  // Search results state
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchSuggestions, setSearchSuggestions] = useState("");
 
   // Flipkart-style filter states
   const [priceRange, setPriceRange] = useState([0, 100000]);
@@ -78,21 +81,51 @@ function Products() {
     }
   };
 
-  // Fetch products
-  const fetchProducts = async () => {
+  // Fetch products with search
+  const fetchProducts = async (searchTerm = "") => {
     try {
+      setLoading(true);
       const API_BASE_URL =
         import.meta.env.VITE_API_BASE || "http://localhost:3001";
-      const response = await fetch(`${API_BASE_URL}/api/products`);
-      if (response.ok) {
-        const data = await response.json();
-        setProducts(data);
-        setFilteredProducts(data);
+      
+      let url = `${API_BASE_URL}/api/products`;
+      
+      // Use search endpoint if there's a search term
+      if (searchTerm && searchTerm.trim()) {
+        setIsSearching(true);
+        url = `${API_BASE_URL}/api/products/search?q=${encodeURIComponent(searchTerm.trim())}`;
+        
+        const response = await fetch(url);
+        if (response.ok) {
+          const data = await response.json();
+          setSearchResults(data.products || []);
+          setSearchSuggestions(data.didYouMean || "");
+          setProducts(data.products || []);
+          setFilteredProducts(data.products || []);
+        } else {
+          console.error("Failed to search products");
+          setSearchResults([]);
+          setProducts([]);
+          setFilteredProducts([]);
+        }
+        setIsSearching(false);
       } else {
-        console.error("Failed to fetch products");
+        // Regular product fetch
+        const response = await fetch(url);
+        if (response.ok) {
+          const data = await response.json();
+          setProducts(data);
+          setFilteredProducts(data);
+          setSearchResults([]);
+          setSearchSuggestions("");
+        } else {
+          console.error("Failed to fetch products");
+        }
       }
     } catch (error) {
       console.error("Error fetching products:", error);
+      setSearchResults([]);
+      setIsSearching(false);
     } finally {
       setLoading(false);
     }
@@ -114,16 +147,16 @@ function Products() {
     const urlTag = (searchParams.get("tag") || "").toLowerCase();
     const urlSort = (searchParams.get("sort") || "").toLowerCase();
 
-    // Search filter
-    if (searchQuery) {
-      filtered = filtered.filter(
-        (product) =>
-          product.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          product.description
-            ?.toLowerCase()
-            .includes(searchQuery.toLowerCase()),
-      );
-    }
+    // Search filter - handled by backend now, skip frontend search
+    // if (searchQuery) {
+    //   filtered = filtered.filter(
+    //     (product) =>
+    //       product.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    //       product.description
+    //         ?.toLowerCase()
+    //         .includes(searchQuery.toLowerCase()),
+    //   );
+    // }
 
     // Category filter
     if (selectedCategory !== "all") {
@@ -215,12 +248,18 @@ function Products() {
 
   // Sync local state with URL search params
   useEffect(() => {
-    const urlQuery = searchParams.get("q") || "";
+    const urlQuery = searchParams.get("search") || searchParams.get("q") || "";
     const urlCategory = searchParams.get("category") || "all";
     const urlSort = (searchParams.get("sort") || "").toLowerCase();
 
     if (urlQuery !== searchQuery) {
       setSearchQuery(urlQuery);
+      // Trigger new search when URL search param changes
+      if (urlQuery.trim()) {
+        fetchProducts(urlQuery);
+      } else {
+        fetchProducts();
+      }
     }
     if (urlCategory !== selectedCategory) {
       setSelectedCategory(urlCategory);
@@ -261,16 +300,24 @@ function Products() {
   const handleSearch = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      setSearchParams({ q: searchQuery });
+      setSearchParams({ search: searchQuery.trim() });
     } else {
       setSearchParams({});
     }
   };
 
-  // Get location
+  // Get location and load initial data
   useEffect(() => {
     fetchCategories();
-    fetchProducts();
+    
+    // Check if there's a search query in URL
+    const urlSearchQuery = searchParams.get("search") || searchParams.get("q") || "";
+    if (urlSearchQuery.trim()) {
+      setSearchQuery(urlSearchQuery);
+      fetchProducts(urlSearchQuery);
+    } else {
+      fetchProducts();
+    }
 
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -746,12 +793,46 @@ function Products() {
               </button>
             </div>
 
+            {/* Search Suggestions */}
+            {searchSuggestions && (
+              <div className="mb-4 p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
+                <p className="text-sm text-emerald-700">
+                  Did you mean: <span className="font-semibold cursor-pointer underline" 
+                    onClick={() => {
+                      setSearchQuery(searchSuggestions);
+                      fetchProducts(searchSuggestions);
+                    }}
+                  >
+                    {searchSuggestions}
+                  </span>?
+                </p>
+              </div>
+            )}
+
+            {/* Search Status */}
+            {searchQuery && !loading && (
+              <div className="mb-4 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                <p className="text-sm text-gray-700">
+                  {isSearching ? (
+                    "Searching..."
+                  ) : (
+                    <>
+                      Search results for "<span className="font-semibold">{searchQuery}</span>" 
+                      {currentProducts.length > 0 && (
+                        <span className="text-emerald-600"> - {filteredProducts.length} products found</span>
+                      )}
+                    </>
+                  )}
+                </p>
+              </div>
+            )}
+
             {/* Products Grid - Compact Mobile Design */}
             {loading ? (
               <div className="flex flex-col items-center justify-center py-20">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
                 <p className="mt-3 text-gray-600 text-sm">
-                  Loading products...
+                  {isSearching ? "Searching products..." : "Loading products..."}
                 </p>
               </div>
             ) : currentProducts.length > 0 ? (

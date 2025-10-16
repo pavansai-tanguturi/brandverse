@@ -8,12 +8,7 @@ const MobileBottomNav = () => {
   const location = useLocation();
   const { user } = useAuth();
   const { items, itemCount } = useCart();
-
-  // Use the itemCount from context (already calculates total quantity)
-  const cartItemsCount = itemCount || 0;
-
-  console.log("Mobile Nav - Cart Items:", items);
-  console.log("Mobile Nav - Cart Items Count:", cartItemsCount);
+  
 
   const navItems = [
     {
@@ -79,34 +74,24 @@ const MobileBottomNav = () => {
     },
 
     {
-      id: "cart",
-      label: "cart",
+      id: "wishlist",
+      label: "Wishlist",
       icon: (
         <svg
           className="w-6 h-6"
-          viewBox="0 0 24 24"
           fill="none"
+          viewBox="0 0 24 24"
           stroke="currentColor"
-          xmlns="http://www.w3.org/2000/svg"
         >
-          <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
-          <g
-            id="SVGRepo_tracerCarrier"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          ></g>
-          <g id="SVGRepo_iconCarrier">
-            <path
-              stroke-width={2}
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              d="M6.29977 5H21L19 12H7.37671M20 16H8L6 3H3M9 20C9 20.5523 8.55228 21 8 21C7.44772 21 7 20.5523 7 20C7 19.4477 7.44772 19 8 19C8.55228 19 9 19.4477 9 20ZM20 20C20 20.5523 19.5523 21 19 21C18.4477 21 18 20.5523 18 20C18 19.4477 18.4477 19 19 19C19.5523 19 20 19.4477 20 20Z"
-            ></path>
-          </g>
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+          />
         </svg>
       ),
-      path: "/cart",
-      badge: cartItemsCount,
+      path: "/dashboard?tab=wishlist",
     },
     {
       id: user ? "Profile" : "login",
@@ -177,11 +162,6 @@ const MobileBottomNav = () => {
             >
               {item.icon}
               {/* Show badge only when cart has items */}
-              {item.id === "cart" && cartItemsCount > 0 && (
-                <span className="absolute -top-1 -right-1 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-white bg-red-600 rounded-full min-w-[18px] h-[18px] shadow-lg z-10">
-                  {cartItemsCount > 99 ? "99+" : cartItemsCount}
-                </span>
-              )}
             </div>
             <span
               className={`text-xs mt-1 font-medium ${

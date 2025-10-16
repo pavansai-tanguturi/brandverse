@@ -13,9 +13,6 @@ const ModernNavbar = ({ showSearch = true }) => {
   // Use the itemCount from context (already calculates total quantity)
   const cartItemsCount = itemCount || 0;
 
-  console.log("Desktop Nav - Cart Items:", items);
-  console.log("Desktop Nav - Cart Items Count:", cartItemsCount);
-
   return (
     <nav className="bg-emerald-600 text-white shadow-sm sticky top-0 z-30">
       <div className="max-w-7xl mx-auto px-4">
@@ -85,7 +82,7 @@ const ModernNavbar = ({ showSearch = true }) => {
                     onKeyDown={(e) => {
                       if (e.key === "Enter" && e.target.value.trim()) {
                         navigate(
-                          `/products?q=${encodeURIComponent(e.target.value.trim())}`,
+                          `/products?search=${encodeURIComponent(e.target.value.trim())}`,
                         );
                       }
                     }}
@@ -95,29 +92,7 @@ const ModernNavbar = ({ showSearch = true }) => {
             </div>
           )}
 
-          {/* Action Icons - Hidden on Mobile */}
-          <div className="hidden lg:flex items-center ml-6 space-x-2">
-            {/* Wishlist */}
-            <button
-              onClick={() => navigate("/dashboard?tab=wishlist")}
-              className="p-2 rounded-full text-white/90 hover:text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-emerald-600 transition-colors cursor-pointer"
-            >
-              <svg
-                className="h-6 w-6"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                />
-              </svg>
-            </button>
-
-            {/* Cart */}
+                      {/* Cart */}
             <button
               onClick={() => navigate("/cart")}
               className="relative p-2 rounded-full text-white/90 hover:text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-emerald-600 transition-colors cursor-pointer"
@@ -145,10 +120,32 @@ const ModernNavbar = ({ showSearch = true }) => {
                 </g>
               </svg>
               {cartItemsCount > 0 && (
-                <span className="absolute -top-1 -right-1 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-white bg-red-600 rounded-full min-w-[20px] h-[20px] shadow-lg border-2 border-emerald-600">
+                <span className="absolute top-2 -right-1 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-white bg-red-600 rounded-full min-w-[20px] h-[20px] shadow-lg border-2 border-emerald-600">
                   {cartItemsCount > 99 ? "99+" : cartItemsCount}
                 </span>
               )}
+            </button>
+
+          {/* Action Icons - Hidden on Mobile */}
+          <div className="hidden lg:flex items-center ml-6 space-x-2">
+            {/* Wishlist */}
+            <button
+              onClick={() => navigate("/dashboard?tab=wishlist")}
+              className="p-2 rounded-full text-white/90 hover:text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-emerald-600 transition-colors cursor-pointer"
+            >
+              <svg
+                className="h-6 w-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                />
+              </svg>
             </button>
 
             {/* User Menu */}

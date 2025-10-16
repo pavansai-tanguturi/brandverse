@@ -412,28 +412,14 @@ function Home() {
             >
               <div className="w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center">
                 <img
-                  src={`/categories/${
-                    cat.slug === "beauty"
-                      ? "beauty.png"
-                      : cat.slug === "books"
-                        ? "books.png"
-                        : cat.slug === "clothing"
-                          ? "clothing.png"
-                          : cat.slug === "electronics"
-                            ? "electronics.png"
-                            : cat.slug === "food-beverage"
-                              ? "food-beverage.png"
-                              : cat.slug === "home-garden"
-                                ? "home-garden.png"
-                                : cat.slug === "sports"
-                                  ? "sports.png"
-                                  : cat.slug === "toys-games"
-                                    ? "toys-games.png"
-                                    : cat.image_url
-                  }`}
+                  src={cat.image_url || `/categories/${cat.slug}.png`}
                   alt={cat.name}
                   className="w-full h-full object-contain rounded-full"
                   loading="lazy"
+                  onError={(e) => {
+                    // Fallback to local image if database image fails
+                    e.target.src = `/categories/${cat.slug}.png`;
+                  }}
                 />
               </div>
               <div className="flex items-center gap-1 mt-1 sm:mt-2">

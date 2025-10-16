@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import ModernNavbar from "../../components/ModernNavbar";
 import MobileBottomNav from "../../components/MobileBottomNav";
 import AddressManager from "../../components/AddressManager";
+import OrderHistoryContent from "../../components/OrderHistoryContent";
 import { useAuth } from "../../context/AuthContext";
 import { useWishlist } from "../../context/WishlistContext";
 import { useCart } from "../../context/CartContext";
@@ -436,7 +437,7 @@ const CustomerDashboard = () => {
     const tabParam = params.get("tab");
     if (
       tabParam &&
-      ["orders", "wishlist", "settings", "addresses"].includes(tabParam)
+      ["orders", , "settings", "addresses"].includes(tabParam)
     ) {
       setActiveTab(tabParam);
     }
@@ -593,27 +594,7 @@ const CustomerDashboard = () => {
                         ),
                         count: orders.length,
                       },
-                      {
-                        id: "wishlist",
-                        name: "Wishlist",
-                        icon: (
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="w-5 h-5"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            strokeWidth={1.8}
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M4.318 6.318a4.5 4.5 0 016.364 0L12 7.636l1.318-1.318a4.5 4.5 0 016.364 6.364L12 20.364 4.318 12.682a4.5 4.5 0 010-6.364z"
-                            />
-                          </svg>
-                        ),
-                        count: wishlist.length,
-                      },
+                    
                       {
                         id: "settings",
                         name: "Profile Settings",
@@ -878,146 +859,7 @@ const CustomerDashboard = () => {
           <div className="lg:col-span-3">
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4">
               {/* Orders Tab */}
-              {activeTab === "orders" && (
-                <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-xl font-semibold text-gray-900">
-                      Order History
-                    </h2>
-                    {loadingData && (
-                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-emerald-600"></div>
-                    )}
-                  </div>
-
-                  {error && (
-                    <div className="bg-rose-50 border border-rose-200 text-rose-700 px-4 py-3 rounded-xl mb-4 text-sm">
-                      {error}
-                    </div>
-                  )}
-
-                  {!loadingData && orders.length === 0 ? (
-                    <div className="text-center py-12">
-                      <div className="w-20 h-20 mx-auto mb-4 bg-emerald-100 rounded-full flex items-center justify-center">
-                        <svg
-                          className="w-10 h-10 text-emerald-600"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
-                          />
-                        </svg>
-                      </div>
-                      <h4 className="text-lg font-semibold text-gray-900 mb-2">
-                        No orders yet
-                      </h4>
-                      <p className="text-gray-600 mb-6">
-                        Start shopping to see your orders here
-                      </p>
-                      <button
-                        onClick={() => navigate("/")}
-                        className="w-full sm:w-auto px-6 sm:px-8 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 transition-all duration-300 shadow-md hover:shadow-xl focus:ring-2 focus:ring-emerald-400"
-                      >
-                        Browse Products
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {orders.map((order) => (
-                        <div
-                          key={order.id}
-                          className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 border border-gray-200 rounded-xl hover:shadow-md transition-all duration-200 space-y-3 sm:space-y-0"
-                        >
-                          <div className="flex items-start sm:items-center gap-4">
-                            <div className="bg-emerald-100 p-3 rounded-lg">
-                              <svg
-                                className="w-6 h-6 text-emerald-600"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-                                />
-                              </svg>
-                            </div>
-                            <div className="flex-1">
-                              <p className="font-semibold text-gray-900">
-                                Order #{order.id.slice(-8).toUpperCase()}
-                              </p>
-                              <p className="text-sm text-gray-500">
-                                {new Date(
-                                  order.created_at,
-                                ).toLocaleDateString()}{" "}
-                                • {order.order_items?.length || 0} items
-                              </p>
-                              {order.payment_method && (
-                                <p className="text-xs text-gray-500">
-                                  Payment:{" "}
-                                  {order.payment_method === "cod"
-                                    ? "Cash on Delivery"
-                                    : order.payment_method}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-
-                          <div className="flex flex-col sm:flex-row items-center justify-between sm:justify-end gap-3 sm:gap-4 w-full sm:w-auto">
-                            <div className="flex flex-col items-end gap-2 text-center sm:text-right">
-                              <span
-                                className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(
-                                  order.status,
-                                  order.payment_status,
-                                )}`}
-                              >
-                                {order.payment_status === "failed"
-                                  ? "Payment Failed"
-                                  : order.payment_status === "pending"
-                                    ? "Payment Pending"
-                                    : order.payment_status === "cod_pending" &&
-                                        order.payment_method === "cod"
-                                      ? "COD - Confirmed"
-                                      : order.status?.charAt(0).toUpperCase() +
-                                          order.status?.slice(1) ||
-                                        "Processing"}
-                              </span>
-                              <p className="font-bold text-gray-900 text-lg">
-                                ₹
-                                {order.total_cents
-                                  ? (order.total_cents / 100).toFixed(2)
-                                  : "0.00"}
-                              </p>
-                            </div>
-
-                            <button
-                              onClick={() => setSelectedOrder(order)}
-                              className="w-full sm:w-36 px-6 py-2.5 rounded-lg text-white font-medium bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 transition-all duration-300 shadow-md hover:shadow-lg focus:ring-2 focus:ring-emerald-400"
-                            >
-                              View Details
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {selectedOrder && (
-                    <OrderDetailsModal
-                      order={selectedOrder}
-                      onClose={() => setSelectedOrder(null)}
-                      getStatusColor={getStatusColor}
-                      navigate={navigate}
-                    />
-                  )}
-                </div>
-              )}
+              {activeTab === "orders" && <OrderHistoryContent />}
 
               {/* Wishlist Tab */}
               {activeTab === "wishlist" && (

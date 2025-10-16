@@ -1,0 +1,541 @@
+import React, { useState, useEffect } from "react";
+import { useAuth } from "../context/AuthContext";
+
+const OrderHistoryContent = () => {
+  const { user } = useAuth();
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [activeFilter, setActiveFilter] = useState("all");
+
+  useEffect(() => {
+    if (user) {
+      fetchOrders();
+    }
+  }, [user]);
+
+  const fetchOrders = async () => {
+    try {
+      const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3001";
+      const token = localStorage.getItem("auth_token");
+
+      const response = await fetch(`${API_BASE}/api/orders`, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        credentials: "include",
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setOrders(data);
+      } else {
+        const errorData = await response.json();
+        setError(errorData.error || "Failed to fetch orders");
+      }
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+      setError("Failed to fetch orders");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case "confirmed":
+      case "paid":
+        return "text-emerald-600 bg-emerald-50 border-emerald-200";
+      case "pending":
+        return "text-amber-600 bg-amber-50 border-amber-200";
+      case "processing":
+        return "text-blue-600 bg-blue-50 border-blue-200";
+      case "shipped":
+        return "text-purple-600 bg-purple-50 border-purple-200";
+      case "delivered":
+        return "text-green-700 bg-green-50 border-green-200";
+      case "cancelled":
+      case "failed":
+        return "text-rose-600 bg-rose-50 border-rose-200";
+      default:
+        return "text-gray-600 bg-gray-50 border-gray-200";
+    }
+  };
+
+  const getPaymentStatusColor = (paymentStatus) => {
+    switch (paymentStatus) {
+      case "paid":
+        return "text-emerald-600 bg-emerald-50 border-emerald-200";
+      case "cod_pending":
+        return "text-orange-600 bg-orange-50 border-orange-200";
+      case "pending":
+        return "text-amber-600 bg-amber-50 border-amber-200";
+      case "failed":
+        return "text-rose-600 bg-rose-50 border-rose-200";
+      default:
+        return "text-gray-600 bg-gray-50 border-gray-200";
+    }
+  };
+
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case "delivered":
+        return (
+          <svg
+            className="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M5 13l4 4L19 7"
+            />
+          </svg>
+        );
+      case "shipped":
+        return (
+          <svg
+            className="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+            />
+          </svg>
+        );
+      case "processing":
+        return (
+          <svg
+            className="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+            />
+          </svg>
+        );
+      default:
+        return (
+          <svg
+            className="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+        );
+    }
+  };
+
+  const filteredOrders = orders.filter((order) => {
+    if (activeFilter === "all") return true;
+    return order.status === activeFilter;
+  });
+
+  const orderFilters = [
+    { key: "all", label: "All Orders", count: orders.length },
+    {
+      key: "pending",
+      label: "Pending",
+      count: orders.filter((o) => o.status === "pending").length,
+    },
+    {
+      key: "processing",
+      label: "Processing",
+      count: orders.filter((o) => o.status === "processing").length,
+    },
+    {
+      key: "shipped",
+      label: "Shipped",
+      count: orders.filter((o) => o.status === "shipped").length,
+    },
+    {
+      key: "delivered",
+      label: "Delivered",
+      count: orders.filter((o) => o.status === "delivered").length,
+    },
+    {
+      key: "cancelled",
+      label: "Cancelled",
+      count: orders.filter((o) => o.status === "cancelled").length,
+    },
+  ];
+
+  if (!user) {
+    return (
+      <div className="text-center py-12">
+        <div className="w-20 h-20 mx-auto mb-4 bg-emerald-100 rounded-full flex items-center justify-center">
+          <svg
+            className="w-10 h-10 text-emerald-600"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+            />
+          </svg>
+        </div>
+        <h1 className="text-2xl font-bold text-gray-900 mb-4">
+          Login Required
+        </h1>
+        <p className="text-gray-600 mb-6">
+          Please login to view your order history and track your orders.
+        </p>
+        <button
+          onClick={() => (window.location.href = "/login")}
+          className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white px-8 py-3 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl"
+        >
+          Login to Continue
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      {/* Header Section */}
+      <div className="mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              My Orders
+            </h1>
+            <p className="text-gray-600">
+              Track and manage all your orders in one place
+            </p>
+          </div>
+          <div className="flex items-center space-x-2 text-sm text-gray-600">
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+              />
+            </svg>
+            <span>
+              Welcome back,{" "}
+              {user.name || user.email?.split("@")[0] || "User"}!
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Filter Tabs */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 mb-6">
+        <div className="flex space-x-1 overflow-x-auto scrollbar-hide">
+          {orderFilters.map((filter) => (
+            <button
+              key={filter.key}
+              onClick={() => setActiveFilter(filter.key)}
+              className={`flex items-center space-x-2 px-4 py-2 rounded-xl whitespace-nowrap transition-all duration-200 ${
+                activeFilter === filter.key
+                  ? "bg-emerald-500 text-white shadow-md"
+                  : "text-gray-600 hover:bg-gray-100"
+              }`}
+            >
+              <span className="font-medium">{filter.label}</span>
+              <span
+                className={`text-xs px-1.5 py-0.5 rounded-full ${
+                  activeFilter === filter.key
+                    ? "bg-white/20 text-white"
+                    : "bg-gray-200 text-gray-600"
+                }`}
+              >
+                {filter.count}
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {error && (
+        <div className="mb-6 p-4 bg-rose-50 border border-rose-200 rounded-2xl">
+          <div className="flex items-center space-x-2 text-rose-600">
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            <p>{error}</p>
+          </div>
+        </div>
+      )}
+
+      {loading ? (
+        <div className="text-center py-12 bg-white rounded-2xl shadow-sm border border-gray-200">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
+          <p className="mt-4 text-gray-600">Loading your orders...</p>
+        </div>
+      ) : filteredOrders.length === 0 ? (
+        <div className="text-center py-16 bg-white rounded-2xl shadow-sm border border-gray-200">
+          <div className="mx-auto w-24 h-24 bg-emerald-100 rounded-full flex items-center justify-center mb-4">
+            <svg
+              className="w-12 h-12 text-emerald-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
+              />
+            </svg>
+          </div>
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">
+            No orders found
+          </h3>
+          <p className="text-gray-600 mb-6 max-w-md mx-auto">
+            {activeFilter === "all"
+              ? "You haven't placed any orders yet. Start shopping to see your orders here!"
+              : `No ${activeFilter} orders found.`}
+          </p>
+          <button
+            onClick={() => (window.location.href = "/")}
+            className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white px-8 py-3 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl"
+          >
+            Start Shopping
+          </button>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {filteredOrders.map((order) => (
+            <div
+              key={order.id}
+              className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-all duration-300"
+            >
+              {/* Order Header */}
+              <div className="border-b border-gray-200 p-6">
+                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                  <div className="flex items-center space-x-4">
+                    <div className="bg-emerald-100 p-3 rounded-xl">
+                      <svg
+                        className="w-6 h-6 text-emerald-600"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                        />
+                      </svg>
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        Order #{order.id.slice(-8).toUpperCase()}
+                      </h3>
+                      <p className="text-sm text-gray-600">
+                        Placed on{" "}
+                        {new Date(order.created_at).toLocaleDateString(
+                          "en-IN",
+                          {
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          },
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <span
+                      className={`inline-flex items-center space-x-1 px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(order.status)}`}
+                    >
+                      {getStatusIcon(order.status)}
+                      <span>
+                        {order.status.charAt(0).toUpperCase() +
+                          order.status.slice(1)}
+                      </span>
+                    </span>
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-medium border ${getPaymentStatusColor(order.payment_status)}`}
+                    >
+                      {order.payment_status === "cod_pending"
+                        ? "COD Pending"
+                        : order.payment_status.charAt(0).toUpperCase() +
+                          order.payment_status.slice(1)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Order Details */}
+              <div className="p-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                  <div className="bg-gray-50 rounded-xl p-4">
+                    <h4 className="font-semibold text-gray-900 mb-2 flex items-center space-x-2">
+                      <svg
+                        className="w-4 h-4 text-gray-600"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
+                        />
+                      </svg>
+                      <span>Payment Method</span>
+                    </h4>
+                    <p className="text-sm text-gray-600">
+                      {order.payment_method === "cod"
+                        ? "Cash on Delivery"
+                        : order.payment_method === "razorpay"
+                          ? "Online Payment"
+                          : order.payment_method?.toUpperCase() || "N/A"}
+                    </p>
+                  </div>
+                  <div className="bg-gray-50 rounded-xl p-4">
+                    <h4 className="font-semibold text-gray-900 mb-2 flex items-center space-x-2">
+                      <svg
+                        className="w-4 h-4 text-gray-600"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"
+                        />
+                      </svg>
+                      <span>Total Amount</span>
+                    </h4>
+                    <p className="text-xl font-bold text-emerald-600">
+                      ₹{(order.total_cents / 100).toFixed(2)}
+                    </p>
+                  </div>
+                  <div className="bg-gray-50 rounded-xl p-4">
+                    <h4 className="font-semibold text-gray-900 mb-2 flex items-center space-x-2">
+                      <svg
+                        className="w-4 h-4 text-gray-600"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M20 7l-8-4-8 4m16 0l-8 4-8-4m16 0v10l-8 4-8-4V7"
+                        />
+                      </svg>
+                      <span>Items</span>
+                    </h4>
+                    <p className="text-sm text-gray-600">
+                      {order.order_items?.length || 0} item(s)
+                    </p>
+                  </div>
+                </div>
+
+                {/* Order Items */}
+                {order.order_items && order.order_items.length > 0 && (
+                  <div className="border-t pt-6">
+                    <h4 className="font-semibold text-gray-900 mb-4">
+                      Order Items
+                    </h4>
+                    <div className="space-y-3">
+                      {order.order_items.map((item, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center justify-between p-3 bg-gray-50 rounded-xl"
+                        >
+                          <div className="flex items-center space-x-3">
+                            <div className="w-12 h-12 bg-white rounded-lg border flex items-center justify-center">
+                              {item.image_url ? (
+                                <img
+                                  src={item.image_url}
+                                  alt={item.title}
+                                  className="w-10 h-10 object-cover rounded"
+                                />
+                              ) : (
+                                <svg
+                                  className="w-6 h-6 text-gray-400"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth="2"
+                                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                                  />
+                                </svg>
+                              )}
+                            </div>
+                            <div>
+                              <p className="font-medium text-gray-900">
+                                {item.title}
+                              </p>
+                              <p className="text-sm text-gray-600">
+                                Qty: {item.quantity} × ₹
+                                {(item.unit_price_cents / 100).toFixed(2)}
+                              </p>
+                            </div>
+                          </div>
+                          <p className="font-semibold text-gray-900">
+                            ₹{(item.total_cents / 100).toFixed(2)}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default OrderHistoryContent;
