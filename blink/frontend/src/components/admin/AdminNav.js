@@ -145,7 +145,7 @@ const AdminNav = () => {
           </Link>
 
           {/* Categories */}
-          {/* <Link 
+          <Link 
             to="/admin/categories" 
             onClick={closeSidebar}
             className="flex items-center px-3 py-2 text-gray-700 rounded-md hover:bg-blue-50 hover:text-blue-700 transition-colors"
@@ -154,7 +154,7 @@ const AdminNav = () => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
             </svg>
             Categories
-          </Link> */}
+          </Link>
 
           {/* Products */}
           <Link
