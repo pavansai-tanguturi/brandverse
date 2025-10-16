@@ -447,8 +447,7 @@ const CustomerDashboard = () => {
       localStorage.removeItem("auth_token");
       await logout();
       navigate("/");
-    } catch (error) {
-    }
+    } catch (error) {}
   };
 
   const getStatusColor = (status, paymentStatus) => {

@@ -35,7 +35,7 @@ function AdminCategories() {
         credentials: "include",
         headers: getAuthHeaders(),
       });
-      
+
       if (!res.ok) {
         if (res.status === 401) {
           navigate("/login");
@@ -43,10 +43,10 @@ function AdminCategories() {
         }
         throw new Error(`HTTP error! status: ${res.status}`);
       }
-      
+
       const data = await res.json();
       // Filter out the "All Products" category for admin management
-      const managedCategories = data.filter(cat => cat.id !== 'all');
+      const managedCategories = data.filter((cat) => cat.id !== "all");
       setCategories(managedCategories);
     } catch (err) {
       console.error("Error fetching categories:", err);
@@ -59,7 +59,7 @@ function AdminCategories() {
     const { name, value, files } = e.target;
     setError("");
     setSuccess("");
-    
+
     if (name === "image") {
       setForm((f) => ({ ...f, image: files[0] }));
     } else if (name === "name") {
@@ -96,38 +96,44 @@ function AdminCategories() {
 
     try {
       let imageUrl = form.image;
-      
+
       // Upload image if it's a file
       if (form.image && typeof form.image !== "string") {
         try {
           const formData = new FormData();
           formData.append("image", form.image);
-          
+
           const token = localStorage.getItem("auth_token");
           const headers = {};
           if (token) {
             headers.Authorization = `Bearer ${token}`;
           }
-          
+
           const imgRes = await fetch(`${API_BASE_URL}/api/upload`, {
             method: "POST",
             credentials: "include",
             headers,
             body: formData,
           });
-          
+
           if (!imgRes.ok) {
-            const errorData = await imgRes.json().catch(() => ({ error: 'Upload failed' }));
+            const errorData = await imgRes
+              .json()
+              .catch(() => ({ error: "Upload failed" }));
             console.error("Upload failed:", errorData);
-            throw new Error(errorData.error || `Upload failed with status ${imgRes.status}`);
+            throw new Error(
+              errorData.error || `Upload failed with status ${imgRes.status}`,
+            );
           }
-          
+
           const imgData = await imgRes.json();
           imageUrl = imgData.imageUrl || imgData.url || imgData.filePath;
         } catch (uploadError) {
           console.error("Image upload error:", uploadError);
           // Continue without image if upload fails
-          setError(`Warning: ${uploadError.message}. Category will be created without image.`);
+          setError(
+            `Warning: ${uploadError.message}. Category will be created without image.`,
+          );
           imageUrl = null;
         }
       }
@@ -140,7 +146,7 @@ function AdminCategories() {
 
       let method = "POST";
       let url = `${API_BASE_URL}/api/categories`;
-      
+
       if (editing) {
         method = "PATCH";
         url = `${API_BASE_URL}/api/categories/${editing}`;
@@ -165,12 +171,15 @@ function AdminCategories() {
 
       setForm({ name: "", slug: "", image: null });
       setEditing(null);
-      setSuccess(editing ? "Category updated successfully!" : "Category created successfully!");
+      setSuccess(
+        editing
+          ? "Category updated successfully!"
+          : "Category created successfully!",
+      );
       fetchCategories();
-      
+
       // Clear success message after 3 seconds
       setTimeout(() => setSuccess(""), 3000);
-      
     } catch (err) {
       console.error("Error saving category:", err);
       setError(err.message || "Failed to save category. Please try again.");
@@ -183,9 +192,9 @@ function AdminCategories() {
     setEditing(cat.id);
     setError("");
     setSuccess("");
-    
+
     // Scroll to form
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleCancelEdit = () => {
@@ -196,16 +205,17 @@ function AdminCategories() {
   };
 
   const handleDelete = async (id) => {
-    const category = categories.find(cat => cat.id === id);
-    const confirmMessage = category?.count > 0 
-      ? `This category has ${category.count} products. Are you sure you want to delete "${category.name}"?`
-      : `Are you sure you want to delete "${category?.name}"?`;
-      
+    const category = categories.find((cat) => cat.id === id);
+    const confirmMessage =
+      category?.count > 0
+        ? `This category has ${category.count} products. Are you sure you want to delete "${category.name}"?`
+        : `Are you sure you want to delete "${category?.name}"?`;
+
     if (!window.confirm(confirmMessage)) return;
-    
+
     setError("");
     setSuccess("");
-    
+
     try {
       const response = await fetch(`${API_BASE_URL}/api/categories/${id}`, {
         method: "DELETE",
@@ -230,10 +240,9 @@ function AdminCategories() {
 
       setSuccess("Category deleted successfully!");
       fetchCategories();
-      
+
       // Clear success message after 3 seconds
       setTimeout(() => setSuccess(""), 3000);
-      
     } catch (err) {
       console.error("Error deleting category:", err);
       setError(err.message || "Failed to delete category. Please try again.");
@@ -245,7 +254,9 @@ function AdminCategories() {
       <AdminNav />
       <div className="px-4 py-10 max-w-6xl mx-auto mt-24">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">Manage Categories</h2>
+          <h2 className="text-2xl font-bold text-gray-900">
+            Manage Categories
+          </h2>
           <div className="text-sm text-gray-600">
             Total Categories: {categories.length}
           </div>
@@ -273,7 +284,7 @@ function AdminCategories() {
                   disabled={submitting}
                 />
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   URL Slug *
@@ -308,9 +319,9 @@ function AdminCategories() {
               />
               {form.image && typeof form.image === "string" && (
                 <div className="mt-2">
-                  <img 
-                    src={form.image} 
-                    alt="Current category" 
+                  <img
+                    src={form.image}
+                    alt="Current category"
                     className="w-20 h-20 object-cover rounded-lg border border-gray-200"
                   />
                 </div>
@@ -347,7 +358,7 @@ function AdminCategories() {
                 )}
                 {editing ? "Update Category" : "Add Category"}
               </button>
-              
+
               {editing && (
                 <button
                   type="button"
@@ -365,19 +376,39 @@ function AdminCategories() {
           {error && (
             <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
               <div className="flex items-center gap-2 text-red-700 text-sm">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
                 </svg>
                 {error}
               </div>
             </div>
           )}
-          
+
           {success && (
             <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
               <div className="flex items-center gap-2 text-green-700 text-sm">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
                 </svg>
                 {success}
               </div>
@@ -395,12 +426,26 @@ function AdminCategories() {
         ) : categories.length === 0 ? (
           <div className="text-center py-12 bg-white rounded-xl border border-gray-200">
             <div className="w-20 h-20 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
-              <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+              <svg
+                className="w-10 h-10 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+                />
               </svg>
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">No Categories Yet</h3>
-            <p className="text-gray-600 mb-4">Start by creating your first category above.</p>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              No Categories Yet
+            </h3>
+            <p className="text-gray-600 mb-4">
+              Start by creating your first category above.
+            </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -408,7 +453,9 @@ function AdminCategories() {
               <div
                 key={cat.id}
                 className={`bg-white rounded-xl border-2 transition-all duration-200 hover:shadow-lg flex flex-col min-h-[380px] p-6 ${
-                  editing === cat.id ? 'border-emerald-400 shadow-lg' : 'border-gray-200 hover:border-gray-300'
+                  editing === cat.id
+                    ? "border-emerald-400 shadow-lg"
+                    : "border-gray-200 hover:border-gray-300"
                 }`}
               >
                 {/* Image */}
@@ -421,8 +468,18 @@ function AdminCategories() {
                     />
                   ) : (
                     <div className="text-gray-400 text-center">
-                      <svg className="w-12 h-12 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      <svg
+                        className="w-12 h-12 mx-auto mb-2"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                        />
                       </svg>
                       <span className="text-sm">No image</span>
                     </div>
@@ -434,24 +491,28 @@ function AdminCategories() {
                   <h3 className="font-bold text-lg text-gray-900 mb-2 text-center">
                     {cat.name}
                   </h3>
-                  
+
                   <div className="space-y-2 mb-4 flex-1">
                     <div className="text-center">
                       <span className="inline-block bg-gray-100 px-3 py-1 rounded-full text-sm text-gray-600">
                         /{cat.slug}
                       </span>
                     </div>
-                    
+
                     {cat.count !== undefined && (
                       <div className="text-center">
-                        <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
-                          cat.count > 0 ? 'bg-emerald-100 text-emerald-600' : 'bg-gray-100 text-gray-500'
-                        }`}>
-                          {cat.count} {cat.count === 1 ? 'product' : 'products'}
+                        <span
+                          className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
+                            cat.count > 0
+                              ? "bg-emerald-100 text-emerald-600"
+                              : "bg-gray-100 text-gray-500"
+                          }`}
+                        >
+                          {cat.count} {cat.count === 1 ? "product" : "products"}
                         </span>
                       </div>
                     )}
-                    
+
                     {cat.created_at && (
                       <div className="text-center text-xs text-gray-500">
                         Created {new Date(cat.created_at).toLocaleDateString()}
@@ -464,13 +525,13 @@ function AdminCategories() {
                     <button
                       onClick={() => handleEdit(cat)}
                       className={`flex-1 px-4 py-2 rounded-lg font-semibold transition-all duration-200 ${
-                        editing === cat.id 
-                          ? 'bg-emerald-600 hover:bg-emerald-700 text-white' 
-                          : 'bg-emerald-500 hover:bg-emerald-600 text-white'
+                        editing === cat.id
+                          ? "bg-emerald-600 hover:bg-emerald-700 text-white"
+                          : "bg-emerald-500 hover:bg-emerald-600 text-white"
                       }`}
                       disabled={submitting}
                     >
-                      {editing === cat.id ? 'Editing...' : 'Edit'}
+                      {editing === cat.id ? "Editing..." : "Edit"}
                     </button>
                     <button
                       onClick={() => handleDelete(cat.id)}

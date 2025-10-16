@@ -292,7 +292,6 @@ const AdminDashboard = () => {
 
   // Single effect to handle data fetching
   useEffect(() => {
-
     // Only fetch if auth is complete and user is admin
     if (!authLoading) {
       if (user && user.isAdmin) {
