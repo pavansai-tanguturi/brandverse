@@ -206,16 +206,22 @@ function Home() {
     };
   }, []);
 
-  const groupCount = Math.max(1, Math.ceil(localCategoryBanners.length / groupSize));
-  const groupCount2 = Math.max(1, Math.ceil(localCategoryBanners2.length / groupSize));
+  const groupCount = Math.max(
+    1,
+    Math.ceil(localCategoryBanners.length / groupSize),
+  );
+  const groupCount2 = Math.max(
+    1,
+    Math.ceil(localCategoryBanners2.length / groupSize),
+  );
 
   // Ensure indexes stay in range when group counts change
   useEffect(() => {
-    setLocalBannerIndex((prev) => (prev % groupCount));
+    setLocalBannerIndex((prev) => prev % groupCount);
   }, [groupCount]);
 
   useEffect(() => {
-    setLocalBannerIndex2((prev) => (prev % groupCount2));
+    setLocalBannerIndex2((prev) => prev % groupCount2);
   }, [groupCount2]);
 
   const handlePrevLocalBanner = () => {
@@ -255,7 +261,10 @@ function Home() {
     if (localBannerTimerRef2.current)
       clearInterval(localBannerTimerRef2.current);
     if (!isBannerPaused2) {
-      console.debug("carousel2: starting autoplay", { groupCount2, isBannerPaused2 });
+      console.debug("carousel2: starting autoplay", {
+        groupCount2,
+        isBannerPaused2,
+      });
       localBannerTimerRef2.current = setInterval(() => {
         setLocalBannerIndex2((prev) => {
           const next = (prev + 1) % groupCount2;
@@ -395,62 +404,62 @@ function Home() {
       <ModernNavbar showSearch={true} />
 
       {/* Delivery Status Strip */}
-   {!checkingDelivery && showDeliveryStatus && (
-  <div
-    className={`mx-2 sm:mx-4 my-2 px-2 sm:px-3 py-2 rounded-lg text-xs sm:text-sm transition-all duration-500 ${
-      deliveryAvailable
-        ? "bg-green-100 text-green-800"
-        : "bg-yellow-100 text-yellow-800"
-    }`}
-  >
-    <div className="flex flex-wrap items-center justify-between gap-2">
-      {/* Left side: location + status */}
-      <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink min-w-0">
-        <svg
-          className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
+      {!checkingDelivery && showDeliveryStatus && (
+        <div
+          className={`mx-2 sm:mx-4 my-2 px-2 sm:px-3 py-2 rounded-lg text-xs sm:text-sm transition-all duration-500 ${
+            deliveryAvailable
+              ? "bg-green-100 text-green-800"
+              : "bg-yellow-100 text-yellow-800"
+          }`}
         >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M17.657 16.657L13.414 20.9a2 2 0 01-2.828 0l-4.243-4.243a8 8 0 1111.314 0z"
-          />
-        </svg>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            {/* Left side: location + status */}
+            <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink min-w-0">
+              <svg
+                className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M17.657 16.657L13.414 20.9a2 2 0 01-2.828 0l-4.243-4.243a8 8 0 1111.314 0z"
+                />
+              </svg>
 
-        {/* Responsive text truncation */}
-        <span className="truncate max-w-[160px] sm:max-w-xs">
-          {locationName} •{" "}
-          {deliveryAvailable
-            ? "Delivery Available"
-            : "Delivery Unavailable"}
-        </span>
-      </div>
+              {/* Responsive text truncation */}
+              <span className="truncate max-w-[160px] sm:max-w-xs">
+                {locationName} •{" "}
+                {deliveryAvailable
+                  ? "Delivery Available"
+                  : "Delivery Unavailable"}
+              </span>
+            </div>
 
-      {/* Close button */}
-      <button
-        onClick={() => setShowDeliveryStatus(false)}
-        className="p-1 hover:bg-black/10 rounded-full transition-colors"
-      >
-        <svg
-          className="w-3 h-3 sm:w-4 sm:h-4"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M6 18L18 6M6 6l12 12"
-          />
-        </svg>
-      </button>
-    </div>
-  </div>
-)}
+            {/* Close button */}
+            <button
+              onClick={() => setShowDeliveryStatus(false)}
+              className="p-1 hover:bg-black/10 rounded-full transition-colors"
+            >
+              <svg
+                className="w-3 h-3 sm:w-4 sm:h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Category Navigation */}
       <div className="bg-white py-4 sm:py-6 border-b border-gray-100">
@@ -542,7 +551,7 @@ function Home() {
           <div className="relative w-full bg-white min-h-[180px] sm:min-h-[220px] md:min-h-[240px]">
             {" "}
             {/* Changed bg-gray-50 to bg-white for a cleaner look */}
-              {(() => {
+            {(() => {
               // Group banners using the responsive groupSize state (1/2/3)
               const groups = [];
               for (let i = 0; i < localCategoryBanners.length; i += groupSize) {
@@ -644,12 +653,18 @@ function Home() {
           onTouchStart={(e) => {
             setIsBannerPaused2(true);
             touchStartXRef2.current = e.touches?.[0]?.clientX ?? null;
-            console.debug('carousel2 touchstart', { x: touchStartXRef2.current });
+            console.debug("carousel2 touchstart", {
+              x: touchStartXRef2.current,
+            });
           }}
           onTouchEnd={(e) => {
             const endX = e.changedTouches?.[0]?.clientX ?? null;
             const startX = touchStartXRef2.current;
-            console.debug('carousel2 touchend', { startX, endX, delta: endX != null && startX != null ? endX - startX : null });
+            console.debug("carousel2 touchend", {
+              startX,
+              endX,
+              delta: endX != null && startX != null ? endX - startX : null,
+            });
             if (startX != null && endX != null) {
               const delta = endX - startX;
               if (Math.abs(delta) > SWIPE_THRESHOLD) {
@@ -665,10 +680,14 @@ function Home() {
           <div className="relative w-full bg-white min-h-[180px] sm:min-h-[220px] md:min-h-[240px]">
             {" "}
             {/* Changed bg-gray-50 to bg-white for a cleaner look */}
-              {(() => {
+            {(() => {
               // Group banners using the responsive groupSize state (1/2/3)
               const groups2 = [];
-              for (let i = 0; i < localCategoryBanners2.length; i += groupSize) {
+              for (
+                let i = 0;
+                i < localCategoryBanners2.length;
+                i += groupSize
+              ) {
                 groups2.push(localCategoryBanners2.slice(i, i + groupSize));
               }
               return groups2.map((group, groupIndex) => (
@@ -761,27 +780,28 @@ function Home() {
 
       {/* Spotlight Section */}
       <div className="bg-white py-4 border-t border-gray-200">
-  <div className="max-w-7xl mx-auto px-4">
-    <h2 className="text-xl font-bold text-gray-900 mb-3">Quick Filters</h2>
+        <div className="max-w-7xl mx-auto px-4">
+          <h2 className="text-xl font-bold text-gray-900 mb-3">
+            Quick Filters
+          </h2>
 
-    <div className="flex gap-3 overflow-x-auto scrollbar-hide">
-      {spotlightItems.map((item) => (
-        <button
-          key={item.image}
-          onClick={() => navigate(item.link)}
-          className="flex items-center justify-center w-24 h-24 sm:w-28 sm:h-28 flex-shrink-0 bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md hover:bg-gray-50 transition-all duration-200"
-        >
-          <img
-            src={`/spotlights/${item.image}`}
-            alt={item.label || "Quick Filter"}
-            className="w-full h-full object-cover rounded-xl"
-          /> 
-        </button>
-      ))}
-    </div>
-  </div>
-</div>
-
+          <div className="flex gap-3 overflow-x-auto scrollbar-hide">
+            {spotlightItems.map((item) => (
+              <button
+                key={item.image}
+                onClick={() => navigate(item.link)}
+                className="flex items-center justify-center w-24 h-24 sm:w-28 sm:h-28 flex-shrink-0 bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md hover:bg-gray-50 transition-all duration-200"
+              >
+                <img
+                  src={`/spotlights/${item.image}`}
+                  alt={item.label || "Quick Filter"}
+                  className="w-full h-full object-cover rounded-xl"
+                />
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
 
       {/* Category-Based Product Sections */}
       <div className="pb-20 lg:pb-0">
@@ -909,12 +929,11 @@ function Home() {
 
       <MobileBottomNav />
       {/* Home Specials - two prominent image cards */}
-    <div className="bg-transparent mt-6" style={{ marginTop: '-90px' }}>
+      <div className="bg-transparent mt-6" style={{ marginTop: "-90px" }}>
         <div className="max-w-7xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between mb-4">
-           
             <button
-              onClick={() => navigate('/products')}
+              onClick={() => navigate("/products")}
               className="hidden sm:inline-flex items-center gap-2 text-sm text-emerald-600 hover:text-emerald-700"
             >
               Browse all
@@ -925,7 +944,12 @@ function Home() {
                 stroke="currentColor"
                 viewBox="0 0 24 24"
               >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 5l7 7-7 7"
+                />
               </svg>
             </button>
           </div>
@@ -933,7 +957,7 @@ function Home() {
           <div className="grid grid-cols-2 gap-4">
             <div
               role="button"
-              onClick={() => navigate('/products?category=pantry')}
+              onClick={() => navigate("/products?category=pantry")}
               className="relative h-[200px] sm:h-[250px] md:h-[300px] lg:h-[400px] rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-transform transform hover:-translate-y-1 cursor-pointer bg-gray-50"
             >
               <img
@@ -941,19 +965,23 @@ function Home() {
                 alt="Pantry Specials"
                 className="w-full h-full object-cover"
                 loading="lazy"
-                onError={(e) => (e.target.src = '/logo192.png')}
+                onError={(e) => (e.target.src = "/logo192.png")}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent flex items-end p-4">
                 <div className="hidden sm:block">
-                  <h3 className="text-white font-semibold text-lg">Pantry Essentials</h3>
-                  <p className="text-white text-xs opacity-90">Staples and bulk buys for your kitchen</p>
+                  <h3 className="text-white font-semibold text-lg">
+                    Pantry Essentials
+                  </h3>
+                  <p className="text-white text-xs opacity-90">
+                    Staples and bulk buys for your kitchen
+                  </p>
                 </div>
               </div>
             </div>
 
             <div
               role="button"
-              onClick={() => navigate('/products?category=breakfast')}
+              onClick={() => navigate("/products?category=breakfast")}
               className="relative h-[200px] sm:h-[250px] md:h-[300px] lg:h-[400px] rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-transform transform hover:-translate-y-1 cursor-pointer bg-gray-50"
             >
               <img
@@ -961,12 +989,16 @@ function Home() {
                 alt="Breakfast Specials"
                 className="w-full h-full object-cover"
                 loading="lazy"
-                onError={(e) => (e.target.src = '/logo192.png')}
+                onError={(e) => (e.target.src = "/logo192.png")}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent flex items-end p-4">
                 <div className="hidden sm:block">
-                  <h3 className="text-white font-semibold text-lg">Breakfast Picks</h3>
-                  <p className="text-white text-xs opacity-90">Kickstart your day with healthy choices</p>
+                  <h3 className="text-white font-semibold text-lg">
+                    Breakfast Picks
+                  </h3>
+                  <p className="text-white text-xs opacity-90">
+                    Kickstart your day with healthy choices
+                  </p>
                 </div>
               </div>
             </div>

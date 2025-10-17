@@ -9,7 +9,12 @@ import MobileBottomNav from "../components/MobileBottomNav";
 const Wishlist = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { items: wishlistItems, removeFromWishlist, isLoading, fetchWishlist } = useWishlist();
+  const {
+    items: wishlistItems,
+    removeFromWishlist,
+    isLoading,
+    fetchWishlist,
+  } = useWishlist();
   const { addToCart } = useCart();
   const [loadingItemId, setLoadingItemId] = useState(null);
 
@@ -71,17 +76,18 @@ const Wishlist = () => {
   return (
     <div className="min-h-screen bg-gray-50 pb-16 lg:pb-0">
       <ModernNavbar />
-      
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">My Wishlist</h1>
             <p className="text-gray-600 mt-2">
-              {wishlistItems?.length || 0} {(wishlistItems?.length || 0) === 1 ? 'item' : 'items'} saved
+              {wishlistItems?.length || 0}{" "}
+              {(wishlistItems?.length || 0) === 1 ? "item" : "items"} saved
             </p>
           </div>
-          
+
           {!user && (
             <div className="text-center bg-emerald-50 border border-emerald-200 rounded-lg p-4">
               <p className="text-emerald-800 text-sm">
@@ -98,7 +104,7 @@ const Wishlist = () => {
         </div>
 
         {/* Wishlist Items */}
-        {(!wishlistItems || wishlistItems.length === 0) ? (
+        {!wishlistItems || wishlistItems.length === 0 ? (
           <div className="text-center py-16">
             <div className="w-24 h-24 mx-auto mb-6 bg-gray-100 rounded-full flex items-center justify-center">
               <svg
@@ -119,7 +125,8 @@ const Wishlist = () => {
               Your wishlist is empty
             </h2>
             <p className="text-gray-600 mb-8 max-w-md mx-auto">
-              Start adding items to your wishlist by clicking the heart icon on products you love!
+              Start adding items to your wishlist by clicking the heart icon on
+              products you love!
             </p>
             <button
               onClick={() => navigate("/products")}
@@ -150,7 +157,7 @@ const Wishlist = () => {
                       className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-200 cursor-pointer"
                       onClick={() => handleProductClick(item.id)}
                     />
-                    
+
                     {hasDiscount && (
                       <div className="absolute top-3 left-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white px-2 py-1 rounded text-xs font-bold">
                         {item.discount_percent}% OFF
@@ -185,7 +192,7 @@ const Wishlist = () => {
                         {item.stock_quantity} left
                       </div>
                     )}
-                    
+
                     {item.stock_quantity <= 0 && (
                       <div className="absolute bottom-3 right-3 bg-rose-500 text-white px-2 py-1 rounded text-xs font-bold">
                         Out of Stock

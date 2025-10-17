@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 import ModernNavbar from "../components/ModernNavbar";
 import MobileBottomNav from "../components/MobileBottomNav";
 
 const OrderHistoryPage = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -229,6 +231,33 @@ const OrderHistoryPage = () => {
   return (
     <>
       <ModernNavbar showSearch={true} />
+
+      {/* Back Navigation */}
+      <div className="bg-gray-50 border-b border-gray-200">
+        <div className="container mx-auto px-3 sm:px-4 py-3">
+          <button
+            onClick={() => navigate(-1)}
+            className="flex items-center gap-2 text-gray-700 hover:text-blue-600 transition-colors"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="w-5 h-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M15 19l-7-7 7-7"
+              />
+            </svg>
+            <span className="text-sm font-medium">Back</span>
+          </button>
+        </div>
+      </div>
+
       <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50 pt-8 px-4 pb-20">
         <div className="max-w-6xl mx-auto">
           {/* Header Section */}
@@ -242,69 +271,73 @@ const OrderHistoryPage = () => {
                   Track and manage all your orders in one place
                 </p>
               </div>
-            
             </div>
           </div>
 
           {/* Filter Tabs */}
-         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 mb-6 relative">
-  <div className="flex justify-between items-center">
-    <h3 className="text-gray-800 font-semibold">Filter Orders</h3>
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 mb-6 relative">
+            <div className="flex justify-between items-center">
+              <h3 className="text-gray-800 font-semibold">Filter Orders</h3>
 
-    {/* Dropdown Toggle */}
-    <button
-      onClick={() => setIsOpen(!isOpen)}
-      className="flex items-center gap-2 px-4 py-2 bg-emerald-500 text-white rounded-xl hover:bg-emerald-600 transition-all duration-200"
-    >
-      <span>
-        {orderFilters.find((f) => f.key === activeFilter)?.label || "Select Filter"}
-      </span>
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        className={`h-4 w-4 transition-transform duration-300 ${
-          isOpen ? "rotate-180" : ""
-        }`}
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-      >
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-      </svg>
-    </button>
-  </div>
+              {/* Dropdown Toggle */}
+              <button
+                onClick={() => setIsOpen(!isOpen)}
+                className="flex items-center gap-2 px-4 py-2 bg-emerald-500 text-white rounded-xl hover:bg-emerald-600 transition-all duration-200"
+              >
+                <span>
+                  {orderFilters.find((f) => f.key === activeFilter)?.label ||
+                    "Select Filter"}
+                </span>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className={`h-4 w-4 transition-transform duration-300 ${
+                    isOpen ? "rotate-180" : ""
+                  }`}
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </button>
+            </div>
 
-  {/* Dropdown Menu */}
-  {isOpen && (
-    <div className="absolute right-4 mt-3 w-56 bg-white border border-gray-200 rounded-xl shadow-lg z-10 animate-fadeIn">
-      {orderFilters.map((filter) => (
-        <button
-          key={filter.key}
-          onClick={() => {
-            setActiveFilter(filter.key);
-            setIsOpen(false);
-          }}
-          className={`w-full text-left px-4 py-2 flex justify-between items-center rounded-lg transition-all duration-150 ${
-            activeFilter === filter.key
-              ? "bg-emerald-100 text-emerald-700 font-medium"
-              : "text-gray-700 hover:bg-gray-50"
-          }`}
-        >
-          <span>{filter.label}</span>
-          <span
-            className={`text-xs px-2 py-0.5 rounded-full ${
-              activeFilter === filter.key
-                ? "bg-emerald-500 text-white"
-                : "bg-gray-200 text-gray-600"
-            }`}
-          >
-            {filter.count}
-          </span>
-        </button>
-      ))}
-    </div>
-  )}
-</div>
-
+            {/* Dropdown Menu */}
+            {isOpen && (
+              <div className="absolute right-4 mt-3 w-56 bg-white border border-gray-200 rounded-xl shadow-lg z-10 animate-fadeIn">
+                {orderFilters.map((filter) => (
+                  <button
+                    key={filter.key}
+                    onClick={() => {
+                      setActiveFilter(filter.key);
+                      setIsOpen(false);
+                    }}
+                    className={`w-full text-left px-4 py-2 flex justify-between items-center rounded-lg transition-all duration-150 ${
+                      activeFilter === filter.key
+                        ? "bg-emerald-100 text-emerald-700 font-medium"
+                        : "text-gray-700 hover:bg-gray-50"
+                    }`}
+                  >
+                    <span>{filter.label}</span>
+                    <span
+                      className={`text-xs px-2 py-0.5 rounded-full ${
+                        activeFilter === filter.key
+                          ? "bg-emerald-500 text-white"
+                          : "bg-gray-200 text-gray-600"
+                      }`}
+                    >
+                      {filter.count}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
 
           {error && (
             <div className="mb-6 p-4 bg-rose-50 border border-rose-200 rounded-2xl">

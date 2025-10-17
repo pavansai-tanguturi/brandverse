@@ -416,33 +416,40 @@ const CheckoutPage = () => {
 
       {/* Progress Steps bar placed under the sticky navbar so it doesn't overlap content */}
       <div className="bg-white border-b border-gray-200 sticky top-16 z-30">
-  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div className="flex justify-center items-center space-x-3 overflow-x-auto py-3">
-      {[{ num: 1, label: "Bag" }, { num: 2, label: "Address" }, { num: 3, label: "Payment" }].map((item, idx) => (
-        <React.Fragment key={item.num}>
-          <div className="flex items-center">
-            <div
-              className={`flex items-center space-x-2 px-3 py-1 rounded-full transition-all ${
-                step >= item.num
-                  ? "bg-emerald-100 text-emerald-700 border border-emerald-200"
-                  : "bg-gray-50 text-gray-400 border border-gray-200"
-              }`}
-            >
-              <span className={`text-sm font-bold ${step === item.num ? "scale-110" : ""}`}>
-                {item.num}
-              </span>
-              <span className="text-xs font-medium">{item.label}</span>
-            </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-center items-center space-x-3 overflow-x-auto py-3">
+            {[
+              { num: 1, label: "Bag" },
+              { num: 2, label: "Address" },
+              { num: 3, label: "Payment" },
+            ].map((item, idx) => (
+              <React.Fragment key={item.num}>
+                <div className="flex items-center">
+                  <div
+                    className={`flex items-center space-x-2 px-3 py-1 rounded-full transition-all ${
+                      step >= item.num
+                        ? "bg-emerald-100 text-emerald-700 border border-emerald-200"
+                        : "bg-gray-50 text-gray-400 border border-gray-200"
+                    }`}
+                  >
+                    <span
+                      className={`text-sm font-bold ${step === item.num ? "scale-110" : ""}`}
+                    >
+                      {item.num}
+                    </span>
+                    <span className="text-xs font-medium">{item.label}</span>
+                  </div>
+                </div>
+                {idx < 2 && (
+                  <div
+                    className={`w-8 md:w-12 h-0.5 ${step > item.num ? "bg-emerald-500" : "bg-gray-200"}`}
+                  />
+                )}
+              </React.Fragment>
+            ))}
           </div>
-          {idx < 2 && (
-            <div className={`w-8 md:w-12 h-0.5 ${step > item.num ? "bg-emerald-500" : "bg-gray-200"}`} />
-          )}
-        </React.Fragment>
-      ))}
-    </div>
-  </div>
-</div>
-
+        </div>
+      </div>
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-24">
@@ -770,23 +777,22 @@ const CheckoutPage = () => {
                       </div>
                     )}
                     <div className="mt-6 flex justify-between">
-                     <div className="flex flex-row gap-3 mt-4 flex-wrap">
-  <button
-    onClick={() => setStep(1)}
-    className="flex-1 min-w-[120px] px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-all text-sm sm:text-base"
-  >
-    Back to Bag
-  </button>
+                      <div className="flex flex-row gap-3 mt-4 flex-wrap">
+                        <button
+                          onClick={() => setStep(1)}
+                          className="flex-1 min-w-[120px] px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-all text-sm sm:text-base"
+                        >
+                          Back to Bag
+                        </button>
 
-  <button
-    onClick={() => setStep(3)}
-    disabled={!selectedAddress}
-    className="flex-1 min-w-[150px] bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-lg transition-all shadow-sm hover:shadow-md font-medium disabled:opacity-50 text-sm sm:text-base"
-  >
-    Continue to Payment
-  </button>
-</div>
-
+                        <button
+                          onClick={() => setStep(3)}
+                          disabled={!selectedAddress}
+                          className="flex-1 min-w-[150px] bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-lg transition-all shadow-sm hover:shadow-md font-medium disabled:opacity-50 text-sm sm:text-base"
+                        >
+                          Continue to Payment
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ) : (
@@ -1009,7 +1015,6 @@ const CheckoutPage = () => {
                           </p>
                         </div>
                       </div>
-                   
                     </div>
                   </div>
                   {/* UPI Payment Option - centered and visually merged with page bg when unselected */}

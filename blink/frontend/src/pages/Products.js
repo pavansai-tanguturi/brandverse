@@ -31,7 +31,9 @@ function Products() {
   const [filteredProducts, setFilteredProducts] = useState([]);
 
   // Search and filters
-  const [searchQuery, setSearchQuery] = useState(searchParams.get("search") || searchParams.get("q") || "");
+  const [searchQuery, setSearchQuery] = useState(
+    searchParams.get("search") || searchParams.get("q") || "",
+  );
   const [selectedCategory, setSelectedCategory] = useState(
     searchParams.get("category") || "all",
   );
@@ -87,14 +89,14 @@ function Products() {
       setLoading(true);
       const API_BASE_URL =
         import.meta.env.VITE_API_BASE || "http://localhost:3001";
-      
+
       let url = `${API_BASE_URL}/api/products`;
-      
+
       // Use search endpoint if there's a search term
       if (searchTerm && searchTerm.trim()) {
         setIsSearching(true);
         url = `${API_BASE_URL}/api/products/search?q=${encodeURIComponent(searchTerm.trim())}`;
-        
+
         const response = await fetch(url);
         if (response.ok) {
           const data = await response.json();
@@ -309,9 +311,10 @@ function Products() {
   // Get location and load initial data
   useEffect(() => {
     fetchCategories();
-    
+
     // Check if there's a search query in URL
-    const urlSearchQuery = searchParams.get("search") || searchParams.get("q") || "";
+    const urlSearchQuery =
+      searchParams.get("search") || searchParams.get("q") || "";
     if (urlSearchQuery.trim()) {
       setSearchQuery(urlSearchQuery);
       fetchProducts(urlSearchQuery);
@@ -797,14 +800,17 @@ function Products() {
             {searchSuggestions && (
               <div className="mb-4 p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
                 <p className="text-sm text-emerald-700">
-                  Did you mean: <span className="font-semibold cursor-pointer underline" 
+                  Did you mean:{" "}
+                  <span
+                    className="font-semibold cursor-pointer underline"
                     onClick={() => {
                       setSearchQuery(searchSuggestions);
                       fetchProducts(searchSuggestions);
                     }}
                   >
                     {searchSuggestions}
-                  </span>?
+                  </span>
+                  ?
                 </p>
               </div>
             )}
@@ -817,9 +823,13 @@ function Products() {
                     "Searching..."
                   ) : (
                     <>
-                      Search results for "<span className="font-semibold">{searchQuery}</span>" 
+                      Search results for "
+                      <span className="font-semibold">{searchQuery}</span>"
                       {currentProducts.length > 0 && (
-                        <span className="text-emerald-600"> - {filteredProducts.length} products found</span>
+                        <span className="text-emerald-600">
+                          {" "}
+                          - {filteredProducts.length} products found
+                        </span>
                       )}
                     </>
                   )}
@@ -832,7 +842,9 @@ function Products() {
               <div className="flex flex-col items-center justify-center py-20">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
                 <p className="mt-3 text-gray-600 text-sm">
-                  {isSearching ? "Searching products..." : "Loading products..."}
+                  {isSearching
+                    ? "Searching products..."
+                    : "Loading products..."}
                 </p>
               </div>
             ) : currentProducts.length > 0 ? (

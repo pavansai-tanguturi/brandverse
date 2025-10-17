@@ -8,7 +8,6 @@ const MobileBottomNav = () => {
   const location = useLocation();
   const { user } = useAuth();
   const { items, itemCount } = useCart();
-  
 
   const navItems = [
     {
@@ -170,7 +169,10 @@ const MobileBottomNav = () => {
   }, []);
 
   return (
-    <div ref={navRef} className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 lg:hidden">
+    <div
+      ref={navRef}
+      className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 lg:hidden"
+    >
       <div className="flex justify-around items-center">
         {navItems.map((item) => (
           <Link

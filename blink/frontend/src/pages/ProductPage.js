@@ -362,15 +362,15 @@ const ProductPage = () => {
                   }
                 }}
                 className={`absolute top-3 right-3 w-10 h-10 backdrop-blur-sm border rounded-full flex items-center justify-center hover:shadow-md transition-all duration-200 z-20 ${
-                  isInWishlist(product.id) 
-                    ? "bg-red-50 border-red-200 hover:bg-red-100" 
+                  isInWishlist(product.id)
+                    ? "bg-red-50 border-red-200 hover:bg-red-100"
                     : "bg-white/90 border-gray-200 hover:bg-white"
                 }`}
               >
                 <svg
                   className={`w-5 h-5 transition-all duration-200 ${
-                    isInWishlist(product.id) 
-                      ? "text-red-500 fill-red-500 scale-110" 
+                    isInWishlist(product.id)
+                      ? "text-red-500 fill-red-500 scale-110"
                       : "text-gray-400 hover:text-red-400"
                   }`}
                   fill={isInWishlist(product.id) ? "currentColor" : "none"}
