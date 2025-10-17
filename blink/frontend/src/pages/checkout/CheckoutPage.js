@@ -1046,9 +1046,7 @@ const CheckoutPage = () => {
                           </p>
                         </div>
                       </div>
-                      <div className="bg-emerald-100 text-emerald-800 px-2 py-1 rounded-full text-xs font-bold">
-                        Popular
-                      </div>
+                   
                     </div>
                   </div>
                   {/* UPI Payment Option */}
@@ -1083,9 +1081,7 @@ const CheckoutPage = () => {
                           </p>
                         </div>
                       </div>
-                      <div className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-bold">
-                        Fast
-                      </div>
+                      
                     </div>
                   </div>
                   {/* Payment Info Box */}

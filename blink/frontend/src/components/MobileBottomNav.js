@@ -1,5 +1,5 @@
 // src/components/MobileBottomNav.js
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
@@ -142,8 +142,35 @@ const MobileBottomNav = () => {
     return location.pathname === path;
   };
 
+  const navRef = useRef(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !navRef.current) return;
+    const el = navRef.current;
+    const prev = document.body.style.paddingBottom;
+
+    const updatePadding = () => {
+      try {
+        if (window.innerWidth < 1024) {
+          document.body.style.paddingBottom = `${el.offsetHeight}px`;
+        } else {
+          document.body.style.paddingBottom = prev || "";
+        }
+      } catch (e) {
+        // ignore
+      }
+    };
+
+    updatePadding();
+    window.addEventListener("resize", updatePadding);
+    return () => {
+      window.removeEventListener("resize", updatePadding);
+      document.body.style.paddingBottom = prev || "";
+    };
+  }, []);
+
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 lg:hidden">
+    <div ref={navRef} className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 lg:hidden">
       <div className="flex justify-around items-center">
         {navItems.map((item) => (
           <Link
