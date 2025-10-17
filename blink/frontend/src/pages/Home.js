@@ -464,47 +464,60 @@ function Home() {
       {/* Category Navigation */}
       <div className="bg-white py-4 sm:py-6 border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between overflow-x-auto scrollbar-hide space-x-4 sm:space-x-6">
-          {categories.map((cat) => (
-            <div
-              key={cat.id}
-              onClick={() => navigate(`/products?category=${cat.slug}`)}
-              className="flex flex-col items-center justify-center flex-shrink-0 w-20 sm:w-24 cursor-pointer hover:scale-105 transition-transform"
-            >
-              <div className="w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center">
-                <img
-                  src={cat.image_url || `/categories/${cat.slug}.png`}
-                  alt={cat.name}
-                  className="w-full h-full object-contain rounded-full"
-                  loading="lazy"
-                  onError={(e) => {
-                    // Fallback to local image if database image fails
-                    e.target.src = `/categories/${cat.slug}.png`;
-                  }}
-                />
+          {loading ? (
+            // Category skeleton loader
+            Array.from({ length: 8 }).map((_, index) => (
+              <div
+                key={index}
+                className="flex flex-col items-center justify-center flex-shrink-0 w-20 sm:w-24"
+              >
+                <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-200 rounded-full animate-pulse"></div>
+                <div className="w-16 h-3 sm:h-4 bg-gray-200 rounded mt-1 sm:mt-2 animate-pulse"></div>
               </div>
-              <div className="flex items-center gap-1 mt-1 sm:mt-2">
-                <p className="text-xs sm:text-sm font-semibold text-gray-800 text-center whitespace-nowrap">
-                  {cat.name}
-                </p>
-                {cat.hasDropdown && (
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="w-3 h-3 text-gray-500"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
-                )}
+            ))
+          ) : (
+            categories.map((cat) => (
+              <div
+                key={cat.id}
+                onClick={() => navigate(`/products?category=${cat.slug}`)}
+                className="flex flex-col items-center justify-center flex-shrink-0 w-20 sm:w-24 cursor-pointer hover:scale-105 transition-transform"
+              >
+                <div className="w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center">
+                  <img
+                    src={cat.image_url || `/categories/${cat.slug}.png`}
+                    alt={cat.name}
+                    className="w-full h-full object-contain rounded-full"
+                    loading="lazy"
+                    onError={(e) => {
+                      // Fallback to local image if database image fails
+                      e.target.src = `/categories/${cat.slug}.png`;
+                    }}
+                  />
+                </div>
+                <div className="flex items-center gap-1 mt-1 sm:mt-2">
+                  <p className="text-xs sm:text-sm font-semibold text-gray-800 text-center whitespace-nowrap">
+                    {cat.name}
+                  </p>
+                  {cat.hasDropdown && (
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="w-3 h-3 text-gray-500"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 9l-7 7-7-7"
+                      />
+                    </svg>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </div>
 
@@ -514,39 +527,63 @@ function Home() {
         {/* Changed max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 to w-full to remove outer padding and max width */}
         {/* Section Heading (shared) */}
         <div className="bg-white py-2 sm:py-3 px-0">
-          {/* Heading */}
-          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-0 px-4 sm:px-6 lg:px-8">
-            Featured & More Categories
-          </h2>
+          {loading ? (
+            <div className="px-4 sm:px-6 lg:px-8">
+              <div className="w-80 h-7 sm:h-8 bg-gray-200 rounded animate-pulse mb-2"></div>
+              <div className="w-96 h-4 sm:h-5 bg-gray-200 rounded animate-pulse"></div>
+            </div>
+          ) : (
+            <>
+              {/* Heading */}
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-0 px-4 sm:px-6 lg:px-8">
+                Featured & More Categories
+              </h2>
 
-          {/* Subtext */}
-          <p className="text-gray-600 text-sm sm:text-base mb-0 px-4 sm:px-6 lg:px-8">
-            Browse top picks, deals, and discover more essentials
-          </p>
+              {/* Subtext */}
+              <p className="text-gray-600 text-sm sm:text-base mb-0 px-4 sm:px-6 lg:px-8">
+                Browse top picks, deals, and discover more essentials
+              </p>
+            </>
+          )}
         </div>
         {/* Carousel 1 */}
-        <div
-          className="relative rounded-none overflow-hidden shadow-none mb-0" // Removed rounded, shadow, and mb (margin-bottom)
-          onMouseEnter={() => setIsBannerPaused(true)}
-          onMouseLeave={() => setIsBannerPaused(false)}
-          onTouchStart={(e) => {
-            setIsBannerPaused(true);
-            touchStartXRef.current = e.touches?.[0]?.clientX ?? null;
-          }}
-          onTouchEnd={(e) => {
-            const endX = e.changedTouches?.[0]?.clientX ?? null;
-            const startX = touchStartXRef.current;
-            if (startX != null && endX != null) {
-              const delta = endX - startX;
-              if (Math.abs(delta) > SWIPE_THRESHOLD) {
-                if (delta < 0) handleNextLocalBanner();
-                else handlePrevLocalBanner();
+        {loading ? (
+          // Carousel 1 skeleton
+          <div className="relative w-full bg-white min-h-[180px] sm:min-h-[220px] md:min-h-[240px]">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 h-full">
+              {Array.from({ length: 3 }).map((_, index) => (
+                <div key={index} className="relative w-full h-full">
+                  <div className="w-full h-[180px] sm:h-[220px] md:h-[240px] bg-gray-200 animate-pulse"></div>
+                  <div className="absolute bottom-4 left-4">
+                    <div className="w-32 h-5 bg-gray-300 rounded animate-pulse"></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div
+            className="relative rounded-none overflow-hidden shadow-none mb-0" // Removed rounded, shadow, and mb (margin-bottom)
+            onMouseEnter={() => setIsBannerPaused(true)}
+            onMouseLeave={() => setIsBannerPaused(false)}
+            onTouchStart={(e) => {
+              setIsBannerPaused(true);
+              touchStartXRef.current = e.touches?.[0]?.clientX ?? null;
+            }}
+            onTouchEnd={(e) => {
+              const endX = e.changedTouches?.[0]?.clientX ?? null;
+              const startX = touchStartXRef.current;
+              if (startX != null && endX != null) {
+                const delta = endX - startX;
+                if (Math.abs(delta) > SWIPE_THRESHOLD) {
+                  if (delta < 0) handleNextLocalBanner();
+                  else handlePrevLocalBanner();
+                }
               }
-            }
-            touchStartXRef.current = null;
-            setTimeout(() => setIsBannerPaused(false), 150);
-          }}
-        >
+              touchStartXRef.current = null;
+              setTimeout(() => setIsBannerPaused(false), 150);
+            }}
+          >
           {/* Slides - single banner on mobile, grid on larger screens */}
           <div className="relative w-full bg-white min-h-[180px] sm:min-h-[220px] md:min-h-[240px]">
             {" "}
@@ -643,39 +680,47 @@ function Home() {
 
           {/* Dots removed */}
         </div>
+        )}
         <hr className="border-gray-200" />{" "}
         {/* Added a divider for visual separation since margins are removed */}
         {/* Carousel 2 */}
-        <div
-          className="relative rounded-none overflow-hidden shadow-none mb-0" // Removed rounded, shadow, and mb (margin-bottom)
-          onMouseEnter={() => setIsBannerPaused2(true)}
-          onMouseLeave={() => setIsBannerPaused2(false)}
-          onTouchStart={(e) => {
-            setIsBannerPaused2(true);
-            touchStartXRef2.current = e.touches?.[0]?.clientX ?? null;
-            console.debug("carousel2 touchstart", {
-              x: touchStartXRef2.current,
-            });
-          }}
-          onTouchEnd={(e) => {
-            const endX = e.changedTouches?.[0]?.clientX ?? null;
-            const startX = touchStartXRef2.current;
-            console.debug("carousel2 touchend", {
-              startX,
-              endX,
-              delta: endX != null && startX != null ? endX - startX : null,
-            });
-            if (startX != null && endX != null) {
-              const delta = endX - startX;
-              if (Math.abs(delta) > SWIPE_THRESHOLD) {
-                if (delta < 0) handleNextLocalBanner2();
-                else handlePrevLocalBanner2();
+        {loading ? (
+          // Carousel 2 skeleton
+          <div className="relative w-full bg-white min-h-[180px] sm:min-h-[220px] md:min-h-[240px]">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 h-full">
+              {Array.from({ length: 3 }).map((_, index) => (
+                <div key={index} className="relative w-full h-full">
+                  <div className="w-full h-[180px] sm:h-[220px] md:h-[240px] bg-gray-200 animate-pulse"></div>
+                  <div className="absolute bottom-4 left-4">
+                    <div className="w-28 h-5 bg-gray-300 rounded animate-pulse"></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div
+            className="relative rounded-none overflow-hidden shadow-none mb-0" // Removed rounded, shadow, and mb (margin-bottom)
+            onMouseEnter={() => setIsBannerPaused2(true)}
+            onMouseLeave={() => setIsBannerPaused2(false)}
+            onTouchStart={(e) => {
+              setIsBannerPaused2(true);
+              touchStartXRef2.current = e.touches?.[0]?.clientX ?? null;
+            }}
+            onTouchEnd={(e) => {
+              const endX = e.changedTouches?.[0]?.clientX ?? null;
+              const startX = touchStartXRef2.current;
+              if (startX != null && endX != null) {
+                const delta = endX - startX;
+                if (Math.abs(delta) > SWIPE_THRESHOLD) {
+                  if (delta < 0) handleNextLocalBanner2();
+                  else handlePrevLocalBanner2();
+                }
               }
-            }
-            touchStartXRef2.current = null;
-            setTimeout(() => setIsBannerPaused2(false), 150);
-          }}
-        >
+              touchStartXRef2.current = null;
+              setTimeout(() => setIsBannerPaused2(false), 150);
+            }}
+          >
           {/* Slides - single banner on mobile, grid on larger screens */}
           <div className="relative w-full bg-white min-h-[180px] sm:min-h-[220px] md:min-h-[240px]">
             {" "}
@@ -718,12 +763,6 @@ function Home() {
                         <div className="text-white text-base sm:text-lg font-semibold max-w-[80%] sm:max-w-[70%] leading-tight drop-shadow">
                           {item.title}
                         </div>
-                        {/* <button
-                    onClick={() => navigate(item.link)}
-                    className="mt-2 sm:mt-0 bg-emerald-500 text-white font-medium text-sm px-4 py-2 rounded-full shadow hover:bg-emerald-600 transition whitespace-nowrap"
-                  >
-                    Shop Now
-                  </button> */}
                       </div>
                     </div>
                   ))}
@@ -776,29 +815,49 @@ function Home() {
 
           {/* Dots removed */}
         </div>
+        )}
       </div>
 
       {/* Spotlight Section */}
       <div className="bg-white py-4 border-t border-gray-200">
         <div className="max-w-7xl mx-auto px-4">
-          <h2 className="text-xl font-bold text-gray-900 mb-3">
-            Quick Filters
-          </h2>
-
-          <div className="flex gap-3 overflow-x-auto scrollbar-hide">
-            {spotlightItems.map((item) => (
-              <button
-                key={item.image}
-                onClick={() => navigate(item.link)}
-                className="flex items-center justify-center w-24 h-24 sm:w-28 sm:h-28 flex-shrink-0 bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md hover:bg-gray-50 transition-all duration-200"
-              >
-                <img
-                  src={`/spotlights/${item.image}`}
-                  alt={item.label || "Quick Filter"}
-                  className="w-full h-full object-cover rounded-xl"
-                />
-              </button>
-            ))}
+          {loading ? (
+            <div className="w-32 h-6 bg-gray-200 rounded animate-pulse mb-3"></div>
+          ) : (
+            <h2 className="text-xl font-bold text-gray-900 mb-3">
+              Quick Filters
+            </h2>
+          )}
+          <div className="flex gap-2 overflow-x-auto scrollbar-hide">
+            {loading ? (
+              // Spotlight skeleton
+              Array.from({ length: 5 }).map((_, index) => (
+                <div
+                  key={index}
+                  className="flex flex-col items-center w-20 flex-shrink-0 p-2"
+                >
+                  <div className="w-14 h-14 bg-gray-200 rounded-md animate-pulse"></div>
+                  <div className="w-16 h-3 bg-gray-200 rounded mt-1 animate-pulse"></div>
+                </div>
+              ))
+            ) : (
+              spotlightItems.map((item) => (
+                <button
+                  key={item.label}
+                  onClick={() => navigate(item.link)}
+                  className="flex flex-col items-center w-20 flex-shrink-0 p-2 rounded-lg hover:bg-gray-100 transition"
+                >
+                  <img
+                    src={`/spotlights/${item.image}`}
+                    alt={item.label}
+                    className="w-14 h-14 object-contain rounded-md"
+                  />
+                  <p className="text-xs font-medium text-gray-700 mt-1 text-center line-clamp-2">
+                    {item.label}
+                  </p>
+                </button>
+              ))
+            )}
           </div>
         </div>
       </div>
@@ -808,20 +867,42 @@ function Home() {
         {categories.slice(0, 4).map((category) => (
           <div key={category.id} className="py-4">
             <div className="max-w-7xl mx-auto px-4">
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="text-lg font-semibold text-gray-900">
-                  {category.name}
-                </h2>
-                <Link
-                  to={`/products?category=${category.slug}`}
-                  className="text-sm text-green-600 hover:text-green-700"
-                >
-                  View All
-                </Link>
-              </div>
               {loading ? (
-                <div className="flex items-center justify-center py-8">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-600"></div>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="w-32 h-6 bg-gray-200 rounded animate-pulse"></div>
+                  <div className="w-16 h-4 bg-gray-200 rounded animate-pulse"></div>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="text-lg font-semibold text-gray-900">
+                    {category.name}
+                  </h2>
+                  <Link
+                    to={`/products?category=${category.slug}`}
+                    className="text-sm text-green-600 hover:text-green-700"
+                  >
+                    View All
+                  </Link>
+                </div>
+              )}
+              {loading ? (
+                <div className="flex gap-2 overflow-x-auto scrollbar-hide">
+                  {Array.from({ length: 6 }).map((_, index) => (
+                    <div
+                      key={index}
+                      className="flex-none w-44 sm:w-48 bg-white rounded-lg shadow-sm border border-gray-200"
+                    >
+                      <div className="relative">
+                        <div className="w-full h-32 sm:h-36 bg-gray-200 animate-pulse rounded-t-lg"></div>
+                      </div>
+                      <div className="p-2 sm:p-3">
+                        <div className="w-full h-4 bg-gray-200 rounded animate-pulse mb-2"></div>
+                        <div className="w-3/4 h-4 bg-gray-200 rounded animate-pulse mb-3"></div>
+                        <div className="w-20 h-5 bg-gray-200 rounded animate-pulse mb-3"></div>
+                        <div className="w-full h-8 bg-gray-200 rounded animate-pulse"></div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               ) : (
                 <div className="flex gap-2 overflow-x-auto scrollbar-hide">
@@ -837,14 +918,14 @@ function Home() {
                       return (
                         <div
                           key={product.id}
-                          className="flex-none w-36 sm:w-40 bg-white rounded-lg shadow-sm hover:shadow-md transform hover:scale-105 transition-all duration-200 cursor-pointer overflow-hidden group border border-gray-200"
+                          className="flex-none w-44 sm:w-48 bg-white rounded-lg shadow-sm hover:shadow-md transform hover:scale-105 transition-all duration-200 cursor-pointer overflow-hidden group border border-gray-200"
                           onClick={() => navigate(`/product/${product.id}`)}
                         >
                           <div className="relative">
                             <img
                               src={product.image_url}
                               alt={product.title}
-                              className="w-full h-28 object-cover group-hover:scale-105 transition-transform duration-200"
+                              className="w-full h-32 sm:h-36 object-cover group-hover:scale-105 transition-transform duration-200"
                             />
                             {hasDiscount && (
                               <div className="absolute top-1 left-1 bg-gradient-to-r from-emerald-500 to-teal-600 text-white px-1.5 py-0.5 rounded text-xs font-bold">
