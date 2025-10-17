@@ -1,17 +1,17 @@
-import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const Logout = () => {
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
     const doLogout = async () => {
-      setError("");
+      setError('');
       setLoading(true);
       try {
-        const API_BASE = import.meta.env.VITE_API_BASE || "";
+        const API_BASE = import.meta.env.VITE_API_BASE || '';
         const logoutUrl = `${API_BASE}/api/auth/logout`;
         // Send logout request in background so UI isn't blocked.
         if (navigator && navigator.sendBeacon) {
@@ -19,27 +19,19 @@ const Logout = () => {
             navigator.sendBeacon(logoutUrl);
           } catch (e) {
             // fallback to fetch below
-            fetch(logoutUrl, { method: "POST", credentials: "include" }).catch(
-              () => {},
-            );
+            fetch(logoutUrl, { method: 'POST', credentials: 'include' }).catch(() => {});
           }
         } else {
           // fire-and-forget fetch
-          fetch(logoutUrl, { method: "POST", credentials: "include" }).catch(
-            () => {},
-          );
+          fetch(logoutUrl, { method: 'POST', credentials: 'include' }).catch(() => {});
         }
       } catch (err) {
         // ignore network errors — don't block logout UX
       }
-      try {
-        localStorage.removeItem("adminToken");
-      } catch (e) {
-        /* ignore */
-      }
+      try { localStorage.removeItem('adminToken'); } catch (e) { /* ignore */ }
       setLoading(false);
       // redirect immediately
-      navigate("/login", { replace: true });
+      navigate('/login', { replace: true });
     };
     doLogout();
   }, [navigate]);

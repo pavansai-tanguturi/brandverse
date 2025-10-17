@@ -1,21 +1,16 @@
-import React, {
-  createContext,
-  useContext,
-  useReducer,
-  useCallback,
-} from "react";
+import React, { createContext, useContext, useReducer, useCallback } from 'react';
 
 const AddressContext = createContext();
 
 // Address action types
 const ADDRESS_ACTIONS = {
-  SET_ADDRESSES: "SET_ADDRESSES",
-  ADD_ADDRESS: "ADD_ADDRESS",
-  UPDATE_ADDRESS: "UPDATE_ADDRESS",
-  DELETE_ADDRESS: "DELETE_ADDRESS",
-  SET_DEFAULT_ADDRESS: "SET_DEFAULT_ADDRESS",
-  SET_LOADING: "SET_LOADING",
-  SET_ERROR: "SET_ERROR",
+  SET_ADDRESSES: 'SET_ADDRESSES',
+  ADD_ADDRESS: 'ADD_ADDRESS',
+  UPDATE_ADDRESS: 'UPDATE_ADDRESS',
+  DELETE_ADDRESS: 'DELETE_ADDRESS',
+  SET_DEFAULT_ADDRESS: 'SET_DEFAULT_ADDRESS',
+  SET_LOADING: 'SET_LOADING',
+  SET_ERROR: 'SET_ERROR'
 };
 
 // Address reducer
@@ -26,59 +21,59 @@ const addressReducer = (state, action) => {
         ...state,
         addresses: action.payload,
         loading: false,
-        error: null,
+        error: null
       };
-
+    
     case ADDRESS_ACTIONS.ADD_ADDRESS:
       return {
         ...state,
         addresses: [...state.addresses, action.payload],
         loading: false,
-        error: null,
+        error: null
       };
-
+    
     case ADDRESS_ACTIONS.UPDATE_ADDRESS:
       return {
         ...state,
-        addresses: state.addresses.map((addr) =>
-          addr.id === action.payload.id ? action.payload : addr,
+        addresses: state.addresses.map(addr => 
+          addr.id === action.payload.id ? action.payload : addr
         ),
         loading: false,
-        error: null,
+        error: null
       };
-
+    
     case ADDRESS_ACTIONS.DELETE_ADDRESS:
       return {
         ...state,
-        addresses: state.addresses.filter((addr) => addr.id !== action.payload),
+        addresses: state.addresses.filter(addr => addr.id !== action.payload),
         loading: false,
-        error: null,
+        error: null
       };
-
+    
     case ADDRESS_ACTIONS.SET_DEFAULT_ADDRESS:
       return {
         ...state,
-        addresses: state.addresses.map((addr) => ({
+        addresses: state.addresses.map(addr => ({
           ...addr,
-          is_default: addr.id === action.payload.id,
+          is_default: addr.id === action.payload.id
         })),
         loading: false,
-        error: null,
+        error: null
       };
-
+    
     case ADDRESS_ACTIONS.SET_LOADING:
       return {
         ...state,
-        loading: action.payload,
+        loading: action.payload
       };
-
+    
     case ADDRESS_ACTIONS.SET_ERROR:
       return {
         ...state,
         error: action.payload,
-        loading: false,
+        loading: false
       };
-
+    
     default:
       return state;
   }
@@ -87,193 +82,168 @@ const addressReducer = (state, action) => {
 const initialState = {
   addresses: [],
   loading: false,
-  error: null,
+  error: null
 };
 
 export const AddressProvider = ({ children }) => {
   const [state, dispatch] = useReducer(addressReducer, initialState);
 
   // API Base URL
-  const API_BASE_URL = import.meta.env.VITE_API_BASE || "http://localhost:3001";
+  const API_BASE_URL = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
   const API_BASE = `${API_BASE_URL}/api`;
 
   // Helper function to get auth headers
   const getAuthHeaders = () => {
-    const token = localStorage.getItem("auth_token");
+    const token = localStorage.getItem('auth_token');
     return {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
     };
   };
 
   // Fetch addresses for a customer
-  const fetchAddresses = useCallback(
-    async (customerId) => {
-      dispatch({ type: ADDRESS_ACTIONS.SET_LOADING, payload: true });
-
-      try {
-        const token = localStorage.getItem("auth_token");
-        const response = await fetch(`${API_BASE}/addresses`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          credentials: "include",
-        });
-
-        if (!response.ok) {
-          throw new Error(`Failed to fetch addresses: ${response.status}`);
-        }
-
-        const addresses = await response.json();
-        dispatch({ type: ADDRESS_ACTIONS.SET_ADDRESSES, payload: addresses });
-      } catch (error) {
-        console.error("Error fetching addresses:", error);
-        dispatch({ type: ADDRESS_ACTIONS.SET_ERROR, payload: error.message });
+  const fetchAddresses = useCallback(async (customerId) => {
+    dispatch({ type: ADDRESS_ACTIONS.SET_LOADING, payload: true });
+    
+    try {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`${API_BASE}/addresses`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        credentials: 'include'
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch addresses: ${response.status}`);
       }
-    },
-    [API_BASE],
-  );
+      
+      const addresses = await response.json();
+      dispatch({ type: ADDRESS_ACTIONS.SET_ADDRESSES, payload: addresses });
+    } catch (error) {
+      console.error('Error fetching addresses:', error);
+      dispatch({ type: ADDRESS_ACTIONS.SET_ERROR, payload: error.message });
+    }
+  }, [API_BASE]);
 
   // Create a new address
-  const createAddress = useCallback(
-    async (customerId, addressData) => {
-      dispatch({ type: ADDRESS_ACTIONS.SET_LOADING, payload: true });
-
-      try {
-        const response = await fetch(`${API_BASE}/addresses`, {
-          method: "POST",
-          headers: getAuthHeaders(),
-          credentials: "include",
-          body: JSON.stringify(addressData),
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || "Failed to create address");
-        }
-
-        const newAddress = await response.json();
-        dispatch({ type: ADDRESS_ACTIONS.ADD_ADDRESS, payload: newAddress });
-        return newAddress;
-      } catch (error) {
-        console.error("Error creating address:", error);
-        dispatch({ type: ADDRESS_ACTIONS.SET_ERROR, payload: error.message });
-        throw error;
+  const createAddress = useCallback(async (customerId, addressData) => {
+    dispatch({ type: ADDRESS_ACTIONS.SET_LOADING, payload: true });
+    
+    try {
+      const response = await fetch(`${API_BASE}/addresses`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        credentials: 'include',
+        body: JSON.stringify(addressData)
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create address');
       }
-    },
-    [API_BASE],
-  );
+      
+      const newAddress = await response.json();
+      dispatch({ type: ADDRESS_ACTIONS.ADD_ADDRESS, payload: newAddress });
+      return newAddress;
+    } catch (error) {
+      console.error('Error creating address:', error);
+      dispatch({ type: ADDRESS_ACTIONS.SET_ERROR, payload: error.message });
+      throw error;
+    }
+  }, [API_BASE]);
 
   // Update an address
-  const updateAddress = useCallback(
-    async (addressId, addressData) => {
-      dispatch({ type: ADDRESS_ACTIONS.SET_LOADING, payload: true });
-
-      try {
-        const response = await fetch(`${API_BASE}/addresses/${addressId}`, {
-          method: "PUT",
-          headers: getAuthHeaders(),
-          credentials: "include",
-          body: JSON.stringify(addressData),
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || "Failed to update address");
-        }
-
-        const updatedAddress = await response.json();
-        dispatch({
-          type: ADDRESS_ACTIONS.UPDATE_ADDRESS,
-          payload: updatedAddress,
-        });
-        return updatedAddress;
-      } catch (error) {
-        console.error("Error updating address:", error);
-        dispatch({ type: ADDRESS_ACTIONS.SET_ERROR, payload: error.message });
-        throw error;
+  const updateAddress = useCallback(async (addressId, addressData) => {
+    dispatch({ type: ADDRESS_ACTIONS.SET_LOADING, payload: true });
+    
+    try {
+      const response = await fetch(`${API_BASE}/addresses/${addressId}`, {
+        method: 'PUT',
+        headers: getAuthHeaders(),
+        credentials: 'include',
+        body: JSON.stringify(addressData)
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update address');
       }
-    },
-    [API_BASE],
-  );
+      
+      const updatedAddress = await response.json();
+      dispatch({ type: ADDRESS_ACTIONS.UPDATE_ADDRESS, payload: updatedAddress });
+      return updatedAddress;
+    } catch (error) {
+      console.error('Error updating address:', error);
+      dispatch({ type: ADDRESS_ACTIONS.SET_ERROR, payload: error.message });
+      throw error;
+    }
+  }, [API_BASE]);
 
   // Delete an address
-  const deleteAddress = useCallback(
-    async (addressId) => {
-      dispatch({ type: ADDRESS_ACTIONS.SET_LOADING, payload: true });
-
-      try {
-        const token = localStorage.getItem("auth_token");
-        const response = await fetch(`${API_BASE}/addresses/${addressId}`, {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          credentials: "include",
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || "Failed to delete address");
-        }
-
-        dispatch({ type: ADDRESS_ACTIONS.DELETE_ADDRESS, payload: addressId });
-      } catch (error) {
-        console.error("Error deleting address:", error);
-        dispatch({ type: ADDRESS_ACTIONS.SET_ERROR, payload: error.message });
-        throw error;
+  const deleteAddress = useCallback(async (addressId) => {
+    dispatch({ type: ADDRESS_ACTIONS.SET_LOADING, payload: true });
+    
+    try {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch(`${API_BASE}/addresses/${addressId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        credentials: 'include'
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete address');
       }
-    },
-    [API_BASE],
-  );
+      
+      dispatch({ type: ADDRESS_ACTIONS.DELETE_ADDRESS, payload: addressId });
+    } catch (error) {
+      console.error('Error deleting address:', error);
+      dispatch({ type: ADDRESS_ACTIONS.SET_ERROR, payload: error.message });
+      throw error;
+    }
+  }, [API_BASE]);
 
   // Set default address
-  const setDefaultAddress = useCallback(
-    async (addressId) => {
-      dispatch({ type: ADDRESS_ACTIONS.SET_LOADING, payload: true });
-
-      try {
-        const response = await fetch(
-          `${API_BASE}/addresses/${addressId}/default`,
-          {
-            method: "PATCH",
-            headers: getAuthHeaders(),
-            credentials: "include",
-          },
-        );
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || "Failed to set default address");
-        }
-
-        const updatedAddress = await response.json();
-        dispatch({
-          type: ADDRESS_ACTIONS.SET_DEFAULT_ADDRESS,
-          payload: { id: addressId },
-        });
-        return updatedAddress;
-      } catch (error) {
-        console.error("Error setting default address:", error);
-        dispatch({ type: ADDRESS_ACTIONS.SET_ERROR, payload: error.message });
-        throw error;
+  const setDefaultAddress = useCallback(async (addressId) => {
+    dispatch({ type: ADDRESS_ACTIONS.SET_LOADING, payload: true });
+    
+    try {
+      const response = await fetch(`${API_BASE}/addresses/${addressId}/default`, {
+        method: 'PATCH',
+        headers: getAuthHeaders(),
+        credentials: 'include'
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to set default address');
       }
-    },
-    [API_BASE],
-  );
+      
+      const updatedAddress = await response.json();
+      dispatch({ 
+        type: ADDRESS_ACTIONS.SET_DEFAULT_ADDRESS, 
+        payload: { id: addressId } 
+      });
+      return updatedAddress;
+    } catch (error) {
+      console.error('Error setting default address:', error);
+      dispatch({ type: ADDRESS_ACTIONS.SET_ERROR, payload: error.message });
+      throw error;
+    }
+  }, [API_BASE]);
 
   // Get default address by type
   const getDefaultAddress = (type) => {
-    return state.addresses.find(
-      (addr) => addr.type === type && addr.is_default,
-    );
+    return state.addresses.find(addr => addr.type === type && addr.is_default);
   };
 
   // Get addresses by type
   const getAddressesByType = (type) => {
-    return state.addresses.filter(
-      (addr) => addr.type === type || addr.type === "both",
-    );
+    return state.addresses.filter(addr => addr.type === type || addr.type === 'both');
   };
 
   const value = {
@@ -284,18 +254,20 @@ export const AddressProvider = ({ children }) => {
     deleteAddress,
     setDefaultAddress,
     getDefaultAddress,
-    getAddressesByType,
+    getAddressesByType
   };
 
   return (
-    <AddressContext.Provider value={value}>{children}</AddressContext.Provider>
+    <AddressContext.Provider value={value}>
+      {children}
+    </AddressContext.Provider>
   );
 };
 
 export const useAddress = () => {
   const context = useContext(AddressContext);
   if (!context) {
-    throw new Error("useAddress must be used within an AddressProvider");
+    throw new Error('useAddress must be used within an AddressProvider');
   }
   return context;
 };
