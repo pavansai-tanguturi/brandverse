@@ -898,7 +898,7 @@ const AdminProducts = () => {
                               <h4 className="text-sm font-medium text-gray-900 truncate">
                                 {product.title}
                               </h4>
-                              <p className="text-sm text-gray-500 truncate">
+                              <p className="text-sm text-gray-500 line-clamp-2">
                                 {product.description || "No description"}
                               </p>
                             </div>

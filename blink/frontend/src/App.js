@@ -4,6 +4,7 @@ import {
   Routes,
   Route,
   useLocation,
+  Navigate,
 } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { CartProvider } from "./context/CartContext";
@@ -38,6 +39,7 @@ import AdminDeliveryLocations from "./pages/admin/AdminDeliveryLocations";
 import AnalyticsDashboard from "./pages/admin/AnalyticsDashboard";
 import UnauthorizedPage from "./pages/UnauthorizedPage";
 import Logout from "./pages/Logout";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 // Component to conditionally render Footer
 const ConditionalFooter = () => {
@@ -45,9 +47,10 @@ const ConditionalFooter = () => {
   const isAdminRoute = location.pathname.startsWith("/admin");
   const isCheckoutRoute =
     location.pathname === "/checkout" || location.pathname === "/order-success";
+  const isUnauthorizedPage = location.pathname === "/401";
 
-  // Don't show footer on admin pages and checkout/order success pages
-  if (isAdminRoute || isCheckoutRoute) {
+  // Don't show footer on admin pages, checkout/order success pages, and 401 page
+  if (isAdminRoute || isCheckoutRoute || isUnauthorizedPage) {
     return null;
   }
 
@@ -89,21 +92,77 @@ function App() {
 
                 {/* Admin Routes */}
                 <Route path="/admin/login" element={<AdminLogin />} />
-                <Route path="/admin/dashboard" element={<AdminDashboard />} />
-                <Route path="/admin/products" element={<AdminProducts />} />
-                <Route path="/admin/orders" element={<AdminOrders />} />
-                <Route path="/admin/users" element={<AdminUsers />} />
+                <Route 
+                  path="/admin/dashboard" 
+                  element={
+                    <ProtectedRoute>
+                      <AdminDashboard />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/admin/products" 
+                  element={
+                    <ProtectedRoute>
+                      <AdminProducts />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/admin/orders" 
+                  element={
+                    <ProtectedRoute>
+                      <AdminOrders />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/admin/users" 
+                  element={
+                    <ProtectedRoute>
+                      <AdminUsers />
+                    </ProtectedRoute>
+                  } 
+                />
                 <Route
                   path="/admin/delivery-locations"
-                  element={<AdminDeliveryLocations />}
+                  element={
+                    <ProtectedRoute>
+                      <AdminDeliveryLocations />
+                    </ProtectedRoute>
+                  }
                 />
                 <Route
                   path="/admin/analytics"
-                  element={<AnalyticsDashboard />}
+                  element={
+                    <ProtectedRoute>
+                      <AnalyticsDashboard />
+                    </ProtectedRoute>
+                  }
                 />
-                <Route path="/admin/categories" element={<AdminCategories />} />
-                <Route path="/admin/banners" element={<AdminBanners />} />
+                <Route 
+                  path="/admin/categories" 
+                  element={
+                    <ProtectedRoute>
+                      <AdminCategories />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/admin/banners" 
+                  element={
+                    <ProtectedRoute>
+                      <AdminBanners />
+                    </ProtectedRoute>
+                  } 
+                />
                 <Route path="/admin/logout" element={<Logout />} />
+
+                {/* Catch any other /admin/* routes that aren't defined */}
+                <Route path="/admin/*" element={<Navigate to="/401" replace />} />
+
+                {/* 404 - Catch all undefined routes */}
+                <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
 
               {/* Conditional Footer - appears on all pages except admin and checkout */}

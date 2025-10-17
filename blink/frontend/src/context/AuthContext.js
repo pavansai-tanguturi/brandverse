@@ -48,16 +48,11 @@ export const AuthProvider = ({ children }) => {
         console.log("[AuthContext] User found:", response.user);
         setUser(response.user);
       } else {
-        console.log("[AuthContext] No user in session");
         setUser(null);
-        // Clear invalid token if session check fails
-        localStorage.removeItem("auth_token");
       }
     } catch (error) {
       console.error("[AuthContext] Session check failed:", error);
       setUser(null);
-      // Clear token on session check failure
-      localStorage.removeItem("auth_token");
     } finally {
       setLoading(false);
     }

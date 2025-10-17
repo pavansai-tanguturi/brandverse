@@ -12,6 +12,7 @@ const AdminOrders = () => {
   const [expandedOrder, setExpandedOrder] = useState(null);
   const [sortByStatus, setSortByStatus] = useState(true);
   const [deliveryLocations, setDeliveryLocations] = useState([]);
+  const [filterStatus, setFilterStatus] = useState("all"); // New filter state
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -49,9 +50,24 @@ const AdminOrders = () => {
 
   // Set filteredOrders directly from orders (backend already filters)
   useEffect(() => {
-    setFilteredOrders(orders);
+    let filtered = orders;
+    
+    // Apply status filter
+    if (filterStatus !== "all") {
+      filtered = filtered.filter(order => {
+        if (filterStatus === "cod") {
+          return order.payment_method === "cod";
+        } else if (filterStatus === "online") {
+          return order.payment_method === "razorpay";
+        } else {
+          return order.status === filterStatus;
+        }
+      });
+    }
+    
+    setFilteredOrders(filtered);
     setCurrentPage(1);
-  }, [orders]);
+  }, [orders, filterStatus]);
 
   // Auto-dismiss success messages after 5 seconds
   useEffect(() => {
@@ -81,7 +97,7 @@ const AdminOrders = () => {
         const data = await res.json();
         setOrders(data);
         setError(""); // Clear any previous errors
-      } else if (res.status === 401) {
+            } else if (res.status === 401) {
         setError("Authentication failed. Please login again.");
         // Optionally redirect to login page
         // window.location.href = '/admin/login';
@@ -155,7 +171,7 @@ const AdminOrders = () => {
       } else if (res.status === 401) {
         setError("Authentication failed. Please login again.");
         // Optionally redirect to login page
-        // window.location.href = '/admin/login';
+        // window.location.href = '/#/admin/login';
       } else {
         const errorData = await res.json();
         throw new Error(errorData.error || "Failed to update order status");
@@ -172,7 +188,7 @@ const AdminOrders = () => {
     const statusNames = {
       pending: "Pending",
       paid: "Paid",
-      confirmed: "Confirmed (COD)",
+      confirmed: "Confirmed",
       accepted: "Preparing Package",
       packing: "Package Ready",
       ready: "Ready to Ship",
@@ -190,7 +206,7 @@ const AdminOrders = () => {
     const colors = {
       pending: "bg-order-pending-100 text-order-pending-800",
       paid: "bg-blue-100 text-blue-800",
-      confirmed: "bg-emerald-100 text-emerald-800", // Special color for COD confirmed orders
+      confirmed: "bg-emerald-100 text-emerald-800",
       accepted: "bg-green-100 text-green-800",
       packing: "bg-order-packing-100 text-order-packing-800",
       ready: "bg-purple-100 text-purple-800",
@@ -269,9 +285,8 @@ const AdminOrders = () => {
   };
 
   const canAccept = (status) => status === "pending" || status === "paid";
-  const canReject = (status) => status === "pending" || status === "paid";
-  const canStartPacking = (status) =>
-    status === "accepted" || status === "confirmed"; // COD orders go directly to confirmed
+  const canReject = (status) => status === "pending" || status === "paid" || status === "confirmed";
+  const canStartPacking = (status) => status === "accepted" || status === "confirmed";
   const canMarkReady = (status) => status === "packing";
   const canShip = (status) => status === "ready";
   const canDeliver = (status) => status === "shipped";
@@ -286,16 +301,16 @@ const AdminOrders = () => {
 
   const sortOrdersByStatus = (orders) => {
     const statusPriority = {
-      pending: 1,
-      paid: 2,
-      confirmed: 3, // COD orders - ready for packing
-      accepted: 4,
-      packing: 5,
-      ready: 6,
-      shipped: 7,
-      delivered: 8,
-      cancelled: 9,
-      refunded: 10,
+      pending: 1,      // New orders waiting for payment or acceptance (COD)
+      paid: 2,         // Paid but not accepted yet - needs admin action
+      confirmed: 3,    // Admin confirmed - ready for preparation
+      accepted: 4,     // Accepted - needs to start packing
+      packing: 5,      // In packing process
+      ready: 6,        // Ready to ship - waiting for pickup
+      shipped: 7,      // Out for delivery
+      delivered: 8,    // Completed successfully
+      cancelled: 9,    // Cancelled by admin or customer
+      refunded: 10,    // Refunded
     };
 
     return [...orders].sort((a, b) => {
@@ -306,7 +321,7 @@ const AdminOrders = () => {
         return priorityA - priorityB;
       }
 
-      // If same status, sort by creation date (newest first)
+      // Within same status, sort by creation date (newest first)
       return new Date(b.created_at) - new Date(a.created_at);
     });
   };
@@ -336,6 +351,99 @@ const AdminOrders = () => {
     setCurrentPage(1);
   };
 
+  // Download today's orders as CSV
+  const downloadTodaysOrders = () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const todaysOrders = orders.filter(order => {
+      const orderDate = new Date(order.created_at);
+      orderDate.setHours(0, 0, 0, 0);
+      return orderDate.getTime() === today.getTime();
+    });
+
+    if (todaysOrders.length === 0) {
+      setMessage("No orders found for today");
+      return;
+    }
+
+    // Prepare CSV data
+    const csvRows = [];
+    
+    // Headers
+    const headers = [
+      'Order ID',
+      'Date',
+      'Customer Name',
+      'Email',
+      'Phone',
+      'Payment Method',
+      'Status',
+      'Items Count',
+      'Total Amount',
+      'Shipping Address',
+      'Products'
+    ];
+    csvRows.push(headers.join(','));
+
+    // Data rows
+    todaysOrders.forEach(order => {
+      const customer = order.customers || {};
+      const items = order.order_items || [];
+      const productsList = items.map(item => 
+        `${item.title} (Qty: ${item.quantity} @ ₹${(item.unit_price_cents / 100).toFixed(2)})`
+      ).join('; ');
+      
+      // Format address
+      let address = '';
+      const addr = order.shipping_address || customer.shipping_address;
+      if (typeof addr === 'string') {
+        address = addr.replace(/,/g, ';'); // Replace commas with semicolons to avoid CSV issues
+      } else if (addr && typeof addr === 'object') {
+        address = `${addr.street || ''} ${addr.city || ''} ${addr.state || ''} ${addr.postal_code || ''} ${addr.country || ''}`.replace(/,/g, ';');
+      }
+
+      const row = [
+        order.id.slice(0, 8),
+        new Date(order.created_at).toLocaleString('en-US', {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        }),
+        `"${customer.full_name || 'Unknown'}"`,
+        customer.email || '',
+        customer.phone || '',
+        order.payment_method ? order.payment_method.toUpperCase() : '',
+        getStatusDisplayName(order.status),
+        items.length,
+        `₹${(order.total_cents / 100).toFixed(2)}`,
+        `"${address}"`,
+        `"${productsList}"`
+      ];
+      csvRows.push(row.join(','));
+    });
+
+    // Create CSV content
+    const csvContent = csvRows.join('\n');
+    
+    // Create blob and download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    
+    const dateStr = today.toISOString().split('T')[0];
+    link.setAttribute('href', url);
+    link.setAttribute('download', `orders_${dateStr}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    setMessage(`Downloaded ${todaysOrders.length} orders for today`);
+  };
+
   return (
     <>
       <AdminNav />
@@ -353,6 +461,30 @@ const AdminOrders = () => {
               </div>
 
               <div className="flex flex-col sm:flex-row gap-3">
+                {/* Status Filter Dropdown */}
+                <div className="relative">
+                  <select
+                    value={filterStatus}
+                    onChange={(e) => setFilterStatus(e.target.value)}
+                    className="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 bg-white border-2 border-gray-300 hover:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer"
+                  >
+                    <option value="all">All Orders</option>
+                    <optgroup label="Payment Method">
+                      <option value="cod">COD Orders</option>
+                      <option value="online">Online Paid</option>
+                    </optgroup>
+                    <optgroup label="Order Status">
+                      <option value="confirmed">Confirmed</option>
+                      <option value="accepted">Accepted</option>
+                      <option value="packing">Packing</option>
+                      <option value="ready">Ready to Ship</option>
+                      <option value="shipped">Shipped</option>
+                      <option value="delivered">Delivered</option>
+                      <option value="cancelled">Cancelled</option>
+                    </optgroup>
+                  </select>
+                </div>
+
                 <button
                   onClick={() => setSortByStatus(!sortByStatus)}
                   className={`inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
@@ -374,7 +506,7 @@ const AdminOrders = () => {
                       d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
                     ></path>
                   </svg>
-                  {sortByStatus ? "Sort by Status ✓" : "Sort by Date"}
+                  {sortByStatus ? "Priority Sort ✓" : "Date Sort"}
                 </button>
                 <button
                   onClick={() => {
@@ -399,6 +531,51 @@ const AdminOrders = () => {
                   </svg>
                   {loading ? "Refreshing..." : "Refresh"}
                 </button>
+                <button
+                  onClick={downloadTodaysOrders}
+                  className="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 focus:ring-4 focus:ring-green-200 text-white rounded-lg font-medium transition-all duration-200 shadow-sm"
+                  title="Download today's orders as CSV"
+                >
+                  <svg
+                    className="w-4 h-4 mr-2"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
+                  </svg>
+                  Download Today's Orders
+                </button>
+              </div>
+            </div>
+
+            {/* Info Banner for Order Workflow */}
+            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-start">
+                <svg
+                  className="w-5 h-5 text-blue-600 mr-2 flex-shrink-0 mt-0.5"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                <div className="flex-1">
+                  <p className="text-sm text-blue-800 font-medium">
+                    <strong>Order Approval Required:</strong> All orders (both COD and Online Paid) require manual acceptance before processing.
+                  </p>
+                  <p className="text-xs text-blue-700 mt-1">
+                    Review orders and accept if items are in stock, or cancel promptly to notify the customer.
+                  </p>
+                </div>
               </div>
             </div>
 
@@ -541,34 +718,64 @@ const AdminOrders = () => {
             </div>
           )}
 
-          {/* Status Summary */}
-          {!loading && filteredOrders.length > 0 && sortByStatus && (
+          {/* Enhanced Status Summary */}
+          {!loading && filteredOrders.length > 0 && (
             <div className="mb-6 p-4 bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl border border-gray-200">
-              <h3 className="text-sm font-semibold text-gray-700 mb-3">
-                Order Status Summary:
-              </h3>
-              <div className="flex flex-wrap gap-3">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-semibold text-gray-700">
+                  {filterStatus === "all" ? "Order Status Summary" : `Filtered: ${filterStatus.toUpperCase()}`}
+                </h3>
+                {filterStatus !== "all" && (
+                  <button
+                    onClick={() => setFilterStatus("all")}
+                    className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                  >
+                    Clear Filter
+                  </button>
+                )}
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
+                {/* Payment Method Summary */}
+                <div className="col-span-2 sm:col-span-4 lg:col-span-8 mb-2">
+                  <div className="flex gap-3">
+                    <div className="flex-1 bg-orange-50 border border-orange-200 rounded-lg p-2">
+                      <div className="text-xs text-orange-600 font-medium">COD Orders</div>
+                      <div className="text-lg font-bold text-orange-700">
+                        {orders.filter(o => o.payment_method === "cod").length}
+                      </div>
+                    </div>
+                    <div className="flex-1 bg-blue-50 border border-blue-200 rounded-lg p-2">
+                      <div className="text-xs text-blue-600 font-medium">Online Paid</div>
+                      <div className="text-lg font-bold text-blue-700">
+                        {orders.filter(o => o.payment_method === "razorpay").length}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Status Summary */}
                 {[
-                  "pending",
-                  "paid",
-                  "confirmed",
-                  "accepted",
-                  "packing",
-                  "ready",
-                  "shipped",
-                  "delivered",
-                ].map((status) => {
-                  const count = filteredOrders.filter(
+                  { status: "pending", label: "Pending" },
+                  { status: "paid", label: "Paid" },
+                  { status: "confirmed", label: "Confirmed" },
+                  { status: "accepted", label: "Accepted" },
+                  { status: "packing", label: "Packing" },
+                  { status: "ready", label: "Ready" },
+                  { status: "shipped", label: "Shipped" },
+                  { status: "delivered", label: "Delivered" },
+                ].map(({ status, label }) => {
+                  const count = orders.filter(
                     (order) => order.status === status,
                   ).length;
                   if (count === 0) return null;
                   return (
-                    <div
+                    <button
                       key={status}
-                      className={`px-3 py-1.5 rounded-full text-xs font-semibold ${getStatusColor(status)} shadow-sm`}
+                      onClick={() => setFilterStatus(status)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:scale-105 ${getStatusColor(status)} shadow-sm hover:shadow-md cursor-pointer`}
                     >
-                      {getStatusDisplayName(status)}: {count}
-                    </div>
+                      {label}: {count}
+                    </button>
                   );
                 })}
               </div>
@@ -764,19 +971,21 @@ const AdminOrders = () => {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex flex-col space-y-1">
-                            <span
-                              className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${getStatusColor(order.status)}`}
-                            >
-                              {getStatusDisplayName(order.status)}
-                            </span>
+                            <div className="flex items-center gap-1">
+                              <span
+                                className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${getStatusColor(order.status)}`}
+                              >
+                                {getStatusDisplayName(order.status)}
+                              </span>
+                            </div>
                             {/* Payment Method Indicator */}
                             {order.payment_method && (
                               <span
                                 className={`inline-flex items-center px-2 py-0.5 text-xs font-medium rounded ${
                                   order.payment_method === "cod"
-                                    ? "bg-orange-100 text-orange-800"
+                                    ? "bg-orange-100 text-orange-800 border border-orange-200"
                                     : order.payment_method === "razorpay"
-                                      ? "bg-blue-100 text-blue-800"
+                                      ? "bg-blue-100 text-blue-800 border border-blue-200"
                                       : "bg-gray-100 text-gray-800"
                                 }`}
                               >
@@ -813,6 +1022,7 @@ const AdminOrders = () => {
                                   </svg>
                                 )}
                                 {order.payment_method.toUpperCase()}
+                                {order.payment_method === "cod" && " (Pay on Delivery)"}
                               </span>
                             )}
                           </div>
