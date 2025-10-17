@@ -354,53 +354,63 @@ function Home() {
       <ModernNavbar showSearch={true} />
 
       {/* Delivery Status Strip */}
-      {!checkingDelivery && showDeliveryStatus && (
-        <div
-          className={`mx-4 my-2 px-3 py-2 rounded-lg text-sm transition-all duration-500 ${deliveryAvailable ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"}`}
+   {!checkingDelivery && showDeliveryStatus && (
+  <div
+    className={`mx-2 sm:mx-4 my-2 px-2 sm:px-3 py-2 rounded-lg text-xs sm:text-sm transition-all duration-500 ${
+      deliveryAvailable
+        ? "bg-green-100 text-green-800"
+        : "bg-yellow-100 text-yellow-800"
+    }`}
+  >
+    <div className="flex flex-wrap items-center justify-between gap-2">
+      {/* Left side: location + status */}
+      <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink min-w-0">
+        <svg
+          className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
         >
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M17.657 16.657L13.414 20.9a2 2 0 01-2.828 0l-4.243-4.243a8 8 0 1111.314 0z"
-                />
-              </svg>
-              <span className="truncate">
-                {locationName} •{" "}
-                {deliveryAvailable
-                  ? "Delivery Available"
-                  : "Delivery Unavailable"}
-              </span>
-            </div>
-            <button
-              onClick={() => setShowDeliveryStatus(false)}
-              className="md:hidden p-1 hover:bg-black/10 rounded-full transition-colors"
-            >
-              <svg
-                className="w-3 h-3"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-            </button>
-          </div>
-        </div>
-      )}
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M17.657 16.657L13.414 20.9a2 2 0 01-2.828 0l-4.243-4.243a8 8 0 1111.314 0z"
+          />
+        </svg>
+
+        {/* Responsive text truncation */}
+        <span className="truncate max-w-[160px] sm:max-w-xs">
+          {locationName} •{" "}
+          {deliveryAvailable
+            ? "Delivery Available"
+            : "Delivery Unavailable"}
+        </span>
+      </div>
+
+      {/* Close button */}
+      <button
+        onClick={() => setShowDeliveryStatus(false)}
+        className="p-1 hover:bg-black/10 rounded-full transition-colors"
+      >
+        <svg
+          className="w-3 h-3 sm:w-4 sm:h-4"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M6 18L18 6M6 6l12 12"
+          />
+        </svg>
+      </button>
+    </div>
+  </div>
+)}
+
       {/* Category Navigation */}
       <div className="bg-white py-4 sm:py-6 border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between overflow-x-auto scrollbar-hide space-x-4 sm:space-x-6">
@@ -976,6 +986,78 @@ function Home() {
       </div>
 
       <MobileBottomNav />
+      {/* Home Specials - two prominent image cards */}
+      <div className="bg-white mt-6 border-t border-gray-100">
+        <div className="max-w-7xl mx-auto px-4 py-8">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
+                Home Specials
+              </h2>
+              <p className="text-sm text-gray-600">
+                Handpicked pantry and breakfast essentials — curated for you.
+              </p>
+            </div>
+            <button
+              onClick={() => navigate('/products')}
+              className="hidden sm:inline-flex items-center gap-2 text-sm text-emerald-600 hover:text-emerald-700"
+            >
+              Browse all
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div
+              role="button"
+              onClick={() => navigate('/products?category=pantry')}
+              className="relative h-44 sm:h-56 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-transform transform hover:-translate-y-1 cursor-pointer bg-gray-50"
+            >
+              <img
+                src="/home-specials/pantry.png"
+                alt="Pantry Specials"
+                className="w-full h-full object-cover"
+                loading="lazy"
+                onError={(e) => (e.target.src = '/logo192.png')}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent flex items-end p-4">
+                <div>
+                  <h3 className="text-white font-semibold text-lg">Pantry Essentials</h3>
+                  <p className="text-white text-xs opacity-90">Staples and bulk buys for your kitchen</p>
+                </div>
+              </div>
+            </div>
+
+            <div
+              role="button"
+              onClick={() => navigate('/products?category=breakfast')}
+              className="relative h-44 sm:h-56 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-transform transform hover:-translate-y-1 cursor-pointer bg-gray-50"
+            >
+              <img
+                src="/home-specials/breakfast.png"
+                alt="Breakfast Specials"
+                className="w-full h-full object-cover"
+                loading="lazy"
+                onError={(e) => (e.target.src = '/logo192.png')}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent flex items-end p-4">
+                <div>
+                  <h3 className="text-white font-semibold text-lg">Breakfast Picks</h3>
+                  <p className="text-white text-xs opacity-90">Kickstart your day with healthy choices</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

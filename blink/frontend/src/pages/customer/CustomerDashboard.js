@@ -302,7 +302,7 @@ const CustomerDashboard = () => {
   const location = useLocation();
   const { items: wishlistItems, removeFromWishlist } = useWishlist();
   const { addToCart } = useCart();
-  const [activeTab, setActiveTab] = useState("orders");
+  const [activeTab, setActiveTab] = useState("");
   const [userInfo, setUserInfo] = useState({
     name: "",
     email: "",
@@ -319,6 +319,12 @@ const CustomerDashboard = () => {
 
   // Order details modal state
   const [selectedOrder, setSelectedOrder] = useState(null);
+
+  // Derived: show most recent 3 orders on dashboard
+  const recentOrders = orders
+    .slice()
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+    .slice(0, 3);
 
   // Mobile menu state
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -590,7 +596,7 @@ const CustomerDashboard = () => {
               ].map((tab) => (
                 <button
                   key={tab.id}
-                  onClick={() => navigate(`/dashboard?tab=${tab.id}`)}
+                  onClick={() => tab.id === 'orders' ? navigate('/orders') : navigate(`/dashboard?tab=${tab.id}`)}
                   className={`flex-1 min-w-0 flex flex-col items-center p-3 rounded-xl transition-all duration-200 ${
                     activeTab === tab.id
                       ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg"
@@ -677,7 +683,7 @@ const CustomerDashboard = () => {
                   ].map((tab) => (
                     <button
                       key={tab.id}
-                      onClick={() => navigate(`/dashboard?tab=${tab.id}`)}
+                      onClick={() => tab.id === 'orders' ? navigate('/orders') : navigate(`/dashboard?tab=${tab.id}`)}
                       className={`w-full flex items-center justify-between p-4 rounded-xl transition-all duration-200 group ${
                         activeTab === tab.id
                           ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg transform scale-[1.02]"
@@ -748,9 +754,43 @@ const CustomerDashboard = () => {
                 </div>
               </div>
               
+                {/* Recent Orders Preview */}
+                <div className="px-6 pt-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-gray-900">Recent Orders</h3>
+                    <button
+                      onClick={() => navigate('/orders')}
+                      className="text-sm text-emerald-600 hover:underline"
+                    >
+                      View All Orders
+                    </button>
+                  </div>
+
+                  {recentOrders.length === 0 ? (
+                    <div className="text-sm text-gray-600">No recent orders</div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      {recentOrders.map((o) => (
+                        <div key={o.id} className="p-3 bg-white border border-gray-100 rounded-lg">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-sm font-medium">Order #{o.id.slice(-8).toUpperCase()}</p>
+                              <p className="text-xs text-gray-500">{new Date(o.created_at).toLocaleDateString()}</p>
+                            </div>
+                            <div className="text-right">
+                              <p className="font-semibold">₹{((o.total_cents||0)/100).toFixed(2)}</p>
+                              <p className="text-xs text-gray-500">{o.order_items?.length || 0} items</p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
               <div className="p-6">
               {/* Orders Tab */}
-              {activeTab === "orders" && (
+              {/* {activeTab === "orders" && (
                 <div>
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="text-xl font-semibold text-gray-900">
@@ -889,7 +929,7 @@ const CustomerDashboard = () => {
                     />
                   )}
                 </div>
-              )}
+              )} */}
 
               {/* Wishlist Tab */}
               {activeTab === "wishlist" && (
