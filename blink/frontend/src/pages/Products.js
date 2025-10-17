@@ -1,13 +1,11 @@
 // src/pages/Products.js
-import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate, useSearchParams, Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { useWishlist } from '../context/WishlistContext';
-import { useCart } from '../context/CartContext';
-import ModernNavbar from '../components/ModernNavbar';
-import MobileBottomNav from '../components/MobileBottomNav';
-import logo from '../assets/logos.png';
-import locationIcon from '../assets/location.png';
+import React, { useState, useEffect, useRef } from "react";
+import { useNavigate, useSearchParams, Link } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { useWishlist } from "../context/WishlistContext";
+import { useCart } from "../context/CartContext";
+import ModernNavbar from "../components/ModernNavbar";
+import MobileBottomNav from "../components/MobileBottomNav";
 
 function Products() {
   const navigate = useNavigate();
@@ -29,10 +27,17 @@ function Products() {
   const [filteredProducts, setFilteredProducts] = useState([]);
   
   // Search and filters
-  const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
-  const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || 'all');
-  const [sortBy, setSortBy] = useState('name');
-  
+  const [searchQuery, setSearchQuery] = useState(searchParams.get("search") || searchParams.get("q") || "");
+  const [selectedCategory, setSelectedCategory] = useState(
+    searchParams.get("category") || "all",
+  );
+  const [sortBy, setSortBy] = useState("name");
+
+  // Search results state
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchSuggestions, setSearchSuggestions] = useState("");
+
   // Flipkart-style filter states
   const [priceRange, setPriceRange] = useState([0, 100000]);
   const [selectedBrands, setSelectedBrands] = useState([]);
@@ -68,20 +73,51 @@ function Products() {
     }
   };
 
-  // Fetch products
-  const fetchProducts = async () => {
+  // Fetch products with search
+  const fetchProducts = async (searchTerm = "") => {
     try {
-      const API_BASE_URL = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
-      const response = await fetch(`${API_BASE_URL}/api/products`);
-      if (response.ok) {
-        const data = await response.json();
-        setProducts(data);
-        setFilteredProducts(data);
+      setLoading(true);
+      const API_BASE_URL =
+        import.meta.env.VITE_API_BASE || "http://localhost:3001";
+      
+      let url = `${API_BASE_URL}/api/products`;
+      
+      // Use search endpoint if there's a search term
+      if (searchTerm && searchTerm.trim()) {
+        setIsSearching(true);
+        url = `${API_BASE_URL}/api/products/search?q=${encodeURIComponent(searchTerm.trim())}`;
+        
+        const response = await fetch(url);
+        if (response.ok) {
+          const data = await response.json();
+          setSearchResults(data.products || []);
+          setSearchSuggestions(data.didYouMean || "");
+          setProducts(data.products || []);
+          setFilteredProducts(data.products || []);
+        } else {
+          console.error("Failed to search products");
+          setSearchResults([]);
+          setProducts([]);
+          setFilteredProducts([]);
+        }
+        setIsSearching(false);
       } else {
-        console.error('Failed to fetch products');
+        // Regular product fetch
+        const response = await fetch(url);
+        if (response.ok) {
+          const data = await response.json();
+          setProducts(data);
+          setFilteredProducts(data);
+          setSearchResults([]);
+          setSearchSuggestions("");
+        } else {
+          console.error("Failed to fetch products");
+        }
       }
     } catch (error) {
-      console.error('Error fetching products:', error);
+      console.error("Error fetching products:", error);
+      setSearchResults([]);
+      setIsSearching(false);
     } finally {
       setLoading(false);
     }
@@ -100,13 +136,16 @@ function Products() {
     const urlTag = (searchParams.get('tag') || '').toLowerCase();
     const urlSort = (searchParams.get('sort') || '').toLowerCase();
 
-    // Search filter
-    if (searchQuery) {
-      filtered = filtered.filter(product =>
-        product.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        product.description?.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
+    // Search filter - handled by backend now, skip frontend search
+    // if (searchQuery) {
+    //   filtered = filtered.filter(
+    //     (product) =>
+    //       product.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    //       product.description
+    //         ?.toLowerCase()
+    //         .includes(searchQuery.toLowerCase()),
+    //   );
+    // }
 
     // Category filter
     if (selectedCategory !== 'all') {
@@ -178,12 +217,18 @@ function Products() {
 
   // Sync local state with URL search params
   useEffect(() => {
-    const urlQuery = searchParams.get('q') || '';
-    const urlCategory = searchParams.get('category') || 'all';
-    const urlSort = (searchParams.get('sort') || '').toLowerCase();
-    
+    const urlQuery = searchParams.get("search") || searchParams.get("q") || "";
+    const urlCategory = searchParams.get("category") || "all";
+    const urlSort = (searchParams.get("sort") || "").toLowerCase();
+
     if (urlQuery !== searchQuery) {
       setSearchQuery(urlQuery);
+      // Trigger new search when URL search param changes
+      if (urlQuery.trim()) {
+        fetchProducts(urlQuery);
+      } else {
+        fetchProducts();
+      }
     }
     if (urlCategory !== selectedCategory) {
       setSelectedCategory(urlCategory);
@@ -221,17 +266,25 @@ function Products() {
   const handleSearch = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      setSearchParams({ q: searchQuery });
+      setSearchParams({ search: searchQuery.trim() });
     } else {
       setSearchParams({});
     }
   };
 
-  // Get location
+  // Get location and load initial data
   useEffect(() => {
     fetchCategories();
-    fetchProducts();
     
+    // Check if there's a search query in URL
+    const urlSearchQuery = searchParams.get("search") || searchParams.get("q") || "";
+    if (urlSearchQuery.trim()) {
+      setSearchQuery(urlSearchQuery);
+      fetchProducts(urlSearchQuery);
+    } else {
+      fetchProducts();
+    }
+
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(async (position) => {
         const { latitude, longitude } = position.coords;
@@ -617,11 +670,47 @@ function Products() {
               </div>
             </div>
 
+            {/* Search Suggestions */}
+            {searchSuggestions && (
+              <div className="mb-4 p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
+                <p className="text-sm text-emerald-700">
+                  Did you mean: <span className="font-semibold cursor-pointer underline" 
+                    onClick={() => {
+                      setSearchQuery(searchSuggestions);
+                      fetchProducts(searchSuggestions);
+                    }}
+                  >
+                    {searchSuggestions}
+                  </span>?
+                </p>
+              </div>
+            )}
+
+            {/* Search Status */}
+            {searchQuery && !loading && (
+              <div className="mb-4 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                <p className="text-sm text-gray-700">
+                  {isSearching ? (
+                    "Searching..."
+                  ) : (
+                    <>
+                      Search results for "<span className="font-semibold">{searchQuery}</span>" 
+                      {currentProducts.length > 0 && (
+                        <span className="text-emerald-600"> - {filteredProducts.length} products found</span>
+                      )}
+                    </>
+                  )}
+                </p>
+              </div>
+            )}
+
             {/* Products Grid - Compact Mobile Design */}
             {loading ? (
               <div className="flex flex-col items-center justify-center py-20">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
-                <p className="mt-3 text-gray-600 text-sm">Loading products...</p>
+                <p className="mt-3 text-gray-600 text-sm">
+                  {isSearching ? "Searching products..." : "Loading products..."}
+                </p>
               </div>
             ) : currentProducts.length > 0 ? (
               <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 mb-8">
@@ -642,32 +731,12 @@ function Products() {
                           {product.discount_percent}% OFF
                         </div>
                       )}
-                      {/* Wishlist Button */}
-                      <button
-                        onClick={(e) => handleWishlistToggle(e, product)}
-                        className={`absolute top-1 right-1 p-1.5 rounded-full shadow-md transition-all transform hover:scale-110 ${
-                          isInWishlist(product.id) 
-                            ? 'bg-red-50 hover:bg-red-100 ring-2 ring-red-200' 
-                            : 'bg-white/95 hover:bg-white'
-                        }`}
-                        aria-label={isInWishlist(product.id) ? "Remove from wishlist" : "Add to wishlist"}
-                      >
-                        {isInWishlist(product.id) ? (
-                          <svg className="w-4 h-4 text-red-600" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" />
-                          </svg>
-                        ) : (
-                          <svg className="w-4 h-4 text-gray-600 hover:text-red-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                          </svg>
+                      {product.stock_quantity <= 5 &&
+                        product.stock_quantity > 0 && (
+                          <div className="absolute bottom-1 right-1 bg-amber-500 text-white px-1.5 py-0.5 rounded text-xs font-bold">
+                            {product.stock_quantity} left
+                          </div>
                         )}
-                      </button>
-
-                      {product.stock_quantity <= 5 && product.stock_quantity > 0 && (
-                        <div className="absolute bottom-1 right-1 bg-amber-500 text-white px-1.5 py-0.5 rounded text-xs font-bold">
-                          {product.stock_quantity} left
-                        </div>
-                      )}
                       {product.stock_quantity <= 0 && (
                         <div className="absolute bottom-1 right-1 bg-rose-500 text-white px-1.5 py-0.5 rounded text-xs font-bold">
                           Out of Stock

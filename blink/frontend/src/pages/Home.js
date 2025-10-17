@@ -230,22 +230,50 @@ function Home() {
           </div>
         </div>
       )}
-{/* Category Navigation */}
-<div className="bg-white py-4 sm:py-6 border-b border-gray-100">
-  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between overflow-x-auto scrollbar-hide space-x-4 sm:space-x-6">
-    {categories.map((cat) => (
-      <div
-        key={cat.id}
-        onClick={() => navigate(`/products?category=${cat.slug}`)}
-        className="flex flex-col items-center justify-center flex-shrink-0 w-20 sm:w-24 cursor-pointer hover:scale-105 transition-transform"
-      >
-        <div className="w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center">
-          <img
-            src={cat.image_url}
-            alt={cat.name}
-            className="w-full h-full object-contain"
-            loading="lazy"
-          />
+      {/* Category Navigation */}
+      <div className="bg-white py-4 sm:py-6 border-b border-gray-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between overflow-x-auto scrollbar-hide space-x-4 sm:space-x-6">
+          {categories.map((cat) => (
+            <div
+              key={cat.id}
+              onClick={() => navigate(`/products?category=${cat.slug}`)}
+              className="flex flex-col items-center justify-center flex-shrink-0 w-20 sm:w-24 cursor-pointer hover:scale-105 transition-transform"
+            >
+              <div className="w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center">
+                <img
+                  src={cat.image_url || `/categories/${cat.slug}.png`}
+                  alt={cat.name}
+                  className="w-full h-full object-contain rounded-full"
+                  loading="lazy"
+                  onError={(e) => {
+                    // Fallback to local image if database image fails
+                    e.target.src = `/categories/${cat.slug}.png`;
+                  }}
+                />
+              </div>
+              <div className="flex items-center gap-1 mt-1 sm:mt-2">
+                <p className="text-xs sm:text-sm font-semibold text-gray-800 text-center whitespace-nowrap">
+                  {cat.name}
+                </p>
+                {cat.hasDropdown && (
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="w-3 h-3 text-gray-500"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                )}
+              </div>
+            </div>
+          ))}
         </div>
         <div className="flex items-center gap-1 mt-1 sm:mt-2">
           <p className="text-xs sm:text-sm font-semibold text-gray-800 text-center whitespace-nowrap">
@@ -613,14 +641,17 @@ function Home() {
                                 />
                               </svg>
                             )}
-                          </button>
-                        </div>
-                        <div className="p-2">
-                          <h3 className="text-xs font-medium text-gray-900 line-clamp-2">{product.title}</h3>
-                          <div className="mt-1 flex items-center gap-1">
-                            <span className="text-sm font-semibold text-gray-900">₹{finalPrice.toFixed(0)}</span>
-                            {hasDiscount && (
-                              <span className="text-xs text-gray-500 line-through">₹{price.toFixed(0)}</span>
+
+                            {product.stock_quantity <= 5 &&
+                              product.stock_quantity > 0 && (
+                                <div className="absolute bottom-1 right-1 bg-amber-500 text-white px-1.5 py-0.5 rounded text-xs font-bold">
+                                  {product.stock_quantity} left
+                                </div>
+                              )}
+                            {product.stock_quantity <= 0 && (
+                              <div className="absolute bottom-1 right-1 bg-rose-500 text-white px-1.5 py-0.5 rounded text-xs font-bold">
+                                Out of Stock
+                              </div>
                             )}
                           </div>
                           <button

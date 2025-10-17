@@ -38,11 +38,9 @@ const CartPage = () => {
   };
 
   const handleClearCart = async () => {
-    if (window.confirm('Are you sure you want to remove all items?')) {
-      setIsClearing(true);
-      await clearCart();
-      setIsClearing(false);
-    }
+    setIsClearing(true);
+    await clearCart();
+    setIsClearing(false);
   };
 
   const handleCheckout = () => {

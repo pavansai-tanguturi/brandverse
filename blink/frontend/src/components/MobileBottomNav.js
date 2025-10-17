@@ -6,6 +6,8 @@ import { useAuth } from '../context/AuthContext';
 const MobileBottomNav = () => {
   const location = useLocation();
   const { user } = useAuth();
+  const { items, itemCount } = useCart();
+  
 
   const navItems = [
     { 
@@ -39,26 +41,39 @@ const MobileBottomNav = () => {
       ),
       path: '/deals'
     },
-    
-    { 
-      id: 'orders', 
-      label: 'Orders', 
+    {
+      id: "wishlist",
+      label: "Wishlist",
       icon: (
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+        <svg
+          className="w-6 h-6"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+          />
         </svg>
       ),
-      path: '/orders'
-    }, { 
-      id: user ? 'dashboard' : 'login', 
-      label: user ? 'Dashboard' : 'Login', 
-      icon: user ? (
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-        </svg>
-      ) : (
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
+      path: "/wishlist",
+    },
+    {
+      id: user ? "Profile" : "login",
+      label: user ? "Profile" : "Login",
+      icon: (
+        <svg
+          className="w-6 h-6"
+          viewBox="0 0 24 24"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <g id="SVGRepo_bgCarrier"></g>
+          <g
+            id="SVGRepo_tracerCarrier"
             strokeLinecap="round"
             strokeLinejoin="round"
             strokeWidth={2}
@@ -99,6 +114,7 @@ const MobileBottomNav = () => {
                 : 'bg-transparent'
             }`}>
               {item.icon}
+              {/* Show badge only when cart has items */}
             </div>
             <span className={`text-xs mt-1 font-medium ${
               isActive(item.path) 
