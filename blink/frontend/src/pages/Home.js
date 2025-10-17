@@ -30,7 +30,7 @@ function Home() {
   const [isBannerPaused2, setIsBannerPaused2] = useState(false);
   const touchStartXRef = useRef(null);
   const touchStartXRef2 = useRef(null);
-  const SWIPE_THRESHOLD = 40;
+  const SWIPE_THRESHOLD = 20;
 
   // Local category carousel banners (Carousel 1)
   const localCategoryBanners2 = [
@@ -181,8 +181,42 @@ function Home() {
   };
 
   // Carousel navigation for grouped slides
-  const groupCount = Math.ceil(localCategoryBanners.length / 4);
-  const groupCount2 = Math.ceil(localCategoryBanners2.length / 4);
+  // Compute group count based on responsive group size (1 on mobile, 2 on sm, 3 on lg)
+  const getGroupSize = () => {
+    if (typeof window === "undefined") return 1;
+    if (window.innerWidth >= 1024) return 3;
+    if (window.innerWidth >= 640) return 2;
+    return 1;
+  };
+
+  const [groupSize, setGroupSize] = useState(getGroupSize());
+  const resizeTimerRef = useRef(null);
+
+  useEffect(() => {
+    const onResize = () => {
+      if (resizeTimerRef.current) clearTimeout(resizeTimerRef.current);
+      resizeTimerRef.current = setTimeout(() => {
+        setGroupSize(getGroupSize());
+      }, 120);
+    };
+    window.addEventListener("resize", onResize);
+    return () => {
+      window.removeEventListener("resize", onResize);
+      if (resizeTimerRef.current) clearTimeout(resizeTimerRef.current);
+    };
+  }, []);
+
+  const groupCount = Math.max(1, Math.ceil(localCategoryBanners.length / groupSize));
+  const groupCount2 = Math.max(1, Math.ceil(localCategoryBanners2.length / groupSize));
+
+  // Ensure indexes stay in range when group counts change
+  useEffect(() => {
+    setLocalBannerIndex((prev) => (prev % groupCount));
+  }, [groupCount]);
+
+  useEffect(() => {
+    setLocalBannerIndex2((prev) => (prev % groupCount2));
+  }, [groupCount2]);
 
   const handlePrevLocalBanner = () => {
     setLocalBannerIndex((prev) => (prev - 1 + groupCount) % groupCount);
@@ -221,9 +255,16 @@ function Home() {
     if (localBannerTimerRef2.current)
       clearInterval(localBannerTimerRef2.current);
     if (!isBannerPaused2) {
+      console.debug("carousel2: starting autoplay", { groupCount2, isBannerPaused2 });
       localBannerTimerRef2.current = setInterval(() => {
-        setLocalBannerIndex2((prev) => (prev + 1) % groupCount2);
+        setLocalBannerIndex2((prev) => {
+          const next = (prev + 1) % groupCount2;
+          console.debug("carousel2: tick", { prev, next });
+          return next;
+        });
       }, 4000);
+    } else {
+      console.debug("carousel2: paused", { isBannerPaused2 });
     }
     return () =>
       localBannerTimerRef2.current &&
@@ -501,30 +542,11 @@ function Home() {
           <div className="relative w-full bg-white min-h-[180px] sm:min-h-[220px] md:min-h-[240px]">
             {" "}
             {/* Changed bg-gray-50 to bg-white for a cleaner look */}
-            {(() => {
-              // On mobile, each banner is its own slide; on larger screens, group by 2 (sm) or 3 (lg)
+              {(() => {
+              // Group banners using the responsive groupSize state (1/2/3)
               const groups = [];
-              for (
-                let i = 0;
-                i < localCategoryBanners.length;
-                i +=
-                  window.innerWidth >= 640
-                    ? window.innerWidth >= 1024
-                      ? 3
-                      : 2
-                    : 1
-              ) {
-                groups.push(
-                  localCategoryBanners.slice(
-                    i,
-                    i +
-                      (window.innerWidth >= 640
-                        ? window.innerWidth >= 1024
-                          ? 3
-                          : 2
-                        : 1),
-                  ),
-                );
+              for (let i = 0; i < localCategoryBanners.length; i += groupSize) {
+                groups.push(localCategoryBanners.slice(i, i + groupSize));
               }
               return groups.map((group, groupIndex) => (
                 <div
@@ -610,47 +632,7 @@ function Home() {
             </svg>
           </button>
 
-          {/* Dots - hidden on large screens */}
-          <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex gap-1 lg:hidden">
-            {" "}
-            {/* Reduced bottom margin and gap */}
-            {(() => {
-              const groups = [];
-              for (
-                let i = 0;
-                i < localCategoryBanners.length;
-                i +=
-                  window.innerWidth >= 640
-                    ? window.innerWidth >= 1024
-                      ? 3
-                      : 2
-                    : 1
-              ) {
-                groups.push(
-                  localCategoryBanners.slice(
-                    i,
-                    i +
-                      (window.innerWidth >= 640
-                        ? window.innerWidth >= 1024
-                          ? 3
-                          : 2
-                        : 1),
-                  ),
-                );
-              }
-              return groups.map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setLocalBannerIndex(i)}
-                  className={`w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full transition ${
-                    // Slightly smaller dots
-                    i === localBannerIndex ? "bg-emerald-500" : "bg-gray-300"
-                  }`}
-                  aria-label={`Go to slide ${i + 1}`}
-                />
-              ));
-            })()}
-          </div>
+          {/* Dots removed */}
         </div>
         <hr className="border-gray-200" />{" "}
         {/* Added a divider for visual separation since margins are removed */}
@@ -662,10 +644,12 @@ function Home() {
           onTouchStart={(e) => {
             setIsBannerPaused2(true);
             touchStartXRef2.current = e.touches?.[0]?.clientX ?? null;
+            console.debug('carousel2 touchstart', { x: touchStartXRef2.current });
           }}
           onTouchEnd={(e) => {
             const endX = e.changedTouches?.[0]?.clientX ?? null;
             const startX = touchStartXRef2.current;
+            console.debug('carousel2 touchend', { startX, endX, delta: endX != null && startX != null ? endX - startX : null });
             if (startX != null && endX != null) {
               const delta = endX - startX;
               if (Math.abs(delta) > SWIPE_THRESHOLD) {
@@ -681,30 +665,11 @@ function Home() {
           <div className="relative w-full bg-white min-h-[180px] sm:min-h-[220px] md:min-h-[240px]">
             {" "}
             {/* Changed bg-gray-50 to bg-white for a cleaner look */}
-            {(() => {
-              // On mobile, each banner is its own slide; on larger screens, group by 2 (sm) or 3 (lg)
+              {(() => {
+              // Group banners using the responsive groupSize state (1/2/3)
               const groups2 = [];
-              for (
-                let i = 0;
-                i < localCategoryBanners2.length;
-                i +=
-                  window.innerWidth >= 640
-                    ? window.innerWidth >= 1024
-                      ? 3
-                      : 2
-                    : 1
-              ) {
-                groups2.push(
-                  localCategoryBanners2.slice(
-                    i,
-                    i +
-                      (window.innerWidth >= 640
-                        ? window.innerWidth >= 1024
-                          ? 3
-                          : 2
-                        : 1),
-                  ),
-                );
+              for (let i = 0; i < localCategoryBanners2.length; i += groupSize) {
+                groups2.push(localCategoryBanners2.slice(i, i + groupSize));
               }
               return groups2.map((group, groupIndex) => (
                 <div
@@ -790,76 +755,33 @@ function Home() {
             </svg>
           </button>
 
-          {/* Dots - hidden on large screens */}
-          <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex gap-1 lg:hidden">
-            {" "}
-            {/* Reduced bottom margin and gap */}
-            {(() => {
-              const groups2 = [];
-              for (
-                let i = 0;
-                i < localCategoryBanners2.length;
-                i +=
-                  window.innerWidth >= 640
-                    ? window.innerWidth >= 1024
-                      ? 3
-                      : 2
-                    : 1
-              ) {
-                groups2.push(
-                  localCategoryBanners2.slice(
-                    i,
-                    i +
-                      (window.innerWidth >= 640
-                        ? window.innerWidth >= 1024
-                          ? 3
-                          : 2
-                        : 1),
-                  ),
-                );
-              }
-              return groups2.map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setLocalBannerIndex2(i)}
-                  className={`w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full transition ${
-                    // Slightly smaller dots
-                    i === localBannerIndex2 ? "bg-emerald-500" : "bg-gray-300"
-                  }`}
-                  aria-label={`Go to slide ${i + 1}`}
-                />
-              ));
-            })()}
-          </div>
+          {/* Dots removed */}
         </div>
       </div>
 
       {/* Spotlight Section */}
       <div className="bg-white py-4 border-t border-gray-200">
-        <div className="max-w-7xl mx-auto px-4">
-          <h2 className="text-xl font-bold text-gray-900 mb-3">
-            Quick Filters
-          </h2>
-          <div className="flex gap-2 overflow-x-auto scrollbar-hide">
-            {spotlightItems.map((item) => (
-              <button
-                key={item.label}
-                onClick={() => navigate(item.link)}
-                className="flex flex-col items-center w-20 flex-shrink-0 p-2 rounded-lg hover:bg-gray-100 transition"
-              >
-                <img
-                  src={`/spotlights/${item.image}`}
-                  alt={item.label}
-                  className="w-14 h-14 object-contain rounded-md"
-                />
-                <p className="text-xs font-medium text-gray-700 mt-1 text-center line-clamp-2">
-                  {item.label}
-                </p>
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
+  <div className="max-w-7xl mx-auto px-4">
+    <h2 className="text-xl font-bold text-gray-900 mb-3">Quick Filters</h2>
+
+    <div className="flex gap-3 overflow-x-auto scrollbar-hide">
+      {spotlightItems.map((item) => (
+        <button
+          key={item.image}
+          onClick={() => navigate(item.link)}
+          className="flex items-center justify-center w-24 h-24 sm:w-28 sm:h-28 flex-shrink-0 bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md hover:bg-gray-50 transition-all duration-200"
+        >
+          <img
+            src={`/spotlights/${item.image}`}
+            alt={item.label || "Quick Filter"}
+            className="w-full h-full object-cover rounded-xl"
+          />
+        </button>
+      ))}
+    </div>
+  </div>
+</div>
+
 
       {/* Category-Based Product Sections */}
       <div className="pb-20 lg:pb-0">
@@ -1019,12 +941,12 @@ function Home() {
             <div
               role="button"
               onClick={() => navigate('/products?category=pantry')}
-              className="relative h-44 sm:h-56 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-transform transform hover:-translate-y-1 cursor-pointer bg-gray-50"
+              className="relative h-44 sm:h-56 lg:h-[400px] rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-transform transform hover:-translate-y-1 cursor-pointer bg-gray-50"
             >
               <img
                 src="/home-specials/pantry.png"
                 alt="Pantry Specials"
-                className="w-full h-full object-cover"
+                className="w-full h-full lg:h-full object-cover"
                 loading="lazy"
                 onError={(e) => (e.target.src = '/logo192.png')}
               />
@@ -1039,12 +961,12 @@ function Home() {
             <div
               role="button"
               onClick={() => navigate('/products?category=breakfast')}
-              className="relative h-44 sm:h-56 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-transform transform hover:-translate-y-1 cursor-pointer bg-gray-50"
+              className="relative h-44 sm:h-56 lg:h-[400px] rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-transform transform hover:-translate-y-1 cursor-pointer bg-gray-50"
             >
               <img
                 src="/home-specials/breakfast.png"
                 alt="Breakfast Specials"
-                className="w-full h-full object-cover"
+                className="w-full h-full lg:h-full object-cover"
                 loading="lazy"
                 onError={(e) => (e.target.src = '/logo192.png')}
               />
