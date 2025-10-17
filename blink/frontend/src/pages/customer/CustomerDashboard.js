@@ -1081,11 +1081,11 @@ const CustomerDashboard = () => {
                             </div>
                           </div>
                         );
-                      })}
-                    </div>
-                  ) : (
-                    <div className="text-center py-16">
-                      <div className="w-24 h-24 mx-auto mb-6 bg-gradient-to-br from-emerald-100 to-teal-100 rounded-full flex items-center justify-center shadow-lg">
+                        })}
+                      </div>
+                      ) : (
+                      <div className="text-center py-16">
+                        <div className="w-24 h-24 mx-auto mb-6 bg-gradient-to-br from-emerald-100 to-teal-100 rounded-full flex items-center justify-center shadow-lg">
                         <svg
                           className="w-12 h-12 text-emerald-600"
                           fill="none"
@@ -1093,37 +1093,39 @@ const CustomerDashboard = () => {
                           viewBox="0 0 24 24"
                         >
                           <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
                           />
                         </svg>
-                      </div>
-                      <h3 className="text-2xl font-bold text-gray-900 mb-4 flex items-center justify-center gap-2">
+                        </div>
+                        <h3 className="text-2xl font-bold text-gray-900 mb-4 flex items-center justify-center gap-2">
                         <svg className="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                         </svg>
                         Your wishlist is empty
-                      </h3>
-                      <p className="text-gray-600 mb-8 text-lg max-w-md mx-auto">
+                        </h3>
+                        <p className="text-gray-600 mb-8 text-lg max-w-md mx-auto">
                         Discover amazing products and add them to your wishlist for later!
-                      </p>
-                      <button
-                        onClick={() => navigate("/")}
-                        className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white px-8 py-4 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl font-bold text-lg hover:scale-105 flex items-center gap-2"
-                      >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        </p>
+                        <div className="flex justify-center">
+                        <button
+                          onClick={() => navigate("/")}
+                          className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white px-8 py-4 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl font-bold text-lg hover:scale-105 flex items-center gap-2"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                        </svg>
-                        Start Shopping
-                      </button>
+                          </svg>
+                          Start Shopping
+                        </button>
+                        </div>
+                      </div>
+                      )}
                     </div>
-                  )}
-                </div>
-              )}
+                    )}
 
-              {/* Profile Settings Tab */}
+                    {/* Profile Settings Tab */}
               {activeTab === "settings" && (
                 <div className="space-y-8">
                   {error && (
