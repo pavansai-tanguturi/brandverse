@@ -775,7 +775,7 @@ function Home() {
             src={`/spotlights/${item.image}`}
             alt={item.label || "Quick Filter"}
             className="w-full h-full object-cover rounded-xl"
-          />
+          /> 
         </button>
       ))}
     </div>
