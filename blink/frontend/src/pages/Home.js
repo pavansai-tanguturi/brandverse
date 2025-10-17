@@ -30,7 +30,7 @@ function Home() {
   const [isBannerPaused2, setIsBannerPaused2] = useState(false);
   const touchStartXRef = useRef(null);
   const touchStartXRef2 = useRef(null);
-  const SWIPE_THRESHOLD = 40;
+  const SWIPE_THRESHOLD = 20;
 
   // Local category carousel banners (Carousel 1)
   const localCategoryBanners2 = [
@@ -181,8 +181,48 @@ function Home() {
   };
 
   // Carousel navigation for grouped slides
-  const groupCount = Math.ceil(localCategoryBanners.length / 4);
-  const groupCount2 = Math.ceil(localCategoryBanners2.length / 4);
+  // Compute group count based on responsive group size (1 on mobile, 2 on sm, 3 on lg)
+  const getGroupSize = () => {
+    if (typeof window === "undefined") return 1;
+    if (window.innerWidth >= 1024) return 3;
+    if (window.innerWidth >= 640) return 2;
+    return 1;
+  };
+
+  const [groupSize, setGroupSize] = useState(getGroupSize());
+  const resizeTimerRef = useRef(null);
+
+  useEffect(() => {
+    const onResize = () => {
+      if (resizeTimerRef.current) clearTimeout(resizeTimerRef.current);
+      resizeTimerRef.current = setTimeout(() => {
+        setGroupSize(getGroupSize());
+      }, 120);
+    };
+    window.addEventListener("resize", onResize);
+    return () => {
+      window.removeEventListener("resize", onResize);
+      if (resizeTimerRef.current) clearTimeout(resizeTimerRef.current);
+    };
+  }, []);
+
+  const groupCount = Math.max(
+    1,
+    Math.ceil(localCategoryBanners.length / groupSize),
+  );
+  const groupCount2 = Math.max(
+    1,
+    Math.ceil(localCategoryBanners2.length / groupSize),
+  );
+
+  // Ensure indexes stay in range when group counts change
+  useEffect(() => {
+    setLocalBannerIndex((prev) => prev % groupCount);
+  }, [groupCount]);
+
+  useEffect(() => {
+    setLocalBannerIndex2((prev) => prev % groupCount2);
+  }, [groupCount2]);
 
   const handlePrevLocalBanner = () => {
     setLocalBannerIndex((prev) => (prev - 1 + groupCount) % groupCount);
@@ -221,9 +261,19 @@ function Home() {
     if (localBannerTimerRef2.current)
       clearInterval(localBannerTimerRef2.current);
     if (!isBannerPaused2) {
+      console.debug("carousel2: starting autoplay", {
+        groupCount2,
+        isBannerPaused2,
+      });
       localBannerTimerRef2.current = setInterval(() => {
-        setLocalBannerIndex2((prev) => (prev + 1) % groupCount2);
+        setLocalBannerIndex2((prev) => {
+          const next = (prev + 1) % groupCount2;
+          console.debug("carousel2: tick", { prev, next });
+          return next;
+        });
       }, 4000);
+    } else {
+      console.debug("carousel2: paused", { isBannerPaused2 });
     }
     return () =>
       localBannerTimerRef2.current &&
@@ -356,12 +406,17 @@ function Home() {
       {/* Delivery Status Strip */}
       {!checkingDelivery && showDeliveryStatus && (
         <div
-          className={`mx-4 my-2 px-3 py-2 rounded-lg text-sm transition-all duration-500 ${deliveryAvailable ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"}`}
+          className={`mx-2 sm:mx-4 my-2 px-2 sm:px-3 py-2 rounded-lg text-xs sm:text-sm transition-all duration-500 ${
+            deliveryAvailable
+              ? "bg-green-100 text-green-800"
+              : "bg-yellow-100 text-yellow-800"
+          }`}
         >
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            {/* Left side: location + status */}
+            <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink min-w-0">
               <svg
-                className="w-4 h-4"
+                className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -373,19 +428,23 @@ function Home() {
                   d="M17.657 16.657L13.414 20.9a2 2 0 01-2.828 0l-4.243-4.243a8 8 0 1111.314 0z"
                 />
               </svg>
-              <span className="truncate">
+
+              {/* Responsive text truncation */}
+              <span className="truncate max-w-[160px] sm:max-w-xs">
                 {locationName} •{" "}
                 {deliveryAvailable
                   ? "Delivery Available"
                   : "Delivery Unavailable"}
               </span>
             </div>
+
+            {/* Close button */}
             <button
               onClick={() => setShowDeliveryStatus(false)}
-              className="md:hidden p-1 hover:bg-black/10 rounded-full transition-colors"
+              className="p-1 hover:bg-black/10 rounded-full transition-colors"
             >
               <svg
-                className="w-3 h-3"
+                className="w-3 h-3 sm:w-4 sm:h-4"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -401,6 +460,7 @@ function Home() {
           </div>
         </div>
       )}
+
       {/* Category Navigation */}
       <div className="bg-white py-4 sm:py-6 border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between overflow-x-auto scrollbar-hide space-x-4 sm:space-x-6">
@@ -529,29 +589,10 @@ function Home() {
             {" "}
             {/* Changed bg-gray-50 to bg-white for a cleaner look */}
             {(() => {
-              // On mobile, each banner is its own slide; on larger screens, group by 2 (sm) or 3 (lg)
+              // Group banners using the responsive groupSize state (1/2/3)
               const groups = [];
-              for (
-                let i = 0;
-                i < localCategoryBanners.length;
-                i +=
-                  window.innerWidth >= 640
-                    ? window.innerWidth >= 1024
-                      ? 3
-                      : 2
-                    : 1
-              ) {
-                groups.push(
-                  localCategoryBanners.slice(
-                    i,
-                    i +
-                      (window.innerWidth >= 640
-                        ? window.innerWidth >= 1024
-                          ? 3
-                          : 2
-                        : 1),
-                  ),
-                );
+              for (let i = 0; i < localCategoryBanners.length; i += groupSize) {
+                groups.push(localCategoryBanners.slice(i, i + groupSize));
               }
               return groups.map((group, groupIndex) => (
                 <div
@@ -637,47 +678,7 @@ function Home() {
             </svg>
           </button>
 
-          {/* Dots - hidden on large screens */}
-          <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex gap-1 lg:hidden">
-            {" "}
-            {/* Reduced bottom margin and gap */}
-            {(() => {
-              const groups = [];
-              for (
-                let i = 0;
-                i < localCategoryBanners.length;
-                i +=
-                  window.innerWidth >= 640
-                    ? window.innerWidth >= 1024
-                      ? 3
-                      : 2
-                    : 1
-              ) {
-                groups.push(
-                  localCategoryBanners.slice(
-                    i,
-                    i +
-                      (window.innerWidth >= 640
-                        ? window.innerWidth >= 1024
-                          ? 3
-                          : 2
-                        : 1),
-                  ),
-                );
-              }
-              return groups.map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setLocalBannerIndex(i)}
-                  className={`w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full transition ${
-                    // Slightly smaller dots
-                    i === localBannerIndex ? "bg-emerald-500" : "bg-gray-300"
-                  }`}
-                  aria-label={`Go to slide ${i + 1}`}
-                />
-              ));
-            })()}
-          </div>
+          {/* Dots removed */}
         </div>
         )}
         <hr className="border-gray-200" />{" "}
@@ -725,29 +726,14 @@ function Home() {
             {" "}
             {/* Changed bg-gray-50 to bg-white for a cleaner look */}
             {(() => {
-              // On mobile, each banner is its own slide; on larger screens, group by 2 (sm) or 3 (lg)
+              // Group banners using the responsive groupSize state (1/2/3)
               const groups2 = [];
               for (
                 let i = 0;
                 i < localCategoryBanners2.length;
-                i +=
-                  window.innerWidth >= 640
-                    ? window.innerWidth >= 1024
-                      ? 3
-                      : 2
-                    : 1
+                i += groupSize
               ) {
-                groups2.push(
-                  localCategoryBanners2.slice(
-                    i,
-                    i +
-                      (window.innerWidth >= 640
-                        ? window.innerWidth >= 1024
-                          ? 3
-                          : 2
-                        : 1),
-                  ),
-                );
+                groups2.push(localCategoryBanners2.slice(i, i + groupSize));
               }
               return groups2.map((group, groupIndex) => (
                 <div
@@ -827,47 +813,7 @@ function Home() {
             </svg>
           </button>
 
-          {/* Dots - hidden on large screens */}
-          <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex gap-1 lg:hidden">
-            {" "}
-            {/* Reduced bottom margin and gap */}
-            {(() => {
-              const groups2 = [];
-              for (
-                let i = 0;
-                i < localCategoryBanners2.length;
-                i +=
-                  window.innerWidth >= 640
-                    ? window.innerWidth >= 1024
-                      ? 3
-                      : 2
-                    : 1
-              ) {
-                groups2.push(
-                  localCategoryBanners2.slice(
-                    i,
-                    i +
-                      (window.innerWidth >= 640
-                        ? window.innerWidth >= 1024
-                          ? 3
-                          : 2
-                        : 1),
-                  ),
-                );
-              }
-              return groups2.map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setLocalBannerIndex2(i)}
-                  className={`w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full transition ${
-                    // Slightly smaller dots
-                    i === localBannerIndex2 ? "bg-emerald-500" : "bg-gray-300"
-                  }`}
-                  aria-label={`Go to slide ${i + 1}`}
-                />
-              ));
-            })()}
-          </div>
+          {/* Dots removed */}
         </div>
         )}
       </div>
@@ -1063,6 +1009,83 @@ function Home() {
       </div>
 
       <MobileBottomNav />
+      {/* Home Specials - two prominent image cards */}
+      <div className="bg-transparent mt-6" style={{ marginTop: "-90px" }}>
+        <div className="max-w-7xl mx-auto px-4 py-3">
+          <div className="flex items-center justify-between mb-4">
+            <button
+              onClick={() => navigate("/products")}
+              className="hidden sm:inline-flex items-center gap-2 text-sm text-emerald-600 hover:text-emerald-700"
+            >
+              Browse all
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 5l7 7-7 7"
+                />
+              </svg>
+            </button>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div
+              role="button"
+              onClick={() => navigate("/products?category=pantry")}
+              className="relative h-[200px] sm:h-[250px] md:h-[300px] lg:h-[400px] rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-transform transform hover:-translate-y-1 cursor-pointer bg-gray-50"
+            >
+              <img
+                src="/home-specials/pantry.png"
+                alt="Pantry Specials"
+                className="w-full h-full object-cover"
+                loading="lazy"
+                onError={(e) => (e.target.src = "/logo192.png")}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent flex items-end p-4">
+                <div className="hidden sm:block">
+                  <h3 className="text-white font-semibold text-lg">
+                    Pantry Essentials
+                  </h3>
+                  <p className="text-white text-xs opacity-90">
+                    Staples and bulk buys for your kitchen
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div
+              role="button"
+              onClick={() => navigate("/products?category=breakfast")}
+              className="relative h-[200px] sm:h-[250px] md:h-[300px] lg:h-[400px] rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-transform transform hover:-translate-y-1 cursor-pointer bg-gray-50"
+            >
+              <img
+                src="/home-specials/breakfast.png"
+                alt="Breakfast Specials"
+                className="w-full h-full object-cover"
+                loading="lazy"
+                onError={(e) => (e.target.src = "/logo192.png")}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent flex items-end p-4">
+                <div className="hidden sm:block">
+                  <h3 className="text-white font-semibold text-lg">
+                    Breakfast Picks
+                  </h3>
+                  <p className="text-white text-xs opacity-90">
+                    Kickstart your day with healthy choices
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
