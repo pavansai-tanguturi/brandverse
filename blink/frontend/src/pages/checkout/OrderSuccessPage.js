@@ -1,15 +1,13 @@
 // src/pages/OrderSuccessPage.js
-import React, { useEffect, useState } from "react";
-import { useLocation, useNavigate, Link } from "react-router-dom";
-import MobileBottomNav from "../../components/MobileBottomNav";
-import logo from "../../assets/logos.png";
-import ModernNavbar from "../../components/ModernNavbar";
-import { useCart } from "../../context/CartContext";
+import React, { useEffect, useState } from 'react';
+import { useLocation, useNavigate, Link } from 'react-router-dom';
+import MobileBottomNav from '../../components/MobileBottomNav';
+import logo from '../../assets/logos.png';
+import ModernNavbar from '../../components/ModernNavbar';
 
 const OrderSuccessPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { clearCart } = useCart();
   const { order, message, paymentMethod } = location.state || {};
   const [showConfetti, setShowConfetti] = useState(true);
 
@@ -17,17 +15,6 @@ const OrderSuccessPage = () => {
     const timer = setTimeout(() => setShowConfetti(false), 3000);
     return () => clearTimeout(timer);
   }, []);
-
-  // Clear cart in background after order success is displayed
-  useEffect(() => {
-    if (order) {
-      // Clear cart silently in the background after a short delay
-      // This ensures the page is fully rendered first
-      setTimeout(() => {
-        clearCart();
-      }, 100);
-    }
-  }, [order, clearCart]);
 
   if (!order) {
     return (

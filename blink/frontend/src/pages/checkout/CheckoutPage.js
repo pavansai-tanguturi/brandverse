@@ -294,6 +294,9 @@ const CheckoutPage = () => {
       
       console.log('Order created successfully:', order);
 
+      // Clear cart immediately after successful order creation
+      clearCart();
+
       // Handle different payment methods
       if (paymentMethod === 'cod') {
         // Try to confirm COD order
@@ -357,55 +360,14 @@ const CheckoutPage = () => {
   const validation = validateCart();
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Modern Header */}
-      <header className="bg-emerald-600 text-white shadow-sm sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16 md:h-20">
-            <Link to="/" className="flex items-center space-x-3 cursor-pointer">
-              <img
-                src={logo}
-                className="h-10 w-auto object-contain"
-                alt="Logo"
-              />
-            </Link>
-
-            {/* Progress Steps - Desktop */}
-            <div className="hidden md:flex items-center space-x-4">
-              {[
-                { num: 1, label: "Bag" },
-                { num: 2, label: "Address" },
-                { num: 3, label: "Payment" },
-              ].map((item, idx) => (
-                <React.Fragment key={item.num}>
-                  <div className="flex items-center">
-                    <div
-                      className={`flex items-center space-x-2 px-3 py-1 rounded-full transition-all ${
-                        step >= item.num
-                          ? "bg-emerald-100 text-emerald-700 border border-emerald-200"
-                          : "bg-gray-50 text-gray-400 border border-gray-200"
-                      }`}
-                    >
-                      <span
-                        className={`text-sm font-bold ${
-                          step === item.num ? "scale-110" : ""
-                        }`}
-                      >
-                        {item.num}
-                      </span>
-                      <span className="text-xs font-medium">{item.label}</span>
-                    </div>
-                  </div>
-                  {idx < 2 && (
-                    <div
-                      className={`w-12 h-0.5 ${
-                        step > item.num ? "bg-emerald-500" : "bg-gray-200"
-                      }`}
-                    />
-                  )}
-                </React.Fragment>
-              ))}
-            </div>
+   <div className="min-h-screen bg-gray-50">
+  {/* Modern Header */}
+ <header className="bg-gradient-to-r from-emerald-50 to-white shadow-sm sticky top-0 z-50">
+  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="flex items-center justify-between h-16 md:h-20">
+      <Link to="/" className="flex items-center space-x-3 cursor-pointer">
+        <img src={logo} className="h-10 w-auto object-contain" alt="Logo" />
+      </Link>
 
       {/* Progress Steps - Desktop */}
       <div className="hidden md:flex items-center space-x-4">

@@ -110,7 +110,7 @@ const AddressManager = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
         <span className="ml-2">Loading addresses...</span>
       </div>
     );
@@ -133,7 +133,7 @@ const AddressManager = () => {
               resetForm();
               setShowAddForm(true);
             }}
-            className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-lg hover:from-emerald-600 hover:to-teal-700 transition-all duration-300 shadow-lg hover:shadow-xl"
+            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
           >
             Add New Address
           </button>
@@ -144,9 +144,7 @@ const AddressManager = () => {
       {error && (
         <div className="p-4 bg-red-50 border border-red-200 rounded-xl shadow-sm">
           <div className="flex items-center gap-3">
-            <svg className="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-            </svg>
+            <span className="text-red-500 text-xl">⚠️</span>
             <p className="text-red-700 font-medium">{error}</p>
           </div>
         </div>
@@ -157,18 +155,14 @@ const AddressManager = () => {
         <div className="p-4 bg-red-50 border border-red-200 rounded-xl shadow-sm">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <svg className="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-              </svg>
+              <span className="text-red-500 text-xl">⚠️</span>
               <p className="text-red-700 font-medium">{actionError}</p>
             </div>
             <button
-              onClick={() => setActionError("")}
-              className="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-100 transition-colors"
+              onClick={() => setActionError('')}
+              className="text-red-500 hover:text-red-700 font-bold text-xl"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
+              ×
             </button>
           </div>
         </div>
@@ -191,7 +185,7 @@ const AddressManager = () => {
                   name="full_name"
                   value={formData.full_name}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
                   required
                 />
               </div>
@@ -204,7 +198,7 @@ const AddressManager = () => {
                   name="phone"
                   value={formData.phone}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
                   placeholder="+91 9876543210"
                 />
               </div>
@@ -217,7 +211,7 @@ const AddressManager = () => {
                   name="country"
                   value={formData.country}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
                   required
                 />
               </div>
@@ -232,7 +226,7 @@ const AddressManager = () => {
                 name="address_line_1"
                 value={formData.address_line_1}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
                 placeholder="Street address, P.O. Box, etc."
                 required
               />
@@ -247,7 +241,7 @@ const AddressManager = () => {
                 name="address_line_2"
                 value={formData.address_line_2}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
                 placeholder="Apartment, suite, unit, building, floor, etc."
               />
             </div>
@@ -262,7 +256,7 @@ const AddressManager = () => {
                   name="city"
                   value={formData.city}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
                   required
                 />
               </div>
@@ -275,7 +269,7 @@ const AddressManager = () => {
                   name="state"
                   value={formData.state}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
                   required
                 />
               </div>
@@ -288,7 +282,7 @@ const AddressManager = () => {
                   name="postal_code"
                   value={formData.postal_code}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
                   required
                 />
               </div>
@@ -303,7 +297,7 @@ const AddressManager = () => {
                 name="landmark"
                 value={formData.landmark}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
                 placeholder="Near Central Mall, etc."
               />
             </div>
@@ -315,7 +309,7 @@ const AddressManager = () => {
                 id="is_default"
                 checked={formData.is_default}
                 onChange={handleInputChange}
-                className="h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-300 rounded"
+                className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300 rounded"
               />
               <label htmlFor="is_default" className="ml-2 block text-sm text-gray-900">
                 Set as default address
@@ -325,7 +319,7 @@ const AddressManager = () => {
             <div className="flex gap-3 pt-4">
               <button
                 type="submit"
-                className="px-6 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-lg hover:from-emerald-600 hover:to-teal-700 transition-all duration-300 shadow-lg hover:shadow-xl"
+                className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
               >
                 {editingAddress ? 'Update Address' : 'Save Address'}
               </button>
@@ -349,11 +343,8 @@ const AddressManager = () => {
       <div className="space-y-6">
         {addresses.length === 0 ? (
           <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-12 text-center">
-            <div className="bg-gradient-to-br from-emerald-100 to-teal-200 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6">
-              <svg className="w-12 h-12 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
+            <div className="bg-gradient-to-br from-orange-100 to-orange-200 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6">
+              <span className="text-4xl">📍</span>
             </div>
             <h4 className="text-2xl font-bold text-gray-900 mb-3">No addresses saved</h4>
             <p className="text-gray-500 mb-8 text-lg max-w-md mx-auto">
@@ -361,7 +352,7 @@ const AddressManager = () => {
             </p>
             <button
               onClick={() => setShowAddForm(true)}
-              className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-lg hover:from-emerald-600 hover:to-teal-700 transition-all duration-300 shadow-lg hover:shadow-xl"
+              className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
             >
               Add Address
             </button>
@@ -370,37 +361,28 @@ const AddressManager = () => {
           addresses.map((address) => (
             <div
               key={address.id}
-              className="bg-white border border-gray-100 rounded-2xl p-6 hover:shadow-xl transition-all duration-200 transform hover:-translate-y-1 hover:border-emerald-200"
+              className="bg-white border border-gray-100 rounded-2xl p-6 hover:shadow-xl transition-all duration-200 transform hover:-translate-y-1 hover:border-orange-200"
             >
               <div className="flex justify-between items-start">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-4">
-                    <div className="w-3 h-3 rounded-full bg-emerald-400"></div>
+                    <div className="w-3 h-3 rounded-full bg-blue-400"></div>
                     {address.is_default && (
-                      <span className="px-3 py-1 bg-gradient-to-r from-emerald-100 to-emerald-200 text-emerald-700 rounded-full text-sm font-semibold border border-emerald-300 flex items-center gap-1">
-                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                        </svg>
-                        Default
-                      </span>
+                      <span className="px-3 py-1 bg-gradient-to-r from-blue-100 to-blue-200 text-blue-700 rounded-full text-sm font-semibold border border-blue-300">
+                        ⭐ Default
+                      </span>  
                     )}
                   </div>
                   <h5 className="font-bold text-gray-900 text-lg mb-2">{address.full_name}</h5>
                   <p className="text-gray-600 leading-relaxed mb-2">{formatAddress(address)}</p>
                   {address.phone && (
                     <p className="text-gray-600 flex items-center gap-2 mb-1">
-                      <svg className="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                      </svg>
-                      {address.phone}
+                      <span className="text-orange-500">📞</span> {address.phone}
                     </p>
                   )}
                   {address.landmark && (
                     <p className="text-gray-500 flex items-center gap-2">
-                      <svg className="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                      </svg>
-                      {address.landmark}
+                      <span className="text-orange-500">🏛️</span> {address.landmark}
                     </p>
                   )}
                 </div>
@@ -414,7 +396,7 @@ const AddressManager = () => {
                   {!address.is_default && (
                     <button
                       onClick={() => handleSetDefault(address.id)}
-                      className="px-4 py-2 bg-emerald-100 text-emerald-700 rounded-lg hover:bg-emerald-200 transition-colors"
+                      className="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors"
                     >
                       Set Default
                     </button>

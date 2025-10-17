@@ -285,44 +285,18 @@ const ProductPage = () => {
           {/* Product Images */}
           <div className="space-y-3 sm:space-y-4">
             {/* Main Image */}
-            <div
-              className="bg-white border border-gray-200 rounded-lg overflow-hidden relative flex items-center justify-center"
-              style={{ aspectRatio: "4/5", maxHeight: "600px" }}
-            >
-              {/* Wishlist Button - Top Right Corner */}
-              <button
-                onClick={() => {
-                  if (isInWishlist(product.id)) {
-                    removeFromWishlist(product.id);
-                  } else {
-                    const productWithCorrectImage = {
-                      ...product,
-                      image_url: productImages[0],
-                    };
-                    addToWishlist(productWithCorrectImage);
-                  }
-                }}
-                className={`absolute top-3 right-3 w-10 h-10 backdrop-blur-sm border rounded-full flex items-center justify-center hover:shadow-md transition-all duration-200 z-20 ${
-                  isInWishlist(product.id) 
-                    ? "bg-red-50 border-red-200 hover:bg-red-100" 
-                    : "bg-white/90 border-gray-200 hover:bg-white"
-                }`}
-              >
-                <svg
-                  className={`w-5 h-5 transition-all duration-200 ${
-                    isInWishlist(product.id) 
-                      ? "text-red-500 fill-red-500 scale-110" 
-                      : "text-gray-400 hover:text-red-400"
-                  }`}
-                  fill={isInWishlist(product.id) ? "currentColor" : "none"}
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+            <div className="bg-white border border-gray-200 rounded-lg overflow-hidden relative flex items-center justify-center" style={{ aspectRatio: '4/5', maxHeight: '600px' }}>
+             {/* Dots inside image card with glassy effect */}
+            {productImages.length > 1 && (
+              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex justify-center items-center gap-2 z-20">
+                {productImages.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => startTransition(() => setSelectedImage(index))}
+                    className={`w-4 h-4 rounded-full border-2 backdrop-blur bg-white/30 shadow-md transition-all duration-200 focus:outline-none ${
+                      selectedImage === index ? 'border-blue-500 bg-blue-400/60 scale-125' : 'border-gray-300 bg-gray-200/40'
+                    } ${isPending ? 'opacity-60' : ''}`}
+                    aria-label={`Show image ${index + 1}`}
                   />
                 ))}
               </div>

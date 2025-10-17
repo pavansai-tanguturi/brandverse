@@ -333,13 +333,7 @@ export const WishlistProvider = ({ children }) => {
   const wishlistCount = state.items.length;
 
   const value = {
-    // State (with backwards compatibility)
-    state: {
-      items: state.items,
-      isLoading: state.isLoading || false,
-      error: state.error,
-      isGuestMode: state.isGuestMode || false,
-    },
+    // State
     items: state.items,
     wishlistCount,
     isLoading: state.isLoading || false,
