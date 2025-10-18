@@ -1009,83 +1009,127 @@ function Home() {
       </div>
 
       <MobileBottomNav />
-      {/* Home Specials - two prominent image cards */}
-      <div className="bg-transparent mt-6" style={{ marginTop: "-90px" }}>
-        <div className="max-w-7xl mx-auto px-4 py-3">
-          <div className="flex items-center justify-between mb-4">
-            <button
-              onClick={() => navigate("/products")}
-              className="hidden sm:inline-flex items-center gap-2 text-sm text-emerald-600 hover:text-emerald-700"
-            >
-              Browse all
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+      {/* Home Specials - two prominent image cards (with skeleton loader when loading) */}
+      <div className="bg-transparent mt-6 -mt-24">
+        <div className="max-w-7xl mx-auto px-4 py-8">
+          {loading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {Array.from({ length: 4 }).map((_, idx) => (
+                <div
+                  key={idx}
+                  className="flex-none w-full bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden"
+                >
+                  <div className="relative">
+                    <div className="w-full h-40 sm:h-48 bg-gray-200 animate-pulse"></div>
+                  </div>
+                  <div className="p-3 sm:p-4">
+                    <div className="w-3/4 h-4 bg-gray-200 rounded mb-2 animate-pulse"></div>
+                    <div className="w-1/2 h-3 bg-gray-200 rounded mb-3 animate-pulse"></div>
+                    <div className="w-full h-8 bg-gray-200 rounded animate-pulse"></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {/* Pantry Essentials */}
+              <div
+                role="button"
+                onClick={() => navigate("/products?category=pantry")}
+                className="relative h-64 md:h-72 lg:h-80 rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all transform hover:-translate-y-1 bg-gray-100 dark:bg-gray-800 group cursor-pointer"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 5l7 7-7 7"
+                <img
+                  src="/home-specials/pantry.png"
+                  alt="Pantry Essentials"
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  loading="lazy"
+                  onError={(e) => (e.target.src = "/logo192.png")}
                 />
-              </svg>
-            </button>
-          </div>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent flex items-end p-4">
+                  <div>
+                    <h3 className="text-white font-semibold text-lg">
+                      Pantry Essentials
+                    </h3>
+                    <p className="text-white/90 text-xs">
+                      Staples and bulk buys for your kitchen
+                    </p>
+                  </div>
+                </div>
+              </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div
-              role="button"
-              onClick={() => navigate("/products?category=pantry")}
-              className="relative h-[200px] sm:h-[250px] md:h-[300px] lg:h-[400px] rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-transform transform hover:-translate-y-1 cursor-pointer bg-gray-50"
-            >
-              <img
-                src="/home-specials/pantry.png"
-                alt="Pantry Specials"
-                className="w-full h-full object-cover"
-                loading="lazy"
-                onError={(e) => (e.target.src = "/logo192.png")}
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent flex items-end p-4">
-                <div className="hidden sm:block">
-                  <h3 className="text-white font-semibold text-lg">
-                    Pantry Essentials
-                  </h3>
-                  <p className="text-white text-xs opacity-90">
-                    Staples and bulk buys for your kitchen
-                  </p>
+              {/* Breakfast Picks */}
+              <div
+                role="button"
+                onClick={() => navigate("/products?category=breakfast")}
+                className="relative h-64 md:h-72 lg:h-80 rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all transform hover:-translate-y-1 bg-gray-100 dark:bg-gray-800 group cursor-pointer"
+              >
+                <img
+                  src="/home-specials/breakfast.png"
+                  alt="Breakfast Picks"
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  loading="lazy"
+                  onError={(e) => (e.target.src = "/logo192.png")}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent flex items-end p-4">
+                  <div>
+                    <h3 className="text-white font-semibold text-lg">Breakfast Picks</h3>
+                    <p className="text-white/90 text-xs">
+                      Kickstart your day with healthy choices
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Beverages */}
+              <div
+                role="button"
+                onClick={() => navigate("/products?category=beverages")}
+                className="relative h-64 md:h-72 lg:h-80 rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all transform hover:-translate-y-1 bg-gray-100 dark:bg-gray-800 group cursor-pointer"
+              >
+                <img
+                  src="/home-specials/refreshing_drinks.png"
+                  alt="Beverages"
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  loading="lazy"
+                  onError={(e) => (e.target.src = "/logo192.png")}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent flex items-end p-4">
+                  <div>
+                    <h3 className="text-white font-semibold text-lg">Refreshing Drinks</h3>
+                    <p className="text-white/90 text-xs">
+                      Juices, coffee, and more
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Add Optional Extra Category */}
+              <div
+                role="button"
+                onClick={() => navigate("/products?category=snacks")}
+                className="hidden xl:block relative h-64 md:h-72 lg:h-80 rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all transform hover:-translate-y-1 bg-gray-100 dark:bg-gray-800 group cursor-pointer"
+              >
+                <img
+                  src="/home-specials/tasty-snacks.png"
+                  alt="Snacks"
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  loading="lazy"
+                  onError={(e) => (e.target.src = "/logo192.png")}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent flex items-end p-4">
+                  <div>
+                    <h3 className="text-white font-semibold text-lg">Tasty Snacks</h3>
+                    <p className="text-white/90 text-xs">
+                      Perfect bites for every mood
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
-
-            <div
-              role="button"
-              onClick={() => navigate("/products?category=breakfast")}
-              className="relative h-[200px] sm:h-[250px] md:h-[300px] lg:h-[400px] rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-transform transform hover:-translate-y-1 cursor-pointer bg-gray-50"
-            >
-              <img
-                src="/home-specials/breakfast.png"
-                alt="Breakfast Specials"
-                className="w-full h-full object-cover"
-                loading="lazy"
-                onError={(e) => (e.target.src = "/logo192.png")}
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent flex items-end p-4">
-                <div className="hidden sm:block">
-                  <h3 className="text-white font-semibold text-lg">
-                    Breakfast Picks
-                  </h3>
-                  <p className="text-white text-xs opacity-90">
-                    Kickstart your day with healthy choices
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
+          )}
         </div>
       </div>
+
     </div>
   );
 }
