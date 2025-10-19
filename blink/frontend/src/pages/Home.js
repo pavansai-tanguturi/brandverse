@@ -65,18 +65,6 @@ function Home() {
       link: "/products?category=pet",
     },
     {
-      key: "meat",
-      src: "/carousel1/meat.png",
-      title: "Fresh Meat",
-      link: "/products?category=meat",
-    },
-    {
-      key: "skincare",
-      src: "/carousel1/skincare.png",
-      title: "Skincare",
-      link: "/products?category=skincare",
-    },
-    {
       key: "cleaning",
       src: "/carousel1/cleaning.png",
       title: "Home Cleaning",
@@ -111,22 +99,10 @@ function Home() {
       link: "/products?category=bakery",
     },
     {
-      key: "personalcare",
-      src: "/carousel2/personalcare.png",
-      title: "Personal Care",
-      link: "/products?category=personalcare",
-    },
-    {
       key: "babycare",
       src: "/carousel2/babycare.png",
       title: "Baby Care",
       link: "/products?category=babycare",
-    },
-    {
-      key: "gourmet",
-      src: "/carousel2/gourmet.png",
-      title: "Gourmet Foods",
-      link: "/products?category=gourmet",
     },
     {
       key: "stationery",
@@ -636,48 +612,6 @@ function Home() {
             })()}
           </div>
 
-          {/* Arrows - hidden on mobile */}
-          <button
-            aria-label="Previous"
-            className="hidden sm:block absolute left-0 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-gray-800 rounded-none p-3 shadow-none" // Removed rounded, shadow, increased padding for click area
-            onClick={handlePrevLocalBanner}
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              className="w-5 h-5"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M15 19l-7-7 7-7"
-              />
-            </svg>
-          </button>
-          <button
-            aria-label="Next"
-            className="hidden sm:block absolute right-0 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-gray-800 rounded-none p-3 shadow-none" // Removed rounded, shadow, increased padding for click area
-            onClick={handleNextLocalBanner}
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              className="w-5 h-5"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M9 5l7 7-7 7"
-              />
-            </svg>
-          </button>
-
           {/* Dots removed */}
         </div>
         )}
@@ -770,48 +704,6 @@ function Home() {
               ));
             })()}
           </div>
-
-          {/* Arrows - hidden on mobile */}
-          <button
-            aria-label="Previous"
-            className="hidden sm:block absolute left-0 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-gray-800 rounded-none p-3 shadow-none" // Removed rounded, shadow, increased padding for click area
-            onClick={handlePrevLocalBanner2}
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              className="w-5 h-5"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M15 19l-7-7 7-7"
-              />
-            </svg>
-          </button>
-          <button
-            aria-label="Next"
-            className="hidden sm:block absolute right-0 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-gray-800 rounded-none p-3 shadow-none" // Removed rounded, shadow, increased padding for click area
-            onClick={handleNextLocalBanner2}
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              className="w-5 h-5"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M9 5l7 7-7 7"
-              />
-            </svg>
-          </button>
 
           {/* Dots removed */}
         </div>
