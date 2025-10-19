@@ -35,7 +35,7 @@ export async function listCategories(_req, res) {
       .eq('is_active', true);
 
     const allCategories = [
-      { id: 'all', name: 'All Products', slug: 'all', count: totalCount || 0 },
+      { id: 'all', name: 'All Products', slug: 'all', count: totalCount || 0, image_url: null, created_at: null },
       ...categoriesWithCounts
     ];
 
@@ -46,43 +46,171 @@ export async function listCategories(_req, res) {
   }
 }
 
+export async function getCategory(req, res) {
+  try {
+    const { identifier } = req.params;
+    
+    // Check if identifier is UUID format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    const isUUID = uuidRegex.test(identifier);
+    
+    let query = supabaseAdmin.from('categories').select('*');
+    
+    if (isUUID) {
+      query = query.eq('id', identifier);
+    } else {
+      query = query.eq('slug', identifier);
+    }
+    
+    const { data, error } = await query.single();
+    
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return res.status(404).json({ error: 'Category not found' });
+      }
+      return res.status(400).json({ error: error.message });
+    }
+    
+    // Get product count for this category
+    const { count } = await supabaseAdmin
+      .from('products')
+      .select('*', { count: 'exact', head: true })
+      .eq('category_id', data.id)
+      .eq('is_active', true);
+      
+    res.json({
+      ...data,
+      count: count || 0
+    });
+  } catch (error) {
+    console.error('Error fetching category:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
 
 export async function createCategory(req, res) {
   if (!req.user || !req.user.isAdmin)
     return res.status(403).json({ error: 'Admin only' });
-  const { name, slug } = req.body;
+  
+  const { name, slug, image_url } = req.body;
+  
+  // Validate required fields
+  if (!name || !slug) {
+    return res.status(400).json({ error: 'Name and slug are required' });
+  }
+  
+  const categoryData = {
+    name: name.trim(),
+    slug: slug.trim().toLowerCase(),
+    ...(image_url && { image_url: image_url.trim() })
+  };
+  
   const { data, error } = await supabaseAdmin
     .from('categories')
-    .insert({ name, slug })
+    .insert(categoryData)
     .select('*')
     .single();
-  if (error) return res.status(400).json({ error: error.message });
+    
+  if (error) {
+    if (error.code === '23505') { // Unique constraint violation
+      if (error.message.includes('categories_name_key')) {
+        return res.status(400).json({ error: 'Category name already exists' });
+      }
+      if (error.message.includes('categories_slug_key')) {
+        return res.status(400).json({ error: 'Category slug already exists' });
+      }
+    }
+    return res.status(400).json({ error: error.message });
+  }
+  
   res.status(201).json(data);
 }
 
 export async function updateCategory(req, res) {
   if (!req.user || !req.user.isAdmin)
     return res.status(403).json({ error: 'Admin only' });
+    
   const { id } = req.params;
-  const patch = req.body;
+  const { name, slug, image_url } = req.body;
+  
+  // Validate UUID format
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  if (!uuidRegex.test(id)) {
+    return res.status(400).json({ error: 'Invalid category ID format' });
+  }
+  
+  // Build update object with only provided fields
+  const updateData = {};
+  if (name !== undefined) updateData.name = name.trim();
+  if (slug !== undefined) updateData.slug = slug.trim().toLowerCase();
+  if (image_url !== undefined) updateData.image_url = image_url ? image_url.trim() : null;
+  
+  if (Object.keys(updateData).length === 0) {
+    return res.status(400).json({ error: 'No valid fields to update' });
+  }
+  
   const { data, error } = await supabaseAdmin
     .from('categories')
-    .update(patch)
+    .update(updateData)
     .eq('id', id)
     .select('*')
     .single();
-  if (error) return res.status(400).json({ error: error.message });
+    
+  if (error) {
+    if (error.code === '23505') { // Unique constraint violation
+      if (error.message.includes('categories_name_key')) {
+        return res.status(400).json({ error: 'Category name already exists' });
+      }
+      if (error.message.includes('categories_slug_key')) {
+        return res.status(400).json({ error: 'Category slug already exists' });
+      }
+    }
+    if (error.code === 'PGRST116') { // No rows returned
+      return res.status(404).json({ error: 'Category not found' });
+    }
+    return res.status(400).json({ error: error.message });
+  }
+  
   res.json(data);
 }
 
 export async function deleteCategory(req, res) {
   if (!req.user || !req.user.isAdmin)
     return res.status(403).json({ error: 'Admin only' });
+    
   const { id } = req.params;
+  
+  // Validate UUID format
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  if (!uuidRegex.test(id)) {
+    return res.status(400).json({ error: 'Invalid category ID format' });
+  }
+  
+  // Check if category has products
+  const { count: productCount } = await supabaseAdmin
+    .from('products')
+    .select('*', { count: 'exact', head: true })
+    .eq('category_id', id);
+    
+  if (productCount > 0) {
+    return res.status(400).json({ 
+      error: 'Cannot delete category with existing products. Please move or delete all products first.',
+      productCount 
+    });
+  }
+  
   const { error } = await supabaseAdmin
     .from('categories')
     .delete()
     .eq('id', id);
-  if (error) return res.status(400).json({ error: error.message });
+    
+  if (error) {
+    if (error.code === 'PGRST116') { // No rows returned
+      return res.status(404).json({ error: 'Category not found' });
+    }
+    return res.status(400).json({ error: error.message });
+  }
+  
   res.status(200).json({ message: 'Category deleted successfully' });
 }

@@ -32,6 +32,7 @@ const allowedOrigins = [
   'https://brandverse.onrender.com',
   'https://heartfelt-lily-3bb33d.netlify.app',
   'https://akepatimart.com',
+  'https://akepati-mart.vercel.app',
   process.env.DEPLOYMENT_URL,
   process.env.FRONTEND_URL,
   process.env.SUPABASE_URL

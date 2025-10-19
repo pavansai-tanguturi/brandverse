@@ -10,7 +10,8 @@ import {
   deleteProduct,
   addImages,
   deleteImage,
-  searchProducts
+  searchProducts,
+  // listTopSellingProducts
 } from '../controllers/productController.js';
 
 const router = express.Router();

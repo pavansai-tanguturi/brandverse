@@ -1,57 +1,66 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import Navigation from '../../components/Navigation';
-import AddressManager from '../../components/AddressManager';
-import { useAuth } from '../../context/AuthContext';
-import { useWishlist } from '../../context/WishlistContext';
-import { useCart } from '../../context/CartContext';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from "react";
+import ModernNavbar from "../../components/ModernNavbar";
+import MobileBottomNav from "../../components/MobileBottomNav";
+import AddressManager from "../../components/AddressManager";
+import { useAuth } from "../../context/AuthContext";
+import { useWishlist } from "../../context/WishlistContext";
+import { useCart } from "../../context/CartContext";
+import { useAddress } from "../../context/AddressContext";
+import { useNavigate, useLocation } from "react-router-dom";
 
 // Helper function to get auth headers
 const getAuthHeaders = () => {
-  const token = localStorage.getItem('auth_token');
+  const token = localStorage.getItem("auth_token");
   return {
-    'Content-Type': 'application/json',
-    ...(token ? { Authorization: `Bearer ${token}` } : {})
+    "Content-Type": "application/json",
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
 };
 
-// Order Details Modal Component - Moved outside of main component
+// Order Details Modal Component
 const OrderDetailsModal = ({ order, onClose, getStatusColor, navigate }) => {
   if (!order) return null;
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-IN', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    return new Date(dateString).toLocaleDateString("en-IN", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
   const getStatusText = (status, paymentStatus, paymentMethod) => {
-    if (paymentStatus === 'failed') return 'Payment Failed';
-    if (paymentStatus === 'pending') return 'Payment Pending';
-    if (paymentStatus === 'cod_pending' && paymentMethod === 'cod') return 'COD - Order Confirmed';
-    
+    if (paymentStatus === "failed") return "Payment Failed";
+    if (paymentStatus === "pending") return "Payment Pending";
+    if (paymentStatus === "cod_pending" && paymentMethod === "cod")
+      return "COD - Order Confirmed";
+
     switch (status) {
-      case "delivered": return "Delivered";
-      case "shipped": return "Shipped";
-      case "confirmed": return "Confirmed";
-      case "processing": return "Processing";
-      case "pending": return "Pending";
-      default: return status?.charAt(0).toUpperCase() + status?.slice(1) || 'Unknown';
+      case "delivered":
+        return "Delivered";
+      case "shipped":
+        return "Shipped";
+      case "confirmed":
+        return "Confirmed";
+      case "processing":
+        return "Processing";
+      case "pending":
+        return "Pending";
+      default:
+        return status?.charAt(0).toUpperCase() + status?.slice(1) || "Unknown";
     }
   };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+        <div className="flex items-center justify-between p-4 border-b border-gray-200">
           <div>
             <h2 className="text-2xl font-bold text-gray-900">
-              Order #{order.id.slice(0, 8)}
+              Order #{order.id.slice(-8).toUpperCase()}
             </h2>
             <p className="text-gray-600 text-sm mt-1">
               Placed on {formatDate(order.created_at)}
@@ -59,26 +68,46 @@ const OrderDetailsModal = ({ order, onClose, getStatusColor, navigate }) => {
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            className="p-2 hover:bg-gray-100 rounded-full transition-colors cursor-pointer"
           >
-            <svg className="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            <svg
+              className="w-6 h-6 text-gray-500"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
         </div>
 
-        <div className="p-6 space-y-6">
+        <div className="p-4 space-y-4">
           {/* Order Status */}
-          <div className="bg-gray-50 rounded-lg p-4">
+          <div className="bg-emerald-50 rounded-xl p-3 border border-emerald-200">
             <h3 className="font-semibold text-gray-900 mb-3">Order Status</h3>
             <div className="flex flex-wrap items-center gap-4">
-              <span className={`px-3 py-2 rounded-full text-sm font-medium border ${getStatusColor(order.status, order.payment_status)}`}>
-                {getStatusText(order.status, order.payment_status, order.payment_method)}
+              <span
+                className={`px-3 py-2 rounded-full text-sm font-medium border ${getStatusColor(order.status, order.payment_status)}`}
+              >
+                {getStatusText(
+                  order.status,
+                  order.payment_status,
+                  order.payment_method,
+                )}
               </span>
               {order.payment_method && (
                 <div className="flex items-center gap-2 text-sm text-gray-600">
                   <span className="font-medium">Payment Method:</span>
-                  <span className="capitalize">{order.payment_method === 'cod' ? 'Cash on Delivery' : order.payment_method}</span>
+                  <span className="capitalize">
+                    {order.payment_method === "cod"
+                      ? "Cash on Delivery"
+                      : order.payment_method}
+                  </span>
                 </div>
               )}
               {order.confirmed_at && (
@@ -92,31 +121,60 @@ const OrderDetailsModal = ({ order, onClose, getStatusColor, navigate }) => {
 
           {/* Order Items */}
           <div>
-            <h3 className="font-semibold text-gray-900 mb-4">Items ({order.order_items?.length || 0})</h3>
+            <h3 className="font-semibold text-gray-900 mb-4">
+              Items ({order.order_items?.length || 0})
+            </h3>
             <div className="space-y-4">
               {order.order_items?.map((item, index) => (
-                <div key={index} className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg">
-                  {/* Product Image Placeholder */}
-                  <div className="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
+                <div
+                  key={index}
+                  className="flex items-center gap-3 p-3 border border-gray-200 rounded-xl hover:border-emerald-300 transition-colors"
+                >
+                  <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    {item.image_url ? (
+                      <img
+                        src={item.image_url}
+                        alt={item.title}
+                        className="w-full h-full object-cover rounded-lg"
+                      />
+                    ) : (
+                      <svg
+                        className="w-8 h-8 text-gray-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                        />
+                      </svg>
+                    )}
                   </div>
-                  
+
                   <div className="flex-1">
                     <h4 className="font-medium text-gray-900">{item.title}</h4>
-                    <p className="text-sm text-gray-600">Quantity: {item.quantity}</p>
+                    <p className="text-sm text-gray-600">
+                      Quantity: {item.quantity}
+                    </p>
                     <div className="flex items-center gap-2 mt-1">
-                      <span className="text-lg font-semibold text-blue-600">
+                      <span className="text-lg font-semibold text-emerald-600">
                         ₹{((item.unit_price_cents || 0) / 100).toFixed(2)}
                       </span>
                       <span className="text-sm text-gray-500">each</span>
                     </div>
                   </div>
-                  
+
                   <div className="text-right">
                     <p className="font-semibold text-gray-900">
-                      ₹{((item.total_cents || item.unit_price_cents * item.quantity || 0) / 100).toFixed(2)}
+                      ₹
+                      {(
+                        (item.total_cents ||
+                          item.unit_price_cents * item.quantity ||
+                          0) / 100
+                      ).toFixed(2)}
                     </p>
                     <p className="text-sm text-gray-500">Total</p>
                   </div>
@@ -130,17 +188,19 @@ const OrderDetailsModal = ({ order, onClose, getStatusColor, navigate }) => {
           </div>
 
           {/* Pricing Breakdown */}
-          <div className="bg-gray-50 rounded-lg p-4">
-            <h3 className="font-semibold text-gray-900 mb-3">Order Summary</h3>
+          <div className="bg-gray-50 rounded-xl p-3">
+            <h3 className="font-semibold text-gray-900 mb-2">Order Summary</h3>
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span>Subtotal:</span>
                 <span>₹{((order.subtotal_cents || 0) / 100).toFixed(2)}</span>
               </div>
               {order.discount_cents > 0 && (
-                <div className="flex justify-between text-sm text-green-600">
+                <div className="flex justify-between text-sm text-emerald-600">
                   <span>Discount:</span>
-                  <span>-₹{((order.discount_cents || 0) / 100).toFixed(2)}</span>
+                  <span>
+                    -₹{((order.discount_cents || 0) / 100).toFixed(2)}
+                  </span>
                 </div>
               )}
               {order.shipping_cents > 0 && (
@@ -158,7 +218,9 @@ const OrderDetailsModal = ({ order, onClose, getStatusColor, navigate }) => {
               <div className="border-t border-gray-300 pt-2 mt-2">
                 <div className="flex justify-between font-semibold text-lg">
                   <span>Total:</span>
-                  <span className="text-blue-600">₹{((order.total_cents || 0) / 100).toFixed(2)}</span>
+                  <span className="text-emerald-600">
+                    ₹{((order.total_cents || 0) / 100).toFixed(2)}
+                  </span>
                 </div>
               </div>
             </div>
@@ -168,11 +230,17 @@ const OrderDetailsModal = ({ order, onClose, getStatusColor, navigate }) => {
           {order.shipping_address && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <h3 className="font-semibold text-gray-900 mb-3">Shipping Address</h3>
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <p className="font-medium text-gray-900">{order.shipping_address.name}</p>
+                <h3 className="font-semibold text-gray-900 mb-3">
+                  Shipping Address
+                </h3>
+                <div className="bg-gray-50 rounded-xl p-3">
+                  <p className="font-medium text-gray-900">
+                    {order.shipping_address.name}
+                  </p>
                   {order.shipping_address.phone && (
-                    <p className="text-gray-600 text-sm">{order.shipping_address.phone}</p>
+                    <p className="text-gray-600 text-sm">
+                      {order.shipping_address.phone}
+                    </p>
                   )}
                   <div className="text-gray-600 text-sm mt-2 space-y-1">
                     <p>{order.shipping_address.address_line1}</p>
@@ -180,7 +248,9 @@ const OrderDetailsModal = ({ order, onClose, getStatusColor, navigate }) => {
                       <p>{order.shipping_address.address_line2}</p>
                     )}
                     <p>
-                      {order.shipping_address.city}, {order.shipping_address.state} {order.shipping_address.postal_code}
+                      {order.shipping_address.city},{" "}
+                      {order.shipping_address.state}{" "}
+                      {order.shipping_address.postal_code}
                     </p>
                     {order.shipping_address.country && (
                       <p>{order.shipping_address.country}</p>
@@ -192,32 +262,32 @@ const OrderDetailsModal = ({ order, onClose, getStatusColor, navigate }) => {
           )}
 
           {/* Order Actions */}
-          <div className="flex flex-wrap gap-3 pt-4 border-t border-gray-200">
-            {order.payment_status === 'pending' && (
-              <button 
+          <div className="flex flex-wrap gap-3 pt-3 border-t border-gray-200">
+            {order.payment_status === "pending" && (
+              <button
                 onClick={() => {
                   onClose();
-                  navigate('/checkout');
+                  navigate("/checkout");
                 }}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-lg hover:from-emerald-600 hover:to-teal-700 transition-all duration-300 shadow-lg hover:shadow-xl font-medium cursor-pointer"
               >
                 Complete Payment
               </button>
             )}
-            
-            {order.status === 'delivered' && (
-              <button className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+
+            {order.status === "delivered" && (
+              <button className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-lg hover:from-emerald-600 hover:to-teal-700 transition-all duration-300 shadow-lg hover:shadow-xl font-medium cursor-pointer">
                 Leave Review
               </button>
             )}
-            
-            {(order.status === 'pending' || order.status === 'confirmed') && (
-              <button className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
+
+            {(order.status === "pending" || order.status === "confirmed") && (
+              <button className="px-4 py-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700 transition-colors font-medium cursor-pointer">
                 Cancel Order
               </button>
             )}
-            
-            <button className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
+
+            <button className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium cursor-pointer">
               Contact Support
             </button>
           </div>
@@ -230,98 +300,91 @@ const OrderDetailsModal = ({ order, onClose, getStatusColor, navigate }) => {
 const CustomerDashboard = () => {
   const { user, loading, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const { items: wishlistItems, removeFromWishlist } = useWishlist();
   const { addToCart } = useCart();
-  const [activeTab, setActiveTab] = useState('orders');
+  const { addresses } = useAddress();
+  const [activeTab, setActiveTab] = useState("");
   const [userInfo, setUserInfo] = useState({
-    name: '',
-    email: '',
-    mobile: '',
-    full_name: '',
-    phone: ''
+    name: "",
+    email: "",
+    mobile: "",
+    full_name: "",
+    phone: "",
   });
 
   // Dynamic data state
   const [orders, setOrders] = useState([]);
   const [loadingData, setLoadingData] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [updating, setUpdating] = useState(false);
 
   // Order details modal state
   const [selectedOrder, setSelectedOrder] = useState(null);
 
+  // Derived: show most recent 3 orders on dashboard
+  const recentOrders = orders
+    .slice()
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+    .slice(0, 3);
+
+  // Mobile menu state
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
   // Dynamic wishlist from context
   const wishlist = wishlistItems;
-
-  // Temporary static data (will be implemented later)
-  const [paymentMethods] = useState([]);
-  // Payment methods feature is currently disabled
-  // const [paymentMethods] = useState([]);
-  const [addresses] = useState([]);
-  
-  // Address form state
-  const [showAddressForm, setShowAddressForm] = useState(false);
-  const [newAddress, setNewAddress] = useState({
-    name: '',
-    mobile: '',
-    addressLine1: '',
-    addressLine2: '',
-    city: '',
-    state: '',
-    pincode: ''
-  });
 
   // API Functions
   const fetchUserProfile = useCallback(async () => {
     try {
-      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
+      const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3001";
       const response = await fetch(`${API_BASE}/api/customers/me`, {
-        credentials: 'include',
-        headers: getAuthHeaders()
+        credentials: "include",
+        headers: getAuthHeaders(),
       });
-      
+
       if (response.ok) {
         const profileData = await response.json();
         setUserInfo({
-          name: profileData.full_name || profileData.name || user.email?.split('@')[0] || 'User',
-          email: profileData.email || user.email || '',
-          mobile: profileData.phone || profileData.mobile || '',
-          full_name: profileData.full_name || '',
-          phone: profileData.phone || ''
+          name:
+            profileData.full_name ||
+            profileData.name ||
+            user.email?.split("@")[0] ||
+            "User",
+          email: profileData.email || user.email || "",
+          mobile: profileData.phone || profileData.mobile || "",
+          full_name: profileData.full_name || "",
+          phone: profileData.phone || "",
         });
       } else if (response.status === 401) {
-        // Token expired or invalid, redirect to login
-        localStorage.removeItem('auth_token');
-        navigate('/login');
+        localStorage.removeItem("auth_token");
+        navigate("/login");
       }
     } catch (err) {
-      console.error('Error fetching user profile:', err);
-      setError('Failed to load profile data');
+      setError("Failed to load profile data");
     }
   }, [user, navigate]);
 
   const fetchOrders = async () => {
     try {
       setLoadingData(true);
-      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
+      const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3001";
       const response = await fetch(`${API_BASE}/api/orders`, {
-        credentials: 'include',
-        headers: getAuthHeaders()
+        credentials: "include",
+        headers: getAuthHeaders(),
       });
-      
+
       if (response.ok) {
         const ordersData = await response.json();
         setOrders(ordersData || []);
       } else if (response.status === 401) {
-        // Token expired or invalid, redirect to login
-        localStorage.removeItem('auth_token');
-        navigate('/login');
+        localStorage.removeItem("auth_token");
+        navigate("/login");
       } else {
-        setError('Failed to load orders');
+        setError("Failed to load orders");
       }
     } catch (err) {
-      console.error('Error fetching orders:', err);
-      setError('Failed to load orders');
+      setError("Failed to load orders");
     } finally {
       setLoadingData(false);
     }
@@ -330,39 +393,35 @@ const CustomerDashboard = () => {
   const updateUserProfile = async (updatedInfo) => {
     try {
       setUpdating(true);
-      const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
-      
-      // Only update basic profile fields that exist in the customers table
+      const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3001";
+
       const profileData = {
         full_name: updatedInfo.name,
-        phone: updatedInfo.mobile
+        phone: updatedInfo.mobile,
       };
 
       const response = await fetch(`${API_BASE}/api/customers/me`, {
-        method: 'PATCH',
-        credentials: 'include',
+        method: "PATCH",
+        credentials: "include",
         headers: getAuthHeaders(),
-        body: JSON.stringify(profileData)
+        body: JSON.stringify(profileData),
       });
-      
+
       if (response.ok) {
-        await fetchUserProfile(); // Refresh the profile data
-        setError('');
+        await fetchUserProfile();
+        setError("");
         return true;
       } else if (response.status === 401) {
-        // Token expired or invalid, redirect to login
-        localStorage.removeItem('auth_token');
-        navigate('/login');
+        localStorage.removeItem("auth_token");
+        navigate("/login");
         return false;
       } else {
         const errorData = await response.json().catch(() => ({}));
-        console.error('Profile update error:', errorData);
-        setError(errorData.error || 'Failed to update profile');
+        setError(errorData.error || "Failed to update profile");
         return false;
       }
     } catch (err) {
-      console.error('Error updating profile:', err);
-      setError('Failed to update profile');
+      setError("Failed to update profile");
       return false;
     } finally {
       setUpdating(false);
@@ -371,7 +430,7 @@ const CustomerDashboard = () => {
 
   useEffect(() => {
     if (!loading && !user) {
-      navigate('/login');
+      navigate("/login");
       return;
     }
 
@@ -379,48 +438,57 @@ const CustomerDashboard = () => {
       fetchUserProfile();
       fetchOrders();
     }
-  }, [user, loading, navigate, fetchUserProfile]);
+
+    // Check URL parameter for tab
+    const params = new URLSearchParams(location.search);
+    const tabParam = params.get("tab");
+    if (
+      tabParam &&
+      ["orders", "wishlist", "settings", "addresses"].includes(tabParam)
+    ) {
+      setActiveTab(tabParam);
+    } else {
+      // If no tab parameter or tab parameter is not valid, set to empty (recents view)
+      setActiveTab("");
+    }
+  }, [user, loading, navigate, fetchUserProfile, location.search]);
 
   const handleLogout = async () => {
     try {
-      // Clear token from localStorage
-      localStorage.removeItem('auth_token');
+      localStorage.removeItem("auth_token");
+      localStorage.removeItem("is_admin");
       await logout();
-      navigate('/');
-    } catch (error) {
-      console.error('Logout error:', error);
-    }
+      navigate("/");
+    } catch (error) {}
   };
 
   const getStatusColor = (status, paymentStatus) => {
-    // Payment status takes priority
-    if (paymentStatus === 'failed') {
-      return "bg-red-100 text-red-800 border-red-200";
+    if (paymentStatus === "failed") {
+      return "bg-rose-100 text-rose-800 border-rose-200";
     }
-    if (paymentStatus === 'pending') {
-      return "bg-yellow-100 text-yellow-800 border-yellow-200";
+    if (paymentStatus === "pending") {
+      return "bg-amber-100 text-amber-800 border-amber-200";
     }
-    
-    // Order status
+
     switch (status) {
-      case "delivered": 
-        return "bg-green-100 text-green-800 border-green-200";
-      case "shipped": 
+      case "delivered":
+        return "bg-emerald-100 text-emerald-800 border-emerald-200";
+      case "shipped":
         return "bg-blue-100 text-blue-800 border-blue-200";
       case "paid":
-      case "processing": 
-        return "bg-yellow-100 text-yellow-800 border-yellow-200";
-      default: 
+      case "processing":
+        return "bg-amber-100 text-amber-800 border-amber-200";
+      default:
         return "bg-gray-100 text-gray-800 border-gray-200";
     }
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <Navigation />
+      <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50">
+        <ModernNavbar showSearch={true} />
         <div className="flex items-center justify-center pt-32">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
         </div>
       </div>
     );
@@ -431,530 +499,1299 @@ const CustomerDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navigation />
-      
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8" style={{ paddingTop: '70px' }}>
-        <div className="mb-6 sm:mb-8">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">My Dashboard</h1>
-          <p className="text-gray-600 mt-1 sm:mt-2 text-sm sm:text-base">
-            Manage your orders, wishlist, and account settings
-          </p>
-        </div>
+    <div className="min-h-screen bg-gray-50 pb-20">
+      <ModernNavbar showSearch={true} />
 
-        {/* Tab Navigation */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6 sm:mb-8">
-          <div className="border-b border-gray-200">
-            {/* Mobile Tab Navigation - Dropdown */}
-            <div className="sm:hidden">
-              <div className="flex items-center justify-between px-3 py-2">
-                <div className="flex-1">
-                  <label htmlFor="tabs" className="sr-only">Select a tab</label>
-                  <select
-                    id="tabs"
-                    name="tabs"
-                    value={activeTab}
-                    onChange={(e) => setActiveTab(e.target.value)}
-                    className="block w-full px-0 py-2 border-0 border-b border-gray-200 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="orders">Orders</option>
-                    <option value="wishlist">Wishlist</option>
-                    <option value="settings">Settings</option>
-                    {/* <option value="payment">Payment</option> */}
-                    <option value="addresses">Addresses</option>
-                  </select>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        {/* Header Section */}
+        <div className="mb-8">
+          {/* Profile Header Card */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+            <div className="bg-gradient-to-r from-emerald-500 to-teal-600 px-6 py-8">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center space-x-4">
+                  <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
+                    <svg
+                      className="w-8 h-8 text-white"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                      />
+                    </svg>
+                  </div>
+                  <div>
+                    <h1 className="text-2xl sm:text-3xl font-bold text-white">
+                      {userInfo.name || "User"}
+                    </h1>
+                    <p className="text-emerald-50 mt-1">{userInfo.email}</p>
+                  </div>
                 </div>
-                
-                {/* Mobile Logout Button */}
-                <button
-                  onClick={handleLogout}
-                  className="flex items-center gap-1 px-3 py-2 text-red-500 hover:text-red-700 font-medium text-sm"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                  </svg>
-                  <span>Logout</span>
-                </button>
               </div>
             </div>
-            
-            {/* Desktop Tab Navigation */}
-            <nav className="hidden sm:flex space-x-4 lg:space-x-8 px-4 sm:px-6 overflow-x-auto" aria-label="Tabs">
+
+            {/* User Details Section */}
+            <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div className="flex items-center space-x-4">
+                  <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="16"
+                      height="16"
+                      fill="currentColor"
+                      className="w-5 h-5 text-emerald-600"
+                      viewBox="0 0 16 16"
+                    >
+                      <path d="M11 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1zM5 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2z" />
+                      <path d="M8 14a1 1 0 1 0 0-2 1 1 0 0 0 0 2" />
+                    </svg>
+                  </div>
+                  <div>
+                    <div className="text-base font-semibold text-gray-900">
+                      {userInfo.mobile || "Not provided"}
+                    </div>
+                    <div className="text-sm text-gray-600">Mobile Number</div>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-4">
+                  <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <svg
+                      className="w-5 h-5 text-emerald-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                      />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                      />
+                    </svg>
+                  </div>
+                  <div>
+                    <div className="text-base font-semibold text-gray-900">
+                      {(() => {
+                        const defaultAddress = addresses?.find(
+                          (addr) => addr.is_default,
+                        );
+                        if (!defaultAddress) return "No default address";
+                        const addressParts = [
+                          defaultAddress.address_line_1,
+                          defaultAddress.city,
+                          defaultAddress.state,
+                        ].filter(Boolean);
+                        return addressParts.length > 0
+                          ? addressParts.join(", ")
+                          : "Address not complete";
+                      })()}
+                    </div>
+                    <div className="text-sm text-gray-600">Default Address</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Mobile Tab Navigation */}
+        <div className="lg:hidden mb-6">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-2">
+            <div className="flex space-x-1 overflow-x-auto">
               {[
-                { 
-                  id: 'orders', 
-                  name: 'Orders', 
+                {
+                  id: "",
+                  name: "Recents",
                   icon: (
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
                     </svg>
-                  )
+                  ),
+                  count: recentOrders.length,
                 },
-                { 
-                  id: 'wishlist', 
-                  name: 'Wishlist', 
+                {
+                  id: "orders",
+                  name: "Orders",
                   icon: (
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                      />
                     </svg>
-                  )
+                  ),
+                  count: orders.length,
                 },
-                { 
-                  id: 'settings', 
-                  name: 'Settings', 
+                {
+                  id: "wishlist",
+                  name: "Wishlist",
                   icon: (
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                      />
                     </svg>
-                  )
+                  ),
+                  count: wishlist.length,
                 },
-                // {
-                // Payment tab is currently disabled
-                // {
-                //   id: 'payment',
-                //   name: 'Payment',
-                //   icon: (
-                //     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                //       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                //     </svg>
-                //   )
-                // },
-                { 
-                  id: 'addresses', 
-                  name: 'Addresses', 
+                {
+                  id: "settings",
+                  name: "Settings",
                   icon: (
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                      />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                      />
                     </svg>
-                  )
-                }
+                  ),
+                },
+                {
+                  id: "addresses",
+                  name: "Address",
+                  icon: (
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                      />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                      />
+                    </svg>
+                  ),
+                },
               ].map((tab) => (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 py-3 sm:py-4 px-2 sm:px-4 border-b-2 font-medium text-xs sm:text-sm whitespace-nowrap flex-shrink-0 ${
+                  onClick={() => {
+                    if (tab.id === "orders") {
+                      navigate("/orders");
+                    } else if (tab.id === "") {
+                      setActiveTab("");
+                      navigate("/dashboard");
+                    } else {
+                      setActiveTab(tab.id);
+                      navigate(`/dashboard?tab=${tab.id}`);
+                    }
+                  }}
+                  className={`flex-1 min-w-0 flex flex-col items-center p-3 rounded-xl transition-all duration-200 ${
                     activeTab === tab.id
-                      ? 'border-blue-500 text-blue-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg"
+                      : "text-gray-600 hover:bg-gray-50 hover:text-emerald-600"
                   }`}
                 >
-                  <span className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0">{tab.icon}</span>
-                  <span className="hidden sm:inline">{tab.name}</span>
+                  <div className="flex items-center justify-center relative">
+                    {tab.icon}
+                    {tab.count !== undefined && tab.count > 0 && (
+                      <span
+                        className={`absolute -top-2 -right-2 min-w-[1.25rem] h-5 text-xs font-bold rounded-full flex items-center justify-center ${
+                          activeTab === tab.id
+                            ? "bg-white/20 text-white"
+                            : "bg-emerald-100 text-emerald-700"
+                        }`}
+                      >
+                        {tab.count}
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-xs font-medium mt-1 truncate w-full text-center">
+                    {tab.name}
+                  </span>
                 </button>
               ))}
-              
-              {/* Logout Button */}
-              <button
-                onClick={handleLogout}
-                className="flex items-center gap-2 py-3 sm:py-4 px-2 sm:px-4 border-b-2 border-transparent text-red-500 hover:text-red-700 hover:border-red-300 font-medium text-xs sm:text-sm whitespace-nowrap flex-shrink-0 ml-auto"
-              >
-                <span className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0">
-                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                  </svg>
-                </span>
-                <span className="hidden sm:inline">Logout</span>
-              </button>
-            </nav>
+            </div>
+          </div>
+        </div>
+
+        {/* Main Content */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          {/* Sidebar Navigation - Desktop */}
+          <div className="hidden lg:block lg:col-span-1">
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden sticky top-24">
+              {/* Sidebar Header */}
+              <div className="bg-gradient-to-r from-emerald-500 to-teal-600 px-6 py-4">
+                <h2 className="text-lg font-bold text-white">Dashboard Menu</h2>
+              </div>
+
+              <div className="p-6">
+                <nav className="space-y-2">
+                  {[
+                    {
+                      id: "",
+                      name: "Recent Orders",
+                      icon: (
+                        <svg
+                          className="w-5 h-5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        </svg>
+                      ),
+                      count: recentOrders.length,
+                    },
+                    {
+                      id: "orders",
+                      name: "My Orders",
+                      icon: (
+                        <svg
+                          className="w-5 h-5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                          />
+                        </svg>
+                      ),
+                      count: orders.length,
+                    },
+                    {
+                      id: "wishlist",
+                      name: "Wishlist",
+                      icon: (
+                        <svg
+                          className="w-5 h-5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                          />
+                        </svg>
+                      ),
+                      count: wishlist.length,
+                    },
+                    {
+                      id: "settings",
+                      name: "Profile Settings",
+                      icon: (
+                        <svg
+                          className="w-5 h-5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                          />
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                          />
+                        </svg>
+                      ),
+                    },
+                    {
+                      id: "addresses",
+                      name: "My Addresses",
+                      icon: (
+                        <svg
+                          className="w-5 h-5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                          />
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                          />
+                        </svg>
+                      ),
+                    },
+                  ].map((tab) => (
+                    <button
+                      key={tab.id}
+                      onClick={() => {
+                        if (tab.id === "orders") {
+                          navigate("/orders");
+                        } else if (tab.id === "") {
+                          setActiveTab("");
+                          navigate("/dashboard");
+                        } else {
+                          setActiveTab(tab.id);
+                          navigate(`/dashboard?tab=${tab.id}`);
+                        }
+                      }}
+                      className={`w-full flex items-center justify-between p-4 rounded-xl transition-all duration-200 group ${
+                        activeTab === tab.id
+                          ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg transform scale-[1.02]"
+                          : "text-gray-700 hover:bg-emerald-50 hover:text-emerald-600 hover:shadow-md"
+                      }`}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <div
+                          className={`p-2 rounded-lg transition-colors ${
+                            activeTab === tab.id
+                              ? "bg-white/20"
+                              : "bg-emerald-100 group-hover:bg-emerald-200"
+                          }`}
+                        >
+                          {tab.icon}
+                        </div>
+                        <span className="font-medium">{tab.name}</span>
+                      </div>
+                      {tab.count !== undefined && (
+                        <span
+                          className={`px-3 py-1 rounded-full text-xs font-bold ${
+                            activeTab === tab.id
+                              ? "bg-white/20 text-white"
+                              : "bg-emerald-100 text-emerald-700 group-hover:bg-emerald-200"
+                          }`}
+                        >
+                          {tab.count}
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </nav>
+
+                {/* Logout Button */}
+                <div className="mt-8 pt-6 border-t border-gray-200">
+                  <button
+                    onClick={handleLogout}
+                    className="w-full flex items-center justify-center space-x-3 p-4 text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded-xl transition-all duration-200 font-medium group hover:shadow-md"
+                  >
+                    <div className="p-2 bg-rose-100 rounded-lg group-hover:bg-rose-200 transition-colors">
+                      <svg
+                        className="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                        />
+                      </svg>
+                    </div>
+                    <span>Sign Out</span>
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
 
-          {/* Tab Content */}
-          <div className="p-4 sm:p-6">
-            {/* Orders Tab */}
-            {activeTab === 'orders' && (
-              <div>
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Order History</h2>
+          {/* Main Content Area */}
+          <div className="lg:col-span-3">
+            <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+              {/* Content Header */}
+              <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-2xl font-bold text-gray-900">
+                    {!activeTab && "Recent Orders"}
+                    {activeTab === "orders" && "Order History"}
+                    {activeTab === "wishlist" && "My Wishlist"}
+                    {activeTab === "settings" && "Profile Settings"}
+                    {activeTab === "addresses" && "My Addresses"}
+                  </h2>
                   {loadingData && (
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                    <div className="flex items-center space-x-2 text-emerald-600">
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-emerald-600"></div>
+                      <span className="text-sm font-medium">Loading...</span>
+                    </div>
                   )}
                 </div>
-                {/* Status Color Legend */}
-                <div className="flex flex-wrap gap-3 mb-4 text-xs">
-                  <div className="flex items-center gap-2">
-                    <span className="inline-block w-4 h-4 rounded-full bg-green-100 border border-green-200"></span>
-                    <span className="text-gray-700">Delivered / COD Confirmed</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="inline-block w-4 h-4 rounded-full bg-blue-100 border border-blue-200"></span>
-                    <span className="text-gray-700">Shipped</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="inline-block w-4 h-4 rounded-full bg-yellow-100 border border-yellow-200"></span>
-                    <span className="text-gray-700">Processing / Payment Pending</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="inline-block w-4 h-4 rounded-full bg-red-100 border border-red-200"></span>
-                    <span className="text-gray-700">Payment Failed</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="inline-block w-4 h-4 rounded-full bg-gray-100 border border-gray-200"></span>
-                    <span className="text-gray-700">Pending / Other</span>
-                  </div>
-                </div>
-                
-                {error && (
-                  <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4 text-sm">
-                    {error}
-                  </div>
-                )}
-                
-                {!loadingData && orders.length === 0 ? (
-                  <div className="text-center py-8 sm:py-12">
-                    <svg className="mx-auto h-12 w-12 sm:h-16 sm:w-16 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                    </svg>
-                    <h4 className="text-base sm:text-lg font-medium text-gray-900 mb-2">No orders yet</h4>
-                    <p className="text-gray-600 mb-6 text-sm sm:text-base px-4">
-                      Start shopping to see your orders here
-                    </p>
-                    <button 
-                      onClick={() => navigate('/')}
-                      className="px-4 sm:px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base"
+              </div>
+
+              {/* Recent Orders Preview - Only show when no specific tab is active */}
+              {!activeTab && (
+                <div className="px-6 pt-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      Recent Orders
+                    </h3>
+                    <button
+                      onClick={() => navigate("/orders")}
+                      className="text-sm text-emerald-600 hover:underline"
                     >
-                      Browse Products
+                      View All Orders
                     </button>
                   </div>
-                ) : (
-                  <div className="space-y-3 sm:space-y-4">
-                    {orders.map((order) => (
-                      <div key={order.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 border border-gray-200 rounded-lg hover:shadow-md transition-shadow space-y-3 sm:space-y-0">
-                        <div className="flex items-start sm:items-center gap-3 sm:gap-4">
-                          <div className="flex-1">
-                            <p className="font-medium text-gray-900 text-sm sm:text-base">Order #{order.id.slice(0, 8)}</p>
-                            <p className="text-xs sm:text-sm text-gray-500">
-                              {new Date(order.created_at).toLocaleDateString()} • {order.order_items?.length || 0} items
-                            </p>
-                            {order.payment_method && (
-                              <p className="text-xs text-gray-500">
-                                Payment: {order.payment_method === 'cod' ? 'Cash on Delivery' : order.payment_method}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                        <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-4">
-                          <div className="flex flex-col items-end gap-1">
-                            <span className={`px-2 sm:px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(order.status, order.payment_status)}`}>
-                              {order.payment_status === 'failed' ? 'Payment Failed' :
-                               order.payment_status === 'pending' ? 'Payment Pending' :
-                               order.payment_status === 'cod_pending' && order.payment_method === 'cod' ? 'COD - Confirmed' :
-                               order.status?.charAt(0).toUpperCase() + order.status?.slice(1) || 'Processing'}
-                            </span>
-                            {order.payment_status === 'pending' && (
-                              <button
-                                onClick={() => navigate('/checkout')}
-                                className="text-xs text-blue-600 hover:text-blue-800 underline"
-                              >
-                                Complete Payment
-                              </button>
-                            )}
-                          </div>
-                          <p className="font-semibold text-gray-900 text-sm sm:text-base">
-                            ₹{order.total_cents ? (order.total_cents / 100).toFixed(2) : '0.00'}
-                          </p>
-                          <button 
-                            onClick={() => setSelectedOrder(order)}
-                            className="px-2 sm:px-3 py-1 text-xs sm:text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap"
-                          >
-                            View Details
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                
-                {/* Order Details Modal */}
-                {selectedOrder && (
-                  <OrderDetailsModal 
-                    order={selectedOrder} 
-                    onClose={() => setSelectedOrder(null)}
-                    getStatusColor={getStatusColor}
-                    navigate={navigate}
-                  />
-                )}
-              </div>
-            )}
 
-            {/* Wishlist Tab */}
-            {activeTab === 'wishlist' && (
-              <div>
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg sm:text-xl font-semibold text-gray-900">My Wishlist</h2>
-                  <span className="px-2 sm:px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-xs sm:text-sm font-medium">
-                    {wishlist.length} items
-                  </span>
-                </div>
-                {wishlist.length > 0 ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                    {wishlist.map((item) => {
-                      const discountedPrice = item.discount_percent > 0 
-                        ? (item.price_cents / 100) * (1 - item.discount_percent / 100)
-                        : item.price_cents / 100;
-                      
-                      return (
-                        <div key={item.id} className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
-                          <div className="relative cursor-pointer" onClick={() => navigate(`/product/${item.id}`)}>
-                            <img 
-                              src={item.image_url || 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?auto=format&fit=crop&w=300&q=80'} 
-                              alt={item.title}
-                              className="w-full h-40 sm:h-48 object-cover"
-                            />
-                            {item.discount_percent > 0 && (
-                              <div className="absolute top-2 left-2">
-                                <span className="px-2 py-1 bg-red-100 text-red-800 rounded text-xs font-medium">
-                                  {item.discount_percent}% OFF
-                                </span>
-                              </div>
-                            )}
-                            {item.stock_quantity <= 0 && (
-                              <div className="absolute top-2 right-2">
-                                <span className="px-2 py-1 bg-red-100 text-red-800 rounded text-xs font-medium">
-                                  Out of Stock
-                                </span>
-                              </div>
-                            )}
+                  {recentOrders.length === 0 ? (
+                    <div className="text-sm text-gray-600">
+                      No recent orders
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      {recentOrders.map((o) => (
+                        <div
+                          key={o.id}
+                          className="p-3 bg-white border border-gray-100 rounded-lg"
+                        >
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-sm font-medium">
+                                Order #{o.id.slice(-8).toUpperCase()}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                {new Date(o.created_at).toLocaleDateString()}
+                              </p>
+                            </div>
+                            <div className="text-right">
+                              <p className="font-semibold">
+                                ₹{((o.total_cents || 0) / 100).toFixed(2)}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                {o.order_items?.length || 0} items
+                              </p>
+                            </div>
                           </div>
-                          
-                          <div className="p-3 sm:p-4">
-                            <h4 className="font-medium text-gray-900 mb-2 cursor-pointer hover:text-blue-600 text-sm sm:text-base overflow-hidden" 
-                                style={{ 
-                                  display: '-webkit-box',
-                                  WebkitLineClamp: 2,
-                                  WebkitBoxOrient: 'vertical'
-                                }}
-                                onClick={() => navigate(`/product/${item.id}`)}>
-                              {item.title}
-                            </h4>
-                            <div className="mb-3">
-                              {item.discount_percent > 0 ? (
-                                <div className="flex items-center gap-2">
-                                  <span className="text-base sm:text-lg font-bold text-blue-600">
-                                    ₹{discountedPrice.toFixed(2)}
-                                  </span>
-                                  <span className="text-xs sm:text-sm text-gray-500 line-through">
-                                    ₹{(item.price_cents / 100).toFixed(2)}
-                                  </span>
-                                </div>
-                              ) : (
-                                <span className="text-base sm:text-lg font-bold text-blue-600">
-                                  ₹{(item.price_cents / 100).toFixed(2)}
-                                </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="p-6">
+                {/* Orders Tab */}
+                {/* {activeTab === "orders" && (
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-xl font-semibold text-gray-900">
+                      Order History
+                    </h2>
+                    {loadingData && (
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-emerald-600"></div>
+                    )}
+                  </div>
+
+                  {error && (
+                    <div className="bg-rose-50 border border-rose-200 text-rose-700 px-4 py-3 rounded-xl mb-4 text-sm">
+                      {error}
+                    </div>
+                  )}
+
+                  {!loadingData && orders.length === 0 ? (
+                    <div className="text-center py-12">
+                      <div className="w-20 h-20 mx-auto mb-4 bg-emerald-100 rounded-full flex items-center justify-center">
+                        <svg
+                          className="w-10 h-10 text-emerald-600"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+                          />
+                        </svg>
+                      </div>
+                      <h4 className="text-lg font-semibold text-gray-900 mb-2">
+                        No orders yet
+                      </h4>
+                      <p className="text-gray-600 mb-6">
+                        Start shopping to see your orders here
+                      </p>
+                      <button
+                        onClick={() => navigate("/")}
+                        className="w-full sm:w-auto px-6 sm:px-8 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 transition-all duration-300 shadow-md hover:shadow-xl focus:ring-2 focus:ring-emerald-400"
+                      >
+                        Browse Products
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {orders.map((order) => (
+                        <div
+                          key={order.id}
+                          className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 border border-gray-200 rounded-xl hover:shadow-md transition-all duration-200 space-y-3 sm:space-y-0"
+                        >
+                          <div className="flex items-start sm:items-center gap-4">
+                            <div className="bg-emerald-100 p-3 rounded-lg">
+                              <svg
+                                className="w-6 h-6 text-emerald-600"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                                />
+                              </svg>
+                            </div>
+                            <div className="flex-1">
+                              <p className="font-semibold text-gray-900">
+                                Order #{order.id.slice(-8).toUpperCase()}
+                              </p>
+                              <p className="text-sm text-gray-500">
+                                {new Date(
+                                  order.created_at,
+                                ).toLocaleDateString()}{" "}
+                                • {order.order_items?.length || 0} items
+                              </p>
+                              {order.payment_method && (
+                                <p className="text-xs text-gray-500">
+                                  Payment:{" "}
+                                  {order.payment_method === "cod"
+                                    ? "Cash on Delivery"
+                                    : order.payment_method}
+                                </p>
                               )}
                             </div>
-                            <div className="flex items-center gap-2">
-                              <button 
-                                className={`flex-1 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm rounded transition-colors ${
-                                  item.stock_quantity > 0 
-                                    ? 'bg-blue-600 text-white hover:bg-blue-700' 
-                                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                }`}
-                                disabled={item.stock_quantity <= 0}
-                                onClick={async () => {
-                                  try {
-                                    await addToCart(item, 1);
-                                    alert('Item added to cart!');
-                                  } catch (error) {
-                                    console.error('Error adding to cart:', error);
-                                    alert('Error adding to cart');
-                                  }
-                                }}
+                          </div>
+
+                          <div className="flex flex-col sm:flex-row items-center justify-between sm:justify-end gap-3 sm:gap-4 w-full sm:w-auto">
+                            <div className="flex flex-col items-end gap-2 text-center sm:text-right">
+                              <span
+                                className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(
+                                  order.status,
+                                  order.payment_status,
+                                )}`}
                               >
-                                Add to Cart
-                              </button>
-                              <button 
-                                className="p-1.5 sm:p-2 text-red-500 hover:text-red-700 transition-colors"
-                                onClick={() => {
-                                  if (window.confirm('Remove this item from your wishlist?')) {
-                                    removeFromWishlist(item.id);
-                                  }
-                                }}
-                                title="Remove from wishlist"
-                              >
-                                <svg width="14" height="14" className="sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                </svg>
-                              </button>
+                                {order.payment_status === "failed"
+                                  ? "Payment Failed"
+                                  : order.payment_status === "pending"
+                                    ? "Payment Pending"
+                                    : order.payment_status === "cod_pending" &&
+                                        order.payment_method === "cod"
+                                      ? "COD - Confirmed"
+                                      : order.status?.charAt(0).toUpperCase() +
+                                          order.status?.slice(1) ||
+                                        "Processing"}
+                              </span>
+                              <p className="font-bold text-gray-900 text-lg">
+                                ₹
+                                {order.total_cents
+                                  ? (order.total_cents / 100).toFixed(2)
+                                  : "0.00"}
+                              </p>
                             </div>
+
+                            <button
+                              onClick={() => setSelectedOrder(order)}
+                              className="w-full sm:w-36 px-6 py-2.5 rounded-lg text-white font-medium bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 transition-all duration-300 shadow-md hover:shadow-lg focus:ring-2 focus:ring-emerald-400"
+                            >
+                              View Details
+                            </button>
                           </div>
                         </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="text-center py-8 sm:py-12">
-                    <svg className="mx-auto h-12 w-12 sm:h-16 sm:w-16 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                    </svg>
-                    <h4 className="text-base sm:text-lg font-medium text-gray-900 mb-2">Your wishlist is empty</h4>
-                    <p className="text-gray-600 mb-6 text-sm sm:text-base px-4">
-                      Start adding products you love to your wishlist
-                    </p>
-                    <button 
-                      onClick={() => navigate('/')}
-                      className="px-4 sm:px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base"
-                    >
-                      Browse Products
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
+                      ))}
+                    </div>
+                  )}
 
-            {/* Settings Tab */}
-            {activeTab === 'settings' && (
-              <div>
-                <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4">Account Settings</h2>
-                
-                {error && (
-                  <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4 text-sm">
-                    {error}
-                  </div>
-                )}
-                
-                <div className="space-y-4 sm:space-y-6">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-                      <input 
-                        type="text"
-                        value={userInfo.name}
-                        onChange={(e) => setUserInfo({...userInfo, name: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        disabled={updating}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Mobile Number</label>
-                      <input 
-                        type="tel"
-                        value={userInfo.mobile}
-                        onChange={(e) => setUserInfo({...userInfo, mobile: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        disabled={updating}
-                      />
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
-                    <input 
-                      type="email"
-                      value={userInfo.email}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500"
-                      disabled={true}
-                      title="Email cannot be changed"
+                  {selectedOrder && (
+                    <OrderDetailsModal
+                      order={selectedOrder}
+                      onClose={() => setSelectedOrder(null)}
+                      getStatusColor={getStatusColor}
+                      navigate={navigate}
                     />
-                    <p className="text-xs text-gray-500 mt-1">Email address cannot be changed</p>
-                  </div>
-
-                  {/* Address Management Note */}
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <div className="flex items-center">
-                      <svg className="h-5 w-5 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <p className="text-blue-800 text-sm">
-                        <strong>Address Management:</strong> Your shipping and billing addresses can be managed in the 
-                        <button 
-                          onClick={() => setActiveTab('addresses')} 
-                          className="text-blue-600 underline mx-1 hover:text-blue-800"
-                        >
-                          Addresses
-                        </button> 
-                        tab.
-                      </p>
-                    </div>
-                  </div>
-
-                  <button 
-                    onClick={async () => {
-                      const success = await updateUserProfile(userInfo);
-                      if (success) {
-                        alert('Profile updated successfully!');
-                      }
-                    }}
-                    disabled={updating}
-                    className={`w-full sm:w-auto px-4 sm:px-6 py-2 rounded-lg transition-colors text-sm sm:text-base ${
-                      updating
-                        ? 'bg-gray-400 cursor-not-allowed'
-                        : 'bg-blue-600 hover:bg-blue-700'
-                    } text-white`}
-                  >
-                    {updating ? 'Saving...' : 'Save Changes'}
-                  </button>
+                  )}
                 </div>
-              </div>
-            )}
+              )} */}
 
-            {/* Payment Methods Tab */}
-            {/*
-            {activeTab === 'payment' && (
-              <div>
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 space-y-2 sm:space-y-0">
-                  <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Payment Methods</h2>
-                  <button className="px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base">
-                    + Add Card
-                  </button>
-                </div>
-                {paymentMethods.length > 0 ? (
-                  <div className="space-y-4">
-                    {paymentMethods.map((method) => (
-                      <div key={method.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                        <div className="flex items-center gap-4">
-                          <div className="w-12 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded text-white text-xs flex items-center justify-center font-bold">
-                            {method.type.slice(0, 4).toUpperCase()}
-                          </div>
-                          <div>
-                            <p className="font-medium text-gray-900">**** **** **** {method.last4}</p>
-                            <p className="text-sm text-gray-500">
-                              Expires {method.expiryMonth}/{method.expiryYear}
-                            </p>
-                          </div>
-                          {method.isDefault && (
-                            <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-medium">
-                              Default
-                            </span>
-                          )}
+                {/* Wishlist Tab */}
+                {activeTab === "wishlist" && (
+                  <div>
+                    {wishlist.length > 0 ? (
+                      <div className="space-y-6">
+                        {wishlist.map((item) => {
+                          const discountedPrice =
+                            item.discount_percent > 0
+                              ? (item.price_cents / 100) *
+                                (1 - item.discount_percent / 100)
+                              : item.price_cents / 100;
+
+                          return (
+                            <div
+                              key={item.id}
+                              className="flex flex-col sm:flex-row gap-6 p-6 bg-gray-50 rounded-2xl hover:shadow-md transition-all duration-300 border border-gray-100"
+                            >
+                              {/* Product Image */}
+                              <div
+                                className="relative flex-shrink-0 cursor-pointer group"
+                                onClick={() => navigate(`/product/${item.id}`)}
+                              >
+                                <img
+                                  src={
+                                    item.image_url ||
+                                    "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?auto=format&fit=crop&w=300&q=80"
+                                  }
+                                  alt={item.title}
+                                  className="w-full sm:w-32 h-32 sm:h-32 object-cover rounded-xl group-hover:scale-105 transition-transform duration-300"
+                                />
+                                {item.discount_percent > 0 && (
+                                  <div className="absolute top-2 left-2">
+                                    <span className="px-2 py-1 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-lg text-xs font-bold shadow-lg flex items-center gap-1">
+                                      <svg
+                                        className="w-3 h-3"
+                                        fill="currentColor"
+                                        viewBox="0 0 20 20"
+                                      >
+                                        <path
+                                          fillRule="evenodd"
+                                          d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z"
+                                          clipRule="evenodd"
+                                        />
+                                      </svg>
+                                      {item.discount_percent}% OFF
+                                    </span>
+                                  </div>
+                                )}
+                                {item.stock_quantity <= 0 && (
+                                  <div className="absolute top-2 right-2">
+                                    <span className="px-2 py-1 bg-rose-100 text-rose-800 rounded-lg text-xs font-bold border border-rose-200 flex items-center gap-1">
+                                      <svg
+                                        className="w-3 h-3"
+                                        fill="currentColor"
+                                        viewBox="0 0 20 20"
+                                      >
+                                        <path
+                                          fillRule="evenodd"
+                                          d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                                          clipRule="evenodd"
+                                        />
+                                      </svg>
+                                      Out of Stock
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Product Details */}
+                              <div className="flex-1 space-y-4">
+                                <div>
+                                  <h3
+                                    className="text-xl font-bold text-gray-900 cursor-pointer hover:text-emerald-600 transition-colors line-clamp-2 mb-2"
+                                    onClick={() =>
+                                      navigate(`/product/${item.id}`)
+                                    }
+                                  >
+                                    {item.title}
+                                  </h3>
+
+                                  {/* Price Section */}
+                                  <div className="flex items-center gap-3 mb-3">
+                                    {item.discount_percent > 0 ? (
+                                      <div className="flex items-center gap-3">
+                                        <span className="text-2xl font-bold text-emerald-600">
+                                          ₹{discountedPrice.toFixed(2)}
+                                        </span>
+                                        <span className="text-lg text-gray-500 line-through">
+                                          ₹{(item.price_cents / 100).toFixed(2)}
+                                        </span>
+                                        <span className="px-2 py-1 bg-emerald-100 text-emerald-700 rounded-full text-sm font-bold flex items-center gap-1">
+                                          <svg
+                                            className="w-3 h-3"
+                                            fill="currentColor"
+                                            viewBox="0 0 20 20"
+                                          >
+                                            <path
+                                              fillRule="evenodd"
+                                              d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z"
+                                              clipRule="evenodd"
+                                            />
+                                          </svg>
+                                          Save ₹
+                                          {(
+                                            item.price_cents / 100 -
+                                            discountedPrice
+                                          ).toFixed(2)}
+                                        </span>
+                                      </div>
+                                    ) : (
+                                      <span className="text-2xl font-bold text-emerald-600">
+                                        ₹{(item.price_cents / 100).toFixed(2)}
+                                      </span>
+                                    )}
+                                  </div>
+
+                                  {/* Stock Status */}
+                                  <div className="flex items-center gap-2 mb-4">
+                                    <div
+                                      className={`w-3 h-3 rounded-full ${
+                                        item.stock_quantity > 10
+                                          ? "bg-emerald-500"
+                                          : item.stock_quantity > 0
+                                            ? "bg-amber-500"
+                                            : "bg-rose-500"
+                                      }`}
+                                    ></div>
+                                    <span
+                                      className={`text-sm font-medium flex items-center gap-1 ${
+                                        item.stock_quantity > 10
+                                          ? "text-emerald-700"
+                                          : item.stock_quantity > 0
+                                            ? "text-amber-700"
+                                            : "text-rose-700"
+                                      }`}
+                                    >
+                                      {item.stock_quantity > 10 ? (
+                                        <>
+                                          <svg
+                                            className="w-4 h-4"
+                                            fill="currentColor"
+                                            viewBox="0 0 20 20"
+                                          >
+                                            <path
+                                              fillRule="evenodd"
+                                              d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                              clipRule="evenodd"
+                                            />
+                                          </svg>
+                                          In Stock
+                                        </>
+                                      ) : item.stock_quantity > 0 ? (
+                                        <>
+                                          <svg
+                                            className="w-4 h-4"
+                                            fill="currentColor"
+                                            viewBox="0 0 20 20"
+                                          >
+                                            <path
+                                              fillRule="evenodd"
+                                              d="M13.477 14.89A6 6 0 015.11 6.524l8.367 8.368zm1.414-1.414L6.524 5.11a6 6 0 018.367 8.367zM18 10a8 8 0 11-16 0 8 8 0 0116 0z"
+                                              clipRule="evenodd"
+                                            />
+                                          </svg>
+                                          Only {item.stock_quantity} left
+                                        </>
+                                      ) : (
+                                        <>
+                                          <svg
+                                            className="w-4 h-4"
+                                            fill="currentColor"
+                                            viewBox="0 0 20 20"
+                                          >
+                                            <path
+                                              fillRule="evenodd"
+                                              d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                                              clipRule="evenodd"
+                                            />
+                                          </svg>
+                                          Out of Stock
+                                        </>
+                                      )}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                {/* Action Buttons */}
+                                <div className="flex flex-col sm:flex-row gap-3">
+                                  <button
+                                    className={`flex-1 px-6 py-3 rounded-xl transition-all duration-300 font-bold text-sm ${
+                                      item.stock_quantity > 0
+                                        ? "bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white shadow-lg hover:shadow-xl hover:scale-105"
+                                        : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                                    }`}
+                                    disabled={item.stock_quantity <= 0}
+                                    onClick={async () => {
+                                      try {
+                                        await addToCart(item, 1);
+                                        alert("Item added to cart!");
+                                      } catch (error) {
+                                        alert("Error adding to cart");
+                                      }
+                                    }}
+                                  >
+                                    {item.stock_quantity > 0 ? (
+                                      <span className="flex items-center gap-2">
+                                        <svg
+                                          className="w-4 h-4"
+                                          fill="none"
+                                          stroke="currentColor"
+                                          viewBox="0 0 24 24"
+                                        >
+                                          <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5M7 13l2.5 5m0 0h7m-7 0v4a1 1 0 001 1h4a1 1 0 001-1v-4m-5 0h5"
+                                          />
+                                        </svg>
+                                        Add to Cart
+                                      </span>
+                                    ) : (
+                                      <span className="flex items-center gap-2">
+                                        <svg
+                                          className="w-4 h-4"
+                                          fill="currentColor"
+                                          viewBox="0 0 20 20"
+                                        >
+                                          <path
+                                            fillRule="evenodd"
+                                            d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                                            clipRule="evenodd"
+                                          />
+                                        </svg>
+                                        Unavailable
+                                      </span>
+                                    )}
+                                  </button>
+
+                                  <button
+                                    className="px-6 py-3 border-2 border-gray-300 text-gray-700 hover:text-emerald-600 hover:border-emerald-300 hover:bg-emerald-50 rounded-xl transition-all duration-300 font-bold text-sm hover:scale-105 flex items-center gap-2"
+                                    onClick={() =>
+                                      navigate(`/product/${item.id}`)
+                                    }
+                                  >
+                                    <svg
+                                      className="w-4 h-4"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                                      />
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                                      />
+                                    </svg>
+                                    View Details
+                                  </button>
+
+                                  <button
+                                    className="px-4 py-3 text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded-xl transition-all duration-300 border-2 border-rose-200 hover:border-rose-300 font-bold hover:scale-105 flex items-center gap-2"
+                                    onClick={() => {
+                                      if (
+                                        window.confirm(
+                                          "Remove this item from your wishlist?",
+                                        )
+                                      ) {
+                                        removeFromWishlist(item.id);
+                                      }
+                                    }}
+                                    title="Remove from wishlist"
+                                  >
+                                    <svg
+                                      className="w-4 h-4"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                      />
+                                    </svg>
+                                    Remove
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="text-center py-16">
+                        <div className="w-24 h-24 mx-auto mb-6 bg-gradient-to-br from-emerald-100 to-teal-100 rounded-full flex items-center justify-center shadow-lg">
+                          <svg
+                            className="w-12 h-12 text-emerald-600"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                            />
+                          </svg>
                         </div>
-                        <div className="flex gap-2">
-                          <button className="p-2 text-gray-500 hover:text-gray-700 transition-colors">
-                            ✏️
-                          </button>
-                          <button className="p-2 text-red-500 hover:text-red-700 transition-colors">
-                            🗑️
-                          </button>
+                        <h3 className="text-2xl font-bold text-gray-900 mb-4 flex items-center justify-center gap-2">
+                          <svg
+                            className="w-6 h-6 text-emerald-600"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                            />
+                          </svg>
+                          Your wishlist is empty
+                        </h3>
+                        <p className="text-gray-600 mb-8 text-lg max-w-md mx-auto">
+                          Discover amazing products and add them to your
+                          wishlist for later!
+                        </p>
+                        <button
+                          onClick={() => navigate("/")}
+                          className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white px-8 py-4 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl font-bold text-lg hover:scale-105 flex items-center gap-2"
+                        >
+                          <svg
+                            className="w-5 h-5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
+                            />
+                          </svg>
+                          Start Shopping
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Profile Settings Tab */}
+                {activeTab === "settings" && (
+                  <div className="space-y-8">
+                    {error && (
+                      <div className="bg-rose-50 border-l-4 border-rose-400 text-rose-700 px-6 py-4 rounded-xl shadow-sm">
+                        <div className="flex items-center">
+                          <svg
+                            className="w-5 h-5 mr-2"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                          {error}
                         </div>
                       </div>
-                    ))}
+                    )}
+
+                    {/* Profile Form */}
+                    <div className="bg-gradient-to-br from-gray-50 to-white rounded-2xl p-4 sm:p-6 lg:p-8 border border-gray-200">
+                      <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6 flex items-center">
+                        <div className="w-7 h-7 sm:w-8 sm:h-8 bg-emerald-100 rounded-lg flex items-center justify-center mr-2 sm:mr-3 flex-shrink-0">
+                          <svg
+                            className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                            />
+                          </svg>
+                        </div>
+                        <span className="truncate">Personal Information</span>
+                      </h3>
+
+                      <form
+                        onSubmit={async (e) => {
+                          e.preventDefault();
+                          const success = await updateUserProfile(userInfo);
+                          if (success) {
+                            alert("✅ Profile updated successfully!");
+                          }
+                        }}
+                        className="space-y-4 sm:space-y-6"
+                      >
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
+                          <div className="space-y-2">
+                            <label className="flex items-center gap-2 text-xs sm:text-sm font-bold text-gray-700">
+                              <svg
+                                className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                                />
+                              </svg>
+                              Full Name *
+                            </label>
+                            <input
+                              type="text"
+                              value={userInfo.name}
+                              onChange={(e) =>
+                                setUserInfo({
+                                  ...userInfo,
+                                  name: e.target.value,
+                                })
+                              }
+                              className="w-full px-3 py-3 sm:px-4 sm:py-4 text-sm sm:text-base border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-300 bg-white"
+                              required
+                              placeholder="Enter your full name"
+                            />
+                          </div>
+
+                          <div className="space-y-2">
+                            <label className="flex items-center gap-2 text-xs sm:text-sm font-bold text-gray-700">
+                              <svg
+                                className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M3 8l7.89 7.89a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                                />
+                              </svg>
+                              Email Address
+                            </label>
+                            <input
+                              type="email"
+                              value={userInfo.email}
+                              disabled
+                              className="w-full px-3 py-3 sm:px-4 sm:py-4 text-sm sm:text-base border-2 border-gray-200 rounded-xl bg-gray-50 text-gray-500 cursor-not-allowed"
+                            />
+                            <p className="text-xs text-gray-500 flex items-start sm:items-center">
+                              <svg
+                                className="w-3 h-3 mr-1 mt-0.5 sm:mt-0 flex-shrink-0"
+                                fill="currentColor"
+                                viewBox="0 0 20 20"
+                              >
+                                <path
+                                  fillRule="evenodd"
+                                  d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                                  clipRule="evenodd"
+                                />
+                              </svg>
+                              <span>Email cannot be changed for security reasons</span>
+                            </p>
+                          </div>
+
+                          <div className="space-y-2 md:col-span-2">
+                            <label className="flex items-center gap-2 text-xs sm:text-sm font-bold text-gray-700">
+                              <svg
+                                className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"
+                                />
+                              </svg>
+                              Mobile Number
+                            </label>
+                            <input
+                              type="tel"
+                              value={userInfo.mobile}
+                              onChange={(e) =>
+                                setUserInfo({
+                                  ...userInfo,
+                                  mobile: e.target.value,
+                                })
+                              }
+                              className="w-full px-3 py-3 sm:px-4 sm:py-4 text-sm sm:text-base border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-300 bg-white"
+                              placeholder="Enter your mobile number"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="flex flex-col sm:flex-row justify-end gap-3 sm:gap-4 pt-6 sm:pt-8 border-t border-gray-200">
+                          <button
+                            type="button"
+                            onClick={() => fetchUserProfile()}
+                            className="w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 text-sm sm:text-base border-2 border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 hover:border-gray-400 transition-all duration-300 font-bold flex items-center justify-center gap-2"
+                          >
+                            <svg
+                              className="w-4 h-4 flex-shrink-0"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                              />
+                            </svg>
+                            <span className="truncate">Reset Changes</span>
+                          </button>
+                          <button
+                            type="submit"
+                            disabled={updating}
+                            className="w-full sm:w-auto bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white px-6 sm:px-8 py-3 sm:py-4 text-sm sm:text-base rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl font-bold disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 flex items-center justify-center gap-2"
+                          >
+                            <svg
+                              className="w-4 h-4 flex-shrink-0"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"
+                              />
+                            </svg>
+                            <span className="truncate">{updating ? "Updating..." : "Save Changes"}</span>
+                          </button>
+                        </div>
+                      </form>
+                    </div>
                   </div>
-                ) : (
-                  <div className="text-center py-8 sm:py-12">
-                    <svg className="mx-auto h-12 w-12 sm:h-16 sm:w-16 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                    </svg>
-                    <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">No payment methods added</h3>
-                    <p className="text-gray-500 mb-6 text-sm sm:text-base px-4">Add a credit or debit card to make checkout faster and easier</p>
-                    <button className="px-4 sm:px-6 py-2 sm:py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base">
-                      Add Your First Card
-                    </button>
+                )}
+
+                {/* Addresses Tab */}
+                {activeTab === "addresses" && (
+                  <div>
+                    <h2 className="text-xl font-semibold text-gray-900 mb-4">
+                      My Addresses
+                    </h2>
+                    <AddressManager />
                   </div>
                 )}
               </div>
-            )}
-            */}
-
-            {/* Addresses Tab */}
-            {activeTab === 'addresses' && (
-              <div className="px-0 sm:px-2 py-2 sm:py-4">
-                <AddressManager />
-              </div>
-            )}
+            </div>
+            {/* Mobile Sign Out Button */}
+            <div className="mt-4">
+              <button
+                onClick={handleLogout}
+                className="
+                  w-full flex items-center justify-center space-x-3 p-4
+                  text-rose-600 hover:text-rose-700
+                  bg-white hover:bg-rose-50
+                  rounded-xl
+                  transition-all duration-200
+                  font-medium group
+                  border border-rose-200 hover:border-rose-300
+                "
+              >
+                <div className="p-2 bg-rose-100 rounded-lg group-hover:bg-rose-200 transition-colors">
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                    />
+                  </svg>
+                </div>
+                <span>Sign Out</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
+
+      <MobileBottomNav />
     </div>
   );
 };

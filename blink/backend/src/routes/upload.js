@@ -1,25 +1,14 @@
 import express from 'express';
 import multer from 'multer';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import { uploadImage } from '../controllers/uploadController.js';
 import { adminAuth } from '../controllers/authController.js';
 
 const router = express.Router();
 
-// Set up multer for file uploads (temporary local storage)
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, path.join(__dirname, '../../uploads'));
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, uniqueSuffix + '-' + file.originalname);
-  }
+// Set up multer for file uploads (memory storage for direct bucket upload)
+const upload = multer({ 
+  storage: multer.memoryStorage()
 });
-const upload = multer({ storage });
 
 
 // POST /api/upload - handle image upload to Supabase (admin only)
