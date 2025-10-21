@@ -54,8 +54,7 @@ const CartPage = () => {
       await addToCart(product, product.quantity || 1);
       navigate("/checkout");
     } catch (err) {
-      console.error("Buy now failed", err);
-      alert("Failed to start checkout for this item.");
+      // Failed to start checkout
     } finally {
       setUpdatingItems((prev) => {
         const newSet = new Set(prev);

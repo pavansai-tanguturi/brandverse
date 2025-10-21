@@ -1376,9 +1376,8 @@ const CustomerDashboard = () => {
                                     onClick={async () => {
                                       try {
                                         await addToCart(item, 1);
-                                        alert("Item added to cart!");
                                       } catch (error) {
-                                        alert("Error adding to cart");
+                                        // Error adding to cart
                                       }
                                     }}
                                   >
@@ -1586,10 +1585,7 @@ const CustomerDashboard = () => {
                       <form
                         onSubmit={async (e) => {
                           e.preventDefault();
-                          const success = await updateUserProfile(userInfo);
-                          if (success) {
-                            alert("✅ Profile updated successfully!");
-                          }
+                          await updateUserProfile(userInfo);
                         }}
                         className="space-y-4 sm:space-y-6"
                       >
