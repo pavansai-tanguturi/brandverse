@@ -115,24 +115,31 @@ const ProductPage = () => {
       return [
         "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?auto=format&fit=crop&w=600&q=80",
       ];
-
+    // Collect images from product_images array (if present)
+    const collected = [];
     if (product.product_images && product.product_images.length > 0) {
-      const validImages = product.product_images
-        .filter((img) => img.url)
-        .map((img) => img.url);
-      return validImages.length > 0
-        ? validImages
-        : [
-            product.image_url ||
-              "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?auto=format&fit=crop&w=600&q=80",
-          ];
-    } else if (product.image_url) {
-      return [product.image_url];
-    } else {
-      return [
-        "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?auto=format&fit=crop&w=600&q=80",
-      ];
+      for (const img of product.product_images) {
+        if (img && img.url) collected.push(img.url);
+      }
     }
+
+    // Ensure primary/main image is included (put it first if present and not duplicated)
+    if (product.image_url) {
+      if (!collected.includes(product.image_url)) {
+        collected.unshift(product.image_url);
+      }
+    }
+
+    // Filter falsy values and deduplicate while preserving order
+    const uniqueImages = [...new Set(collected.filter(Boolean))];
+
+    if (uniqueImages.length > 0) return uniqueImages;
+
+    // Fallback single image
+    return [
+      product.image_url ||
+        "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?auto=format&fit=crop&w=600&q=80",
+    ];
   }, [product]);
 
   const fetchProduct = useCallback(async () => {
