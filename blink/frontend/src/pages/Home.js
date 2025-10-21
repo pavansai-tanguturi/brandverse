@@ -36,49 +36,37 @@ function Home() {
   const localCategoryBanners2 = [
     {
       key: "dairy",
-      src: "carousel1/dairy.png",
+      src: "/carousel1/dairy.png",
       title: "Dairy Deals",
       link: "/products?category=dairy",
     },
     {
       key: "basmati",
-      src: "carousel1/basmati.png",
+      src: "/carousel1/basmati.png",
       title: "Basmati Rice",
       link: "/products?category=basmati",
     },
     {
       key: "veggies",
-      src: "carousel1/veggies.png",
+      src: "/carousel1/veggies.png",
       title: "Fresh Veggies",
       link: "/products?category=veggies",
     },
     {
       key: "cooking",
-      src: "carousel1/cooking.png",
+      src: "/carousel1/cooking.png",
       title: "Cooking Essentials",
       link: "/products?category=cooking",
     },
     {
       key: "pet",
-      src: "carousel1/pet.png",
+      src: "/carousel1/pet.png",
       title: "Pet Care",
       link: "/products?category=pet",
     },
     {
-      key: "meat",
-      src: "carousel1/meat.png",
-      title: "Fresh Meat",
-      link: "/products?category=meat",
-    },
-    {
-      key: "skincare",
-      src: "carousel1/skincare.png",
-      title: "Skincare",
-      link: "/products?category=skincare",
-    },
-    {
       key: "cleaning",
-      src: "carousel1/cleaning.png",
+      src: "/carousel1/cleaning.png",
       title: "Home Cleaning",
       link: "/products?category=cleaning",
     },
@@ -88,49 +76,37 @@ function Home() {
   const localCategoryBanners = [
     {
       key: "fruits",
-      src: "carousel2/fruits.png",
+      src: "/carousel2/fruits.png",
       title: "Fresh Fruits",
       link: "/products?category=fruits",
     },
     {
       key: "snacks",
-      src: "carousel2/snacks.png",
+      src: "/carousel2/snacks.png",
       title: "Snacks & Munchies",
       link: "/products?category=snacks",
     },
     {
       key: "beverages",
-      src: "carousel2/beverages.png",
+      src: "/carousel2/beverages.png",
       title: "Beverages",
       link: "/products?category=beverages",
     },
     {
       key: "bakery",
-      src: "carousel2/bakery.png",
+      src: "/carousel2/bakery.png",
       title: "Bakery",
       link: "/products?category=bakery",
     },
     {
-      key: "personalcare",
-      src: "carousel2/personalcare.png",
-      title: "Personal Care",
-      link: "/products?category=personalcare",
-    },
-    {
       key: "babycare",
-      src: "carousel2/babycare.png",
+      src: "/carousel2/babycare.png",
       title: "Baby Care",
       link: "/products?category=babycare",
     },
     {
-      key: "gourmet",
-      src: "carousel2/gourmet.png",
-      title: "Gourmet Foods",
-      link: "/products?category=gourmet",
-    },
-    {
       key: "stationery",
-      src: "carousel2/stationery.png",
+      src: "/carousel2/stationery.png",
       title: "Stationery",
       link: "/products?category=stationery",
     },
@@ -261,19 +237,12 @@ function Home() {
     if (localBannerTimerRef2.current)
       clearInterval(localBannerTimerRef2.current);
     if (!isBannerPaused2) {
-      console.debug("carousel2: starting autoplay", {
-        groupCount2,
-        isBannerPaused2,
-      });
       localBannerTimerRef2.current = setInterval(() => {
         setLocalBannerIndex2((prev) => {
           const next = (prev + 1) % groupCount2;
-          console.debug("carousel2: tick", { prev, next });
           return next;
         });
       }, 4000);
-    } else {
-      console.debug("carousel2: paused", { isBannerPaused2 });
     }
     return () =>
       localBannerTimerRef2.current &&
@@ -636,48 +605,6 @@ function Home() {
             })()}
           </div>
 
-          {/* Arrows - hidden on mobile */}
-          <button
-            aria-label="Previous"
-            className="hidden sm:block absolute left-0 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-gray-800 rounded-none p-3 shadow-none" // Removed rounded, shadow, increased padding for click area
-            onClick={handlePrevLocalBanner}
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              className="w-5 h-5"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M15 19l-7-7 7-7"
-              />
-            </svg>
-          </button>
-          <button
-            aria-label="Next"
-            className="hidden sm:block absolute right-0 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-gray-800 rounded-none p-3 shadow-none" // Removed rounded, shadow, increased padding for click area
-            onClick={handleNextLocalBanner}
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              className="w-5 h-5"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M9 5l7 7-7 7"
-              />
-            </svg>
-          </button>
-
           {/* Dots removed */}
         </div>
         )}
@@ -771,48 +698,6 @@ function Home() {
             })()}
           </div>
 
-          {/* Arrows - hidden on mobile */}
-          <button
-            aria-label="Previous"
-            className="hidden sm:block absolute left-0 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-gray-800 rounded-none p-3 shadow-none" // Removed rounded, shadow, increased padding for click area
-            onClick={handlePrevLocalBanner2}
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              className="w-5 h-5"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M15 19l-7-7 7-7"
-              />
-            </svg>
-          </button>
-          <button
-            aria-label="Next"
-            className="hidden sm:block absolute right-0 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-gray-800 rounded-none p-3 shadow-none" // Removed rounded, shadow, increased padding for click area
-            onClick={handleNextLocalBanner2}
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              className="w-5 h-5"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M9 5l7 7-7 7"
-              />
-            </svg>
-          </button>
-
           {/* Dots removed */}
         </div>
         )}
@@ -863,7 +748,7 @@ function Home() {
       </div>
 
       {/* Category-Based Product Sections */}
-      <div className="pb-20 lg:pb-0">
+      <div className="pb-15 lg:pb-0">
         {categories.slice(0, 4).map((category) => (
           <div key={category.id} className="py-4">
             <div className="max-w-7xl mx-auto px-4">
@@ -1009,127 +894,171 @@ function Home() {
       </div>
 
       <MobileBottomNav />
-      {/* Home Specials - two prominent image cards (with skeleton loader when loading) */}
-      <div className="bg-transparent mt-6 -mt-24">
-        <div className="max-w-7xl mx-auto px-4 py-8">
-          {loading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {Array.from({ length: 4 }).map((_, idx) => (
-                <div
-                  key={idx}
-                  className="flex-none w-full bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden"
-                >
-                  <div className="relative">
-                    <div className="w-full h-40 sm:h-48 bg-gray-200 animate-pulse"></div>
-                  </div>
-                  <div className="p-3 sm:p-4">
-                    <div className="w-3/4 h-4 bg-gray-200 rounded mb-2 animate-pulse"></div>
-                    <div className="w-1/2 h-3 bg-gray-200 rounded mb-3 animate-pulse"></div>
-                    <div className="w-full h-8 bg-gray-200 rounded animate-pulse"></div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {/* Pantry Essentials */}
-              <div
-                role="button"
-                onClick={() => navigate("/products?category=pantry")}
-                className="relative h-64 md:h-72 lg:h-80 rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all transform hover:-translate-y-1 bg-gray-100 dark:bg-gray-800 group cursor-pointer"
+      
+      {/* Home Specials - Responsive for Mobile and Desktop */}
+      <div className="bg-white py-6">
+        <div className="max-w-7xl mx-auto px-4">
+          {/* Header with Browse All Button */}
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
+              Special Offers
+            </h2>
+            <button
+              onClick={() => navigate("/products")}
+              className="inline-flex items-center gap-2 text-sm text-emerald-600 hover:text-emerald-700 font-medium"
+            >
+              Browse all
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
               >
-                <img
-                  src="/home-specials/pantry.png"
-                  alt="Pantry Essentials"
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                  loading="lazy"
-                  onError={(e) => (e.target.src = "/logo192.png")}
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 5l7 7-7 7"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent flex items-end p-4">
-                  <div>
-                    <h3 className="text-white font-semibold text-lg">
-                      Pantry Essentials
-                    </h3>
-                    <p className="text-white/90 text-xs">
-                      Staples and bulk buys for your kitchen
-                    </p>
-                  </div>
-                </div>
-              </div>
+              </svg>
+            </button>
+          </div>
 
-              {/* Breakfast Picks */}
-              <div
-                role="button"
-                onClick={() => navigate("/products?category=breakfast")}
-                className="relative h-64 md:h-72 lg:h-80 rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all transform hover:-translate-y-1 bg-gray-100 dark:bg-gray-800 group cursor-pointer"
-              >
-                <img
-                  src="/home-specials/breakfast.png"
-                  alt="Breakfast Picks"
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                  loading="lazy"
-                  onError={(e) => (e.target.src = "/logo192.png")}
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent flex items-end p-4">
-                  <div>
-                    <h3 className="text-white font-semibold text-lg">Breakfast Picks</h3>
-                    <p className="text-white/90 text-xs">
-                      Kickstart your day with healthy choices
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Beverages */}
-              <div
-                role="button"
-                onClick={() => navigate("/products?category=beverages")}
-                className="relative h-64 md:h-72 lg:h-80 rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all transform hover:-translate-y-1 bg-gray-100 dark:bg-gray-800 group cursor-pointer"
-              >
-                <img
-                  src="/home-specials/refreshing_drinks.png"
-                  alt="Beverages"
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                  loading="lazy"
-                  onError={(e) => (e.target.src = "/logo192.png")}
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent flex items-end p-4">
-                  <div>
-                    <h3 className="text-white font-semibold text-lg">Refreshing Drinks</h3>
-                    <p className="text-white/90 text-xs">
-                      Juices, coffee, and more
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Add Optional Extra Category */}
-              <div
-                role="button"
-                onClick={() => navigate("/products?category=snacks")}
-                className="hidden xl:block relative h-64 md:h-72 lg:h-80 rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all transform hover:-translate-y-1 bg-gray-100 dark:bg-gray-800 group cursor-pointer"
-              >
-                <img
-                  src="/home-specials/tasty-snacks.png"
-                  alt="Snacks"
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                  loading="lazy"
-                  onError={(e) => (e.target.src = "/logo192.png")}
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent flex items-end p-4">
-                  <div>
-                    <h3 className="text-white font-semibold text-lg">Tasty Snacks</h3>
-                    <p className="text-white/90 text-xs">
-                      Perfect bites for every mood
-                    </p>
-                  </div>
+          {/* Mobile View - Vertical Stack */}
+          <div className="flex flex-col gap-4 md:hidden">
+            <div
+              role="button"
+              onClick={() => navigate("/products?category=pantry")}
+              className="relative h-[200px] rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer group"
+            >
+              <img
+                src="/home-specials/pantry.png"
+                alt="Pantry Specials"
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                loading="lazy"
+                onError={(e) => (e.target.src = "/logo192.png")}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent flex items-end p-4">
+                <div>
+                  <h3 className="text-white font-bold text-xl mb-1">
+                    Pantry Essentials
+                  </h3>
+                  <p className="text-white text-sm opacity-90">
+                    Staples and bulk buys for your kitchen
+                  </p>
                 </div>
               </div>
             </div>
-          )}
+
+            <div
+              role="button"
+              onClick={() => navigate("/products?category=breakfast")}
+              className="relative h-[200px] rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer group"
+            >
+              <img
+                src="/home-specials/breakfast.png"
+                alt="Breakfast Specials"
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                loading="lazy"
+                onError={(e) => (e.target.src = "/logo192.png")}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent flex items-end p-4">
+                <div>
+                  <h3 className="text-white font-bold text-xl mb-1">
+                    Breakfast Picks
+                  </h3>
+                  <p className="text-white text-sm opacity-90">
+                    Kickstart your day with healthy choices
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Desktop/Tablet View - Side by Side Grid */}
+          <div className="hidden md:grid md:grid-cols-2 gap-6">
+            <div
+              role="button"
+              onClick={() => navigate("/products?category=pantry")}
+              className="relative h-[280px] lg:h-[320px] rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 cursor-pointer group"
+            >
+              <img
+                src="/home-specials/pantry.png"
+                alt="Pantry Specials"
+                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                loading="lazy"
+                onError={(e) => (e.target.src = "/logo192.png")}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent flex items-end p-6">
+                <div>
+                  <h3 className="text-white font-bold text-2xl lg:text-3xl mb-2">
+                    Pantry Essentials
+                  </h3>
+                  <p className="text-white text-base lg:text-lg opacity-95 mb-3">
+                    Staples and bulk buys for your kitchen
+                  </p>
+                  <span className="inline-flex items-center gap-2 text-white text-sm font-medium bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full hover:bg-white/30 transition-colors">
+                    Shop Now
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 5l7 7-7 7"
+                      />
+                    </svg>
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div
+              role="button"
+              onClick={() => navigate("/products?category=breakfast")}
+              className="relative h-[280px] lg:h-[320px] rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 cursor-pointer group"
+            >
+              <img
+                src="/home-specials/breakfast.png"
+                alt="Breakfast Specials"
+                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                loading="lazy"
+                onError={(e) => (e.target.src = "/logo192.png")}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent flex items-end p-6">
+                <div>
+                  <h3 className="text-white font-bold text-2xl lg:text-3xl mb-2">
+                    Breakfast Picks
+                  </h3>
+                  <p className="text-white text-base lg:text-lg opacity-95 mb-3">
+                    Kickstart your day with healthy choices
+                  </p>
+                  <span className="inline-flex items-center gap-2 text-white text-sm font-medium bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full hover:bg-white/30 transition-colors">
+                    Shop Now
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 5l7 7-7 7"
+                      />
+                    </svg>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-
     </div>
   );
 }

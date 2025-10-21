@@ -39,18 +39,37 @@ async function getProductsWithImages(productIds) {
       .in('id', productIds);
 
     if (!joinError && joinedProducts) {
-      // Process joined data to get primary image
-      const productsWithImages = joinedProducts.map(product => {
+      // Process joined data to get primary image with signed URLs
+      const productsWithImages = await Promise.all(joinedProducts.map(async (product) => {
         const primaryImage = product.product_images?.find(img => img.is_primary === true);
+        let imageUrl = null;
+        
+        // Generate signed URL for the image if path exists
+        if (primaryImage?.path) {
+          try {
+            const { data: signed, error: signedError } = await supabaseAdmin.storage
+              .from(process.env.PRODUCT_IMAGES_BUCKET || 'product-images')
+              .createSignedUrl(primaryImage.path, 3600); // 1 hour expiry
+            
+            if (!signedError && signed?.signedUrl) {
+              imageUrl = signed.signedUrl;
+            } else {
+              console.error('Error generating signed URL:', signedError);
+            }
+          } catch (urlError) {
+            console.error('Exception generating signed URL:', urlError);
+          }
+        }
+        
         return {
           id: product.id,
           title: product.title,
           price_cents: product.price_cents,
           discount_percent: product.discount_percent,
           stock_quantity: product.stock_quantity,
-          image_url: primaryImage?.path || null
+          image_url: imageUrl
         };
-      });
+      }));
 
       console.log('Products fetched with JOIN approach');
       return { products: productsWithImages, error: null };
@@ -81,14 +100,33 @@ async function getProductsWithImages(productIds) {
       // Don't fail if images can't be fetched, just continue without images
     }
 
-    // Combine products with their primary images
-    const productsWithImages = products.map(product => {
+    // Combine products with their primary images and generate signed URLs
+    const productsWithImages = await Promise.all(products.map(async (product) => {
       const primaryImage = images?.find(img => img.product_id === product.id);
+      let imageUrl = null;
+      
+      // Generate signed URL for the image if path exists
+      if (primaryImage?.path) {
+        try {
+          const { data: signed, error: signedError } = await supabaseAdmin.storage
+            .from(process.env.PRODUCT_IMAGES_BUCKET || 'product-images')
+            .createSignedUrl(primaryImage.path, 3600); // 1 hour expiry
+          
+          if (!signedError && signed?.signedUrl) {
+            imageUrl = signed.signedUrl;
+          } else {
+            console.error('Error generating signed URL:', signedError);
+          }
+        } catch (urlError) {
+          console.error('Exception generating signed URL:', urlError);
+        }
+      }
+      
       return {
         ...product,
-        image_url: primaryImage?.path || null
+        image_url: imageUrl
       };
-    });
+    }));
 
     return { products: productsWithImages, error: null };
   } catch (error) {
@@ -195,7 +233,55 @@ export async function listMyOrders(req, res) {
     .eq('customer_id', customer.id)
     .order('created_at', { ascending: false });
   if (error) return res.status(400).json({ error: error.message });
-  res.json(data);
+  
+  // Enrich order items with product images
+  const enrichedOrders = await Promise.all((data || []).map(async (order) => {
+    if (!order.order_items || order.order_items.length === 0) {
+      return order;
+    }
+    
+    // Get product IDs from order items
+    const productIds = order.order_items.map(item => item.product_id);
+    
+    // Fetch product images
+    const { data: images } = await supabaseAdmin
+      .from('product_images')
+      .select('product_id, path')
+      .in('product_id', productIds)
+      .eq('is_primary', true);
+    
+    // Enrich each order item with its image URL
+    const enrichedItems = await Promise.all(order.order_items.map(async (item) => {
+      const primaryImage = images?.find(img => img.product_id === item.product_id);
+      let imageUrl = null;
+      
+      if (primaryImage?.path) {
+        try {
+          const { data: signed, error: signedError } = await supabaseAdmin.storage
+            .from(process.env.PRODUCT_IMAGES_BUCKET || 'product-images')
+            .createSignedUrl(primaryImage.path, 3600); // 1 hour expiry
+          
+          if (!signedError && signed?.signedUrl) {
+            imageUrl = signed.signedUrl;
+          }
+        } catch (urlError) {
+          console.error('Error generating signed URL for order item:', urlError);
+        }
+      }
+      
+      return {
+        ...item,
+        image_url: imageUrl
+      };
+    }));
+    
+    return {
+      ...order,
+      order_items: enrichedItems
+    };
+  }));
+  
+  res.json(enrichedOrders);
 }
 
 // Confirm Razorpay payment and update order
@@ -387,7 +473,55 @@ export async function listAllOrders(req, res) {
         return false;
       });
     }
-    res.json(data);
+    
+    // Enrich order items with product images
+    const enrichedOrders = await Promise.all((data || []).map(async (order) => {
+      if (!order.order_items || order.order_items.length === 0) {
+        return order;
+      }
+      
+      // Get product IDs from order items
+      const productIds = order.order_items.map(item => item.product_id);
+      
+      // Fetch product images
+      const { data: images } = await supabaseAdmin
+        .from('product_images')
+        .select('product_id, path')
+        .in('product_id', productIds)
+        .eq('is_primary', true);
+      
+      // Enrich each order item with its image URL
+      const enrichedItems = await Promise.all(order.order_items.map(async (item) => {
+        const primaryImage = images?.find(img => img.product_id === item.product_id);
+        let imageUrl = null;
+        
+        if (primaryImage?.path) {
+          try {
+            const { data: signed, error: signedError } = await supabaseAdmin.storage
+              .from(process.env.PRODUCT_IMAGES_BUCKET || 'product-images')
+              .createSignedUrl(primaryImage.path, 3600); // 1 hour expiry
+            
+            if (!signedError && signed?.signedUrl) {
+              imageUrl = signed.signedUrl;
+            }
+          } catch (urlError) {
+            console.error('Error generating signed URL for order item:', urlError);
+          }
+        }
+        
+        return {
+          ...item,
+          image_url: imageUrl
+        };
+      }));
+      
+      return {
+        ...order,
+        order_items: enrichedItems
+      };
+    }));
+    
+    res.json(enrichedOrders);
   } catch (error) {
     console.error('💥 listAllOrders failed:', error);
     res.status(500).json({ error: 'Failed to fetch all orders' });
@@ -431,11 +565,11 @@ export async function handleWebhook(req, res) {
         return res.status(404).json({ error: 'Order not found for webhook' });
       }
 
-      // Update order status to paid/confirmed
+      // Update order status to paid (waiting for admin acceptance)
       await supabaseAdmin
         .from('orders')
         .update({
-          status: 'confirmed',
+          status: 'paid',
           payment_status: 'paid',
           razorpay_payment_id,
           confirmed_at: new Date().toISOString()
@@ -915,7 +1049,7 @@ export async function createOrder(req, res) {
     // Prepare order data
     const orderData = {
       customer_id: customer.id,
-      status: payment_method === 'cod' ? 'confirmed' : 'pending',
+      status: 'pending', // All orders start as pending and require admin acceptance
       subtotal_cents: subtotal, // This is now the discounted subtotal
       tax_cents,
       shipping_cents,
@@ -1069,21 +1203,19 @@ export async function createOrder(req, res) {
       .select('*')
       .single();
     
-    if (oErr) {
-      console.error('❌ Order creation error:', oErr);
-      if (oErr.message.includes('column') && oErr.message.includes('does not exist')) {
-        console.log('🔄 Retrying order creation without address/payment columns...');
-        const basicOrderData = {
-          customer_id: customer.id,
-          status: payment_method === 'cod' ? 'confirmed' : 'pending',
-          subtotal_cents: subtotal,
-          tax_cents,
-          shipping_cents,
-          discount_cents: discount_cents + totalDiscount,
-          total_cents: total,
-        };
-        
-        if (razorpayOrder) {
+      if (oErr) {
+        console.error('❌ Order creation error:', oErr);
+        if (oErr.message.includes('column') && oErr.message.includes('does not exist')) {
+          console.log('🔄 Retrying order creation without address/payment columns...');
+          const basicOrderData = {
+            customer_id: customer.id,
+            status: 'pending', // All orders start as pending
+            subtotal_cents: subtotal,
+            tax_cents,
+            shipping_cents,
+            discount_cents: discount_cents + totalDiscount,
+            total_cents: total,
+          };        if (razorpayOrder) {
           basicOrderData.razorpay_order_id = razorpayOrder.id;
         }
         

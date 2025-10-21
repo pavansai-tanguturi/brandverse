@@ -34,6 +34,8 @@ const Logout = () => {
       }
       try {
         localStorage.removeItem("adminToken");
+        localStorage.removeItem("auth_token");
+        localStorage.removeItem("is_admin");
       } catch (e) {
         /* ignore */
       }

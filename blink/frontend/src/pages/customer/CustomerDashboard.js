@@ -456,6 +456,7 @@ const CustomerDashboard = () => {
   const handleLogout = async () => {
     try {
       localStorage.removeItem("auth_token");
+      localStorage.removeItem("is_admin");
       await logout();
       navigate("/");
     } catch (error) {}
@@ -697,7 +698,7 @@ const CustomerDashboard = () => {
                 },
                 {
                   id: "addresses",
-                  name: "Addresses",
+                  name: "Address",
                   icon: (
                     <svg
                       className="w-5 h-5"
@@ -963,7 +964,7 @@ const CustomerDashboard = () => {
 
           {/* Main Content Area */}
           <div className="lg:col-span-3">
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+            <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
               {/* Content Header */}
               <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200">
                 <div className="flex items-center justify-between">
@@ -1375,9 +1376,8 @@ const CustomerDashboard = () => {
                                     onClick={async () => {
                                       try {
                                         await addToCart(item, 1);
-                                        alert("Item added to cart!");
                                       } catch (error) {
-                                        alert("Error adding to cart");
+                                        // Error adding to cart
                                       }
                                     }}
                                   >
@@ -1562,11 +1562,11 @@ const CustomerDashboard = () => {
                     )}
 
                     {/* Profile Form */}
-                    <div className="bg-gradient-to-br from-gray-50 to-white rounded-2xl p-8 border border-gray-200 shadow-sm">
-                      <h3 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
-                        <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center mr-3">
+                    <div className="bg-gradient-to-br from-gray-50 to-white rounded-2xl p-4 sm:p-6 lg:p-8 border border-gray-200">
+                      <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6 flex items-center">
+                        <div className="w-7 h-7 sm:w-8 sm:h-8 bg-emerald-100 rounded-lg flex items-center justify-center mr-2 sm:mr-3 flex-shrink-0">
                           <svg
-                            className="w-5 h-5 text-emerald-600"
+                            className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600"
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
@@ -1579,24 +1579,21 @@ const CustomerDashboard = () => {
                             />
                           </svg>
                         </div>
-                        Personal Information
+                        <span className="truncate">Personal Information</span>
                       </h3>
 
                       <form
                         onSubmit={async (e) => {
                           e.preventDefault();
-                          const success = await updateUserProfile(userInfo);
-                          if (success) {
-                            alert("✅ Profile updated successfully!");
-                          }
+                          await updateUserProfile(userInfo);
                         }}
-                        className="space-y-6"
+                        className="space-y-4 sm:space-y-6"
                       >
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
                           <div className="space-y-2">
-                            <label className="flex items-center gap-2 text-sm font-bold text-gray-700">
+                            <label className="flex items-center gap-2 text-xs sm:text-sm font-bold text-gray-700">
                               <svg
-                                className="w-4 h-4"
+                                className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0"
                                 fill="none"
                                 stroke="currentColor"
                                 viewBox="0 0 24 24"
@@ -1619,16 +1616,16 @@ const CustomerDashboard = () => {
                                   name: e.target.value,
                                 })
                               }
-                              className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-300 bg-white shadow-sm"
+                              className="w-full px-3 py-3 sm:px-4 sm:py-4 text-sm sm:text-base border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-300 bg-white"
                               required
                               placeholder="Enter your full name"
                             />
                           </div>
 
                           <div className="space-y-2">
-                            <label className="flex items-center gap-2 text-sm font-bold text-gray-700">
+                            <label className="flex items-center gap-2 text-xs sm:text-sm font-bold text-gray-700">
                               <svg
-                                className="w-4 h-4"
+                                className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0"
                                 fill="none"
                                 stroke="currentColor"
                                 viewBox="0 0 24 24"
@@ -1646,11 +1643,11 @@ const CustomerDashboard = () => {
                               type="email"
                               value={userInfo.email}
                               disabled
-                              className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl bg-gray-50 text-gray-500 cursor-not-allowed shadow-sm"
+                              className="w-full px-3 py-3 sm:px-4 sm:py-4 text-sm sm:text-base border-2 border-gray-200 rounded-xl bg-gray-50 text-gray-500 cursor-not-allowed"
                             />
-                            <p className="text-xs text-gray-500 flex items-center">
+                            <p className="text-xs text-gray-500 flex items-start sm:items-center">
                               <svg
-                                className="w-3 h-3 mr-1"
+                                className="w-3 h-3 mr-1 mt-0.5 sm:mt-0 flex-shrink-0"
                                 fill="currentColor"
                                 viewBox="0 0 20 20"
                               >
@@ -1660,14 +1657,14 @@ const CustomerDashboard = () => {
                                   clipRule="evenodd"
                                 />
                               </svg>
-                              Email cannot be changed for security reasons
+                              <span>Email cannot be changed for security reasons</span>
                             </p>
                           </div>
 
                           <div className="space-y-2 md:col-span-2">
-                            <label className="flex items-center gap-2 text-sm font-bold text-gray-700">
+                            <label className="flex items-center gap-2 text-xs sm:text-sm font-bold text-gray-700">
                               <svg
-                                className="w-4 h-4"
+                                className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0"
                                 fill="none"
                                 stroke="currentColor"
                                 viewBox="0 0 24 24"
@@ -1690,20 +1687,20 @@ const CustomerDashboard = () => {
                                   mobile: e.target.value,
                                 })
                               }
-                              className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-300 bg-white shadow-sm"
+                              className="w-full px-3 py-3 sm:px-4 sm:py-4 text-sm sm:text-base border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-300 bg-white"
                               placeholder="Enter your mobile number"
                             />
                           </div>
                         </div>
 
-                        <div className="flex flex-col sm:flex-row justify-end gap-4 pt-8 border-t border-gray-200">
+                        <div className="flex flex-col sm:flex-row justify-end gap-3 sm:gap-4 pt-6 sm:pt-8 border-t border-gray-200">
                           <button
                             type="button"
                             onClick={() => fetchUserProfile()}
-                            className="px-8 py-4 border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 hover:border-gray-400 transition-all duration-300 font-bold shadow-sm hover:shadow-md flex items-center gap-2"
+                            className="w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 text-sm sm:text-base border-2 border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 hover:border-gray-400 transition-all duration-300 font-bold flex items-center justify-center gap-2"
                           >
                             <svg
-                              className="w-4 h-4"
+                              className="w-4 h-4 flex-shrink-0"
                               fill="none"
                               stroke="currentColor"
                               viewBox="0 0 24 24"
@@ -1715,15 +1712,15 @@ const CustomerDashboard = () => {
                                 d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
                               />
                             </svg>
-                            Reset Changes
+                            <span className="truncate">Reset Changes</span>
                           </button>
                           <button
                             type="submit"
                             disabled={updating}
-                            className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white px-8 py-4 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl font-bold disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 flex items-center gap-2"
+                            className="w-full sm:w-auto bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white px-6 sm:px-8 py-3 sm:py-4 text-sm sm:text-base rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl font-bold disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 flex items-center justify-center gap-2"
                           >
                             <svg
-                              className="w-4 h-4"
+                              className="w-4 h-4 flex-shrink-0"
                               fill="none"
                               stroke="currentColor"
                               viewBox="0 0 24 24"
@@ -1735,123 +1732,10 @@ const CustomerDashboard = () => {
                                 d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"
                               />
                             </svg>
-                            {updating ? "Updating..." : "Save Changes"}
+                            <span className="truncate">{updating ? "Updating..." : "Save Changes"}</span>
                           </button>
                         </div>
                       </form>
-                    </div>
-
-                    {/* Account Information */}
-                    <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl p-8 border border-emerald-200 shadow-sm">
-                      <h3 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
-                        <div className="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center mr-3">
-                          <svg
-                            className="w-5 h-5 text-white"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                            />
-                          </svg>
-                        </div>
-                        Account Summary
-                      </h3>
-
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div className="bg-white rounded-xl p-6 shadow-sm border border-emerald-100">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="text-sm text-gray-600 font-medium">
-                                Account Status
-                              </p>
-                              <p className="text-2xl font-bold text-emerald-600 mt-1">
-                                Active
-                              </p>
-                            </div>
-                            <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center">
-                              <svg
-                                className="w-6 h-6 text-emerald-600"
-                                fill="currentColor"
-                                viewBox="0 0 20 20"
-                              >
-                                <path
-                                  fillRule="evenodd"
-                                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                                  clipRule="evenodd"
-                                />
-                              </svg>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="bg-white rounded-xl p-6 shadow-sm border border-emerald-100">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="text-sm text-gray-600 font-medium">
-                                Member Since
-                              </p>
-                              <p className="text-lg font-bold text-gray-900 mt-1">
-                                {user?.created_at
-                                  ? new Date(
-                                      user.created_at,
-                                    ).toLocaleDateString("en-IN", {
-                                      year: "numeric",
-                                      month: "short",
-                                    })
-                                  : "Recently"}
-                              </p>
-                            </div>
-                            <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                              <svg
-                                className="w-6 h-6 text-blue-600"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                                />
-                              </svg>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="bg-white rounded-xl p-6 shadow-sm border border-emerald-100">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="text-sm text-gray-600 font-medium">
-                                Total Orders
-                              </p>
-                              <p className="text-2xl font-bold text-gray-900 mt-1">
-                                {orders.length}
-                              </p>
-                            </div>
-                            <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
-                              <svg
-                                className="w-6 h-6 text-purple-600"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
-                                />
-                              </svg>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
                     </div>
                   </div>
                 )}
@@ -1866,6 +1750,38 @@ const CustomerDashboard = () => {
                   </div>
                 )}
               </div>
+            </div>
+            {/* Mobile Sign Out Button */}
+            <div className="mt-4">
+              <button
+                onClick={handleLogout}
+                className="
+                  w-full flex items-center justify-center space-x-3 p-4
+                  text-rose-600 hover:text-rose-700
+                  bg-white hover:bg-rose-50
+                  rounded-xl
+                  transition-all duration-200
+                  font-medium group
+                  border border-rose-200 hover:border-rose-300
+                "
+              >
+                <div className="p-2 bg-rose-100 rounded-lg group-hover:bg-rose-200 transition-colors">
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                    />
+                  </svg>
+                </div>
+                <span>Sign Out</span>
+              </button>
             </div>
           </div>
         </div>

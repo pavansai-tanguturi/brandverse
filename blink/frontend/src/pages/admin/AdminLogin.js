@@ -42,13 +42,8 @@ const AdminLogin = () => {
         if (data.admin) {
           navigate("/admin/dashboard");
         }
-      } else {
-        // Token is invalid, remove it
-        localStorage.removeItem("auth_token");
-      }
+      } 
     } catch (err) {
-      // Token verification failed, remove it
-      localStorage.removeItem("auth_token");
       console.error("Token verification failed:", err);
     }
   };
@@ -118,6 +113,7 @@ const AdminLogin = () => {
           // Store the authentication token
           if (data.token) {
             localStorage.setItem("auth_token", data.token);
+            localStorage.setItem("is_admin", "true"); // Store admin flag
             setMessage("Admin authentication successful");
 
             // Navigate to dashboard after a brief delay to show success message
