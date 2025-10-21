@@ -30,55 +30,43 @@ function Home() {
   const [isBannerPaused2, setIsBannerPaused2] = useState(false);
   const touchStartXRef = useRef(null);
   const touchStartXRef2 = useRef(null);
-  const SWIPE_THRESHOLD = 40;
+  const SWIPE_THRESHOLD = 20;
 
   // Local category carousel banners (Carousel 1)
   const localCategoryBanners2 = [
     {
       key: "dairy",
-      src: "carousel1/dairy.png",
+      src: "/carousel1/dairy.png",
       title: "Dairy Deals",
       link: "/products?category=dairy",
     },
     {
       key: "basmati",
-      src: "carousel1/basmati.png",
+      src: "/carousel1/basmati.png",
       title: "Basmati Rice",
       link: "/products?category=basmati",
     },
     {
       key: "veggies",
-      src: "carousel1/veggies.png",
+      src: "/carousel1/veggies.png",
       title: "Fresh Veggies",
       link: "/products?category=veggies",
     },
     {
       key: "cooking",
-      src: "carousel1/cooking.png",
+      src: "/carousel1/cooking.png",
       title: "Cooking Essentials",
       link: "/products?category=cooking",
     },
     {
       key: "pet",
-      src: "carousel1/pet.png",
+      src: "/carousel1/pet.png",
       title: "Pet Care",
       link: "/products?category=pet",
     },
     {
-      key: "meat",
-      src: "carousel1/meat.png",
-      title: "Fresh Meat",
-      link: "/products?category=meat",
-    },
-    {
-      key: "skincare",
-      src: "carousel1/skincare.png",
-      title: "Skincare",
-      link: "/products?category=skincare",
-    },
-    {
       key: "cleaning",
-      src: "carousel1/cleaning.png",
+      src: "/carousel1/cleaning.png",
       title: "Home Cleaning",
       link: "/products?category=cleaning",
     },
@@ -88,49 +76,37 @@ function Home() {
   const localCategoryBanners = [
     {
       key: "fruits",
-      src: "carousel2/fruits.png",
+      src: "/carousel2/fruits.png",
       title: "Fresh Fruits",
       link: "/products?category=fruits",
     },
     {
       key: "snacks",
-      src: "carousel2/snacks.png",
+      src: "/carousel2/snacks.png",
       title: "Snacks & Munchies",
       link: "/products?category=snacks",
     },
     {
       key: "beverages",
-      src: "carousel2/beverages.png",
+      src: "/carousel2/beverages.png",
       title: "Beverages",
       link: "/products?category=beverages",
     },
     {
       key: "bakery",
-      src: "carousel2/bakery.png",
+      src: "/carousel2/bakery.png",
       title: "Bakery",
       link: "/products?category=bakery",
     },
     {
-      key: "personalcare",
-      src: "carousel2/personalcare.png",
-      title: "Personal Care",
-      link: "/products?category=personalcare",
-    },
-    {
       key: "babycare",
-      src: "carousel2/babycare.png",
+      src: "/carousel2/babycare.png",
       title: "Baby Care",
       link: "/products?category=babycare",
     },
     {
-      key: "gourmet",
-      src: "carousel2/gourmet.png",
-      title: "Gourmet Foods",
-      link: "/products?category=gourmet",
-    },
-    {
       key: "stationery",
-      src: "carousel2/stationery.png",
+      src: "/carousel2/stationery.png",
       title: "Stationery",
       link: "/products?category=stationery",
     },
@@ -181,8 +157,48 @@ function Home() {
   };
 
   // Carousel navigation for grouped slides
-  const groupCount = Math.ceil(localCategoryBanners.length / 4);
-  const groupCount2 = Math.ceil(localCategoryBanners2.length / 4);
+  // Compute group count based on responsive group size (1 on mobile, 2 on sm, 3 on lg)
+  const getGroupSize = () => {
+    if (typeof window === "undefined") return 1;
+    if (window.innerWidth >= 1024) return 3;
+    if (window.innerWidth >= 640) return 2;
+    return 1;
+  };
+
+  const [groupSize, setGroupSize] = useState(getGroupSize());
+  const resizeTimerRef = useRef(null);
+
+  useEffect(() => {
+    const onResize = () => {
+      if (resizeTimerRef.current) clearTimeout(resizeTimerRef.current);
+      resizeTimerRef.current = setTimeout(() => {
+        setGroupSize(getGroupSize());
+      }, 120);
+    };
+    window.addEventListener("resize", onResize);
+    return () => {
+      window.removeEventListener("resize", onResize);
+      if (resizeTimerRef.current) clearTimeout(resizeTimerRef.current);
+    };
+  }, []);
+
+  const groupCount = Math.max(
+    1,
+    Math.ceil(localCategoryBanners.length / groupSize),
+  );
+  const groupCount2 = Math.max(
+    1,
+    Math.ceil(localCategoryBanners2.length / groupSize),
+  );
+
+  // Ensure indexes stay in range when group counts change
+  useEffect(() => {
+    setLocalBannerIndex((prev) => prev % groupCount);
+  }, [groupCount]);
+
+  useEffect(() => {
+    setLocalBannerIndex2((prev) => prev % groupCount2);
+  }, [groupCount2]);
 
   const handlePrevLocalBanner = () => {
     setLocalBannerIndex((prev) => (prev - 1 + groupCount) % groupCount);
@@ -222,7 +238,10 @@ function Home() {
       clearInterval(localBannerTimerRef2.current);
     if (!isBannerPaused2) {
       localBannerTimerRef2.current = setInterval(() => {
-        setLocalBannerIndex2((prev) => (prev + 1) % groupCount2);
+        setLocalBannerIndex2((prev) => {
+          const next = (prev + 1) % groupCount2;
+          return next;
+        });
       }, 4000);
     }
     return () =>
@@ -356,12 +375,17 @@ function Home() {
       {/* Delivery Status Strip */}
       {!checkingDelivery && showDeliveryStatus && (
         <div
-          className={`mx-4 my-2 px-3 py-2 rounded-lg text-sm transition-all duration-500 ${deliveryAvailable ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"}`}
+          className={`mx-2 sm:mx-4 my-2 px-2 sm:px-3 py-2 rounded-lg text-xs sm:text-sm transition-all duration-500 ${
+            deliveryAvailable
+              ? "bg-green-100 text-green-800"
+              : "bg-yellow-100 text-yellow-800"
+          }`}
         >
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            {/* Left side: location + status */}
+            <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink min-w-0">
               <svg
-                className="w-4 h-4"
+                className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -373,19 +397,23 @@ function Home() {
                   d="M17.657 16.657L13.414 20.9a2 2 0 01-2.828 0l-4.243-4.243a8 8 0 1111.314 0z"
                 />
               </svg>
-              <span className="truncate">
+
+              {/* Responsive text truncation */}
+              <span className="truncate max-w-[160px] sm:max-w-xs">
                 {locationName} •{" "}
                 {deliveryAvailable
                   ? "Delivery Available"
                   : "Delivery Unavailable"}
               </span>
             </div>
+
+            {/* Close button */}
             <button
               onClick={() => setShowDeliveryStatus(false)}
-              className="md:hidden p-1 hover:bg-black/10 rounded-full transition-colors"
+              className="p-1 hover:bg-black/10 rounded-full transition-colors"
             >
               <svg
-                className="w-3 h-3"
+                className="w-3 h-3 sm:w-4 sm:h-4"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -401,50 +429,64 @@ function Home() {
           </div>
         </div>
       )}
+
       {/* Category Navigation */}
       <div className="bg-white py-4 sm:py-6 border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between overflow-x-auto scrollbar-hide space-x-4 sm:space-x-6">
-          {categories.map((cat) => (
-            <div
-              key={cat.id}
-              onClick={() => navigate(`/products?category=${cat.slug}`)}
-              className="flex flex-col items-center justify-center flex-shrink-0 w-20 sm:w-24 cursor-pointer hover:scale-105 transition-transform"
-            >
-              <div className="w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center">
-                <img
-                  src={cat.image_url || `/categories/${cat.slug}.png`}
-                  alt={cat.name}
-                  className="w-full h-full object-contain rounded-full"
-                  loading="lazy"
-                  onError={(e) => {
-                    // Fallback to local image if database image fails
-                    e.target.src = `/categories/${cat.slug}.png`;
-                  }}
-                />
+          {loading ? (
+            // Category skeleton loader
+            Array.from({ length: 8 }).map((_, index) => (
+              <div
+                key={index}
+                className="flex flex-col items-center justify-center flex-shrink-0 w-20 sm:w-24"
+              >
+                <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-200 rounded-full animate-pulse"></div>
+                <div className="w-16 h-3 sm:h-4 bg-gray-200 rounded mt-1 sm:mt-2 animate-pulse"></div>
               </div>
-              <div className="flex items-center gap-1 mt-1 sm:mt-2">
-                <p className="text-xs sm:text-sm font-semibold text-gray-800 text-center whitespace-nowrap">
-                  {cat.name}
-                </p>
-                {cat.hasDropdown && (
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="w-3 h-3 text-gray-500"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
-                )}
+            ))
+          ) : (
+            categories.map((cat) => (
+              <div
+                key={cat.id}
+                onClick={() => navigate(`/products?category=${cat.slug}`)}
+                className="flex flex-col items-center justify-center flex-shrink-0 w-20 sm:w-24 cursor-pointer hover:scale-105 transition-transform"
+              >
+                <div className="w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center">
+                  <img
+                    src={cat.image_url || `/categories/${cat.slug}.png`}
+                    alt={cat.name}
+                    className="w-full h-full object-contain rounded-full"
+                    loading="lazy"
+                    onError={(e) => {
+                      // Fallback to local image if database image fails
+                      e.target.src = `/categories/${cat.slug}.png`;
+                    }}
+                  />
+                </div>
+                <div className="flex items-center gap-1 mt-1 sm:mt-2">
+                  <p className="text-xs sm:text-sm font-semibold text-gray-800 text-center whitespace-nowrap">
+                    {cat.name}
+                  </p>
+                  {cat.hasDropdown && (
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="w-3 h-3 text-gray-500"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 9l-7 7-7-7"
+                      />
+                    </svg>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </div>
 
@@ -454,67 +496,72 @@ function Home() {
         {/* Changed max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 to w-full to remove outer padding and max width */}
         {/* Section Heading (shared) */}
         <div className="bg-white py-2 sm:py-3 px-0">
-          {/* Heading */}
-          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-0 px-4 sm:px-6 lg:px-8">
-            Featured & More Categories
-          </h2>
+          {loading ? (
+            <div className="px-4 sm:px-6 lg:px-8">
+              <div className="w-80 h-7 sm:h-8 bg-gray-200 rounded animate-pulse mb-2"></div>
+              <div className="w-96 h-4 sm:h-5 bg-gray-200 rounded animate-pulse"></div>
+            </div>
+          ) : (
+            <>
+              {/* Heading */}
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-0 px-4 sm:px-6 lg:px-8">
+                Featured & More Categories
+              </h2>
 
-          {/* Subtext */}
-          <p className="text-gray-600 text-sm sm:text-base mb-0 px-4 sm:px-6 lg:px-8">
-            Browse top picks, deals, and discover more essentials
-          </p>
+              {/* Subtext */}
+              <p className="text-gray-600 text-sm sm:text-base mb-0 px-4 sm:px-6 lg:px-8">
+                Browse top picks, deals, and discover more essentials
+              </p>
+            </>
+          )}
         </div>
         {/* Carousel 1 */}
-        <div
-          className="relative rounded-none overflow-hidden shadow-none mb-0" // Removed rounded, shadow, and mb (margin-bottom)
-          onMouseEnter={() => setIsBannerPaused(true)}
-          onMouseLeave={() => setIsBannerPaused(false)}
-          onTouchStart={(e) => {
-            setIsBannerPaused(true);
-            touchStartXRef.current = e.touches?.[0]?.clientX ?? null;
-          }}
-          onTouchEnd={(e) => {
-            const endX = e.changedTouches?.[0]?.clientX ?? null;
-            const startX = touchStartXRef.current;
-            if (startX != null && endX != null) {
-              const delta = endX - startX;
-              if (Math.abs(delta) > SWIPE_THRESHOLD) {
-                if (delta < 0) handleNextLocalBanner();
-                else handlePrevLocalBanner();
+        {loading ? (
+          // Carousel 1 skeleton
+          <div className="relative w-full bg-white min-h-[180px] sm:min-h-[220px] md:min-h-[240px]">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 h-full">
+              {Array.from({ length: 3 }).map((_, index) => (
+                <div key={index} className="relative w-full h-full">
+                  <div className="w-full h-[180px] sm:h-[220px] md:h-[240px] bg-gray-200 animate-pulse"></div>
+                  <div className="absolute bottom-4 left-4">
+                    <div className="w-32 h-5 bg-gray-300 rounded animate-pulse"></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div
+            className="relative rounded-none overflow-hidden shadow-none mb-0" // Removed rounded, shadow, and mb (margin-bottom)
+            onMouseEnter={() => setIsBannerPaused(true)}
+            onMouseLeave={() => setIsBannerPaused(false)}
+            onTouchStart={(e) => {
+              setIsBannerPaused(true);
+              touchStartXRef.current = e.touches?.[0]?.clientX ?? null;
+            }}
+            onTouchEnd={(e) => {
+              const endX = e.changedTouches?.[0]?.clientX ?? null;
+              const startX = touchStartXRef.current;
+              if (startX != null && endX != null) {
+                const delta = endX - startX;
+                if (Math.abs(delta) > SWIPE_THRESHOLD) {
+                  if (delta < 0) handleNextLocalBanner();
+                  else handlePrevLocalBanner();
+                }
               }
-            }
-            touchStartXRef.current = null;
-            setTimeout(() => setIsBannerPaused(false), 150);
-          }}
-        >
+              touchStartXRef.current = null;
+              setTimeout(() => setIsBannerPaused(false), 150);
+            }}
+          >
           {/* Slides - single banner on mobile, grid on larger screens */}
           <div className="relative w-full bg-white min-h-[180px] sm:min-h-[220px] md:min-h-[240px]">
             {" "}
             {/* Changed bg-gray-50 to bg-white for a cleaner look */}
             {(() => {
-              // On mobile, each banner is its own slide; on larger screens, group by 2 (sm) or 3 (lg)
+              // Group banners using the responsive groupSize state (1/2/3)
               const groups = [];
-              for (
-                let i = 0;
-                i < localCategoryBanners.length;
-                i +=
-                  window.innerWidth >= 640
-                    ? window.innerWidth >= 1024
-                      ? 3
-                      : 2
-                    : 1
-              ) {
-                groups.push(
-                  localCategoryBanners.slice(
-                    i,
-                    i +
-                      (window.innerWidth >= 640
-                        ? window.innerWidth >= 1024
-                          ? 3
-                          : 2
-                        : 1),
-                  ),
-                );
+              for (let i = 0; i < localCategoryBanners.length; i += groupSize) {
+                groups.push(localCategoryBanners.slice(i, i + groupSize));
               }
               return groups.map((group, groupIndex) => (
                 <div
@@ -558,143 +605,62 @@ function Home() {
             })()}
           </div>
 
-          {/* Arrows - hidden on mobile */}
-          <button
-            aria-label="Previous"
-            className="hidden sm:block absolute left-0 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-gray-800 rounded-none p-3 shadow-none" // Removed rounded, shadow, increased padding for click area
-            onClick={handlePrevLocalBanner}
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              className="w-5 h-5"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M15 19l-7-7 7-7"
-              />
-            </svg>
-          </button>
-          <button
-            aria-label="Next"
-            className="hidden sm:block absolute right-0 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-gray-800 rounded-none p-3 shadow-none" // Removed rounded, shadow, increased padding for click area
-            onClick={handleNextLocalBanner}
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              className="w-5 h-5"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M9 5l7 7-7 7"
-              />
-            </svg>
-          </button>
-
-          {/* Dots - hidden on large screens */}
-          <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex gap-1 lg:hidden">
-            {" "}
-            {/* Reduced bottom margin and gap */}
-            {(() => {
-              const groups = [];
-              for (
-                let i = 0;
-                i < localCategoryBanners.length;
-                i +=
-                  window.innerWidth >= 640
-                    ? window.innerWidth >= 1024
-                      ? 3
-                      : 2
-                    : 1
-              ) {
-                groups.push(
-                  localCategoryBanners.slice(
-                    i,
-                    i +
-                      (window.innerWidth >= 640
-                        ? window.innerWidth >= 1024
-                          ? 3
-                          : 2
-                        : 1),
-                  ),
-                );
-              }
-              return groups.map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setLocalBannerIndex(i)}
-                  className={`w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full transition ${
-                    // Slightly smaller dots
-                    i === localBannerIndex ? "bg-emerald-500" : "bg-gray-300"
-                  }`}
-                  aria-label={`Go to slide ${i + 1}`}
-                />
-              ));
-            })()}
-          </div>
+          {/* Dots removed */}
         </div>
+        )}
         <hr className="border-gray-200" />{" "}
         {/* Added a divider for visual separation since margins are removed */}
         {/* Carousel 2 */}
-        <div
-          className="relative rounded-none overflow-hidden shadow-none mb-0" // Removed rounded, shadow, and mb (margin-bottom)
-          onMouseEnter={() => setIsBannerPaused2(true)}
-          onMouseLeave={() => setIsBannerPaused2(false)}
-          onTouchStart={(e) => {
-            setIsBannerPaused2(true);
-            touchStartXRef2.current = e.touches?.[0]?.clientX ?? null;
-          }}
-          onTouchEnd={(e) => {
-            const endX = e.changedTouches?.[0]?.clientX ?? null;
-            const startX = touchStartXRef2.current;
-            if (startX != null && endX != null) {
-              const delta = endX - startX;
-              if (Math.abs(delta) > SWIPE_THRESHOLD) {
-                if (delta < 0) handleNextLocalBanner2();
-                else handlePrevLocalBanner2();
+        {loading ? (
+          // Carousel 2 skeleton
+          <div className="relative w-full bg-white min-h-[180px] sm:min-h-[220px] md:min-h-[240px]">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 h-full">
+              {Array.from({ length: 3 }).map((_, index) => (
+                <div key={index} className="relative w-full h-full">
+                  <div className="w-full h-[180px] sm:h-[220px] md:h-[240px] bg-gray-200 animate-pulse"></div>
+                  <div className="absolute bottom-4 left-4">
+                    <div className="w-28 h-5 bg-gray-300 rounded animate-pulse"></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div
+            className="relative rounded-none overflow-hidden shadow-none mb-0" // Removed rounded, shadow, and mb (margin-bottom)
+            onMouseEnter={() => setIsBannerPaused2(true)}
+            onMouseLeave={() => setIsBannerPaused2(false)}
+            onTouchStart={(e) => {
+              setIsBannerPaused2(true);
+              touchStartXRef2.current = e.touches?.[0]?.clientX ?? null;
+            }}
+            onTouchEnd={(e) => {
+              const endX = e.changedTouches?.[0]?.clientX ?? null;
+              const startX = touchStartXRef2.current;
+              if (startX != null && endX != null) {
+                const delta = endX - startX;
+                if (Math.abs(delta) > SWIPE_THRESHOLD) {
+                  if (delta < 0) handleNextLocalBanner2();
+                  else handlePrevLocalBanner2();
+                }
               }
-            }
-            touchStartXRef2.current = null;
-            setTimeout(() => setIsBannerPaused2(false), 150);
-          }}
-        >
+              touchStartXRef2.current = null;
+              setTimeout(() => setIsBannerPaused2(false), 150);
+            }}
+          >
           {/* Slides - single banner on mobile, grid on larger screens */}
           <div className="relative w-full bg-white min-h-[180px] sm:min-h-[220px] md:min-h-[240px]">
             {" "}
             {/* Changed bg-gray-50 to bg-white for a cleaner look */}
             {(() => {
-              // On mobile, each banner is its own slide; on larger screens, group by 2 (sm) or 3 (lg)
+              // Group banners using the responsive groupSize state (1/2/3)
               const groups2 = [];
               for (
                 let i = 0;
                 i < localCategoryBanners2.length;
-                i +=
-                  window.innerWidth >= 640
-                    ? window.innerWidth >= 1024
-                      ? 3
-                      : 2
-                    : 1
+                i += groupSize
               ) {
-                groups2.push(
-                  localCategoryBanners2.slice(
-                    i,
-                    i +
-                      (window.innerWidth >= 640
-                        ? window.innerWidth >= 1024
-                          ? 3
-                          : 2
-                        : 1),
-                  ),
-                );
+                groups2.push(localCategoryBanners2.slice(i, i + groupSize));
               }
               return groups2.map((group, groupIndex) => (
                 <div
@@ -724,12 +690,6 @@ function Home() {
                         <div className="text-white text-base sm:text-lg font-semibold max-w-[80%] sm:max-w-[70%] leading-tight drop-shadow">
                           {item.title}
                         </div>
-                        {/* <button
-                    onClick={() => navigate(item.link)}
-                    className="mt-2 sm:mt-0 bg-emerald-500 text-white font-medium text-sm px-4 py-2 rounded-full shadow hover:bg-emerald-600 transition whitespace-nowrap"
-                  >
-                    Shop Now
-                  </button> */}
                       </div>
                     </div>
                   ))}
@@ -738,138 +698,125 @@ function Home() {
             })()}
           </div>
 
-          {/* Arrows - hidden on mobile */}
-          <button
-            aria-label="Previous"
-            className="hidden sm:block absolute left-0 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-gray-800 rounded-none p-3 shadow-none" // Removed rounded, shadow, increased padding for click area
-            onClick={handlePrevLocalBanner2}
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              className="w-5 h-5"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M15 19l-7-7 7-7"
-              />
-            </svg>
-          </button>
-          <button
-            aria-label="Next"
-            className="hidden sm:block absolute right-0 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-gray-800 rounded-none p-3 shadow-none" // Removed rounded, shadow, increased padding for click area
-            onClick={handleNextLocalBanner2}
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              className="w-5 h-5"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M9 5l7 7-7 7"
-              />
-            </svg>
-          </button>
-
-          {/* Dots - hidden on large screens */}
-          <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex gap-1 lg:hidden">
-            {" "}
-            {/* Reduced bottom margin and gap */}
-            {(() => {
-              const groups2 = [];
-              for (
-                let i = 0;
-                i < localCategoryBanners2.length;
-                i +=
-                  window.innerWidth >= 640
-                    ? window.innerWidth >= 1024
-                      ? 3
-                      : 2
-                    : 1
-              ) {
-                groups2.push(
-                  localCategoryBanners2.slice(
-                    i,
-                    i +
-                      (window.innerWidth >= 640
-                        ? window.innerWidth >= 1024
-                          ? 3
-                          : 2
-                        : 1),
-                  ),
-                );
-              }
-              return groups2.map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setLocalBannerIndex2(i)}
-                  className={`w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full transition ${
-                    // Slightly smaller dots
-                    i === localBannerIndex2 ? "bg-emerald-500" : "bg-gray-300"
-                  }`}
-                  aria-label={`Go to slide ${i + 1}`}
-                />
-              ));
-            })()}
-          </div>
+          {/* Dots removed */}
         </div>
+        )}
       </div>
 
       {/* Spotlight Section */}
       <div className="bg-white py-4 border-t border-gray-200">
         <div className="max-w-7xl mx-auto px-4">
-          <h2 className="text-xl font-bold text-gray-900 mb-3">
-            Quick Filters
-          </h2>
+          {loading ? (
+            <div className="w-32 h-6 bg-gray-200 rounded animate-pulse mb-3"></div>
+          ) : (
+            <h2 className="text-xl font-bold text-gray-900 mb-3">
+              Quick Filters
+            </h2>
+          )}
           <div className="flex gap-2 overflow-x-auto scrollbar-hide">
-            {spotlightItems.map((item) => (
-              <button
-                key={item.label}
-                onClick={() => navigate(item.link)}
-                className="flex flex-col items-center w-20 flex-shrink-0 p-2 rounded-lg hover:bg-gray-100 transition"
-              >
-                <img
-                  src={`/spotlights/${item.image}`}
-                  alt={item.label}
-                  className="w-14 h-14 object-contain rounded-md"
-                />
-                <p className="text-xs font-medium text-gray-700 mt-1 text-center line-clamp-2">
-                  {item.label}
-                </p>
-              </button>
-            ))}
+            {loading ? (
+              // Spotlight skeleton
+              Array.from({ length: 5 }).map((_, index) => (
+                <div
+                  key={index}
+                  className="flex flex-col items-center w-20 flex-shrink-0 p-2"
+                >
+                  <div className="w-14 h-14 bg-gray-200 rounded-md animate-pulse"></div>
+                  <div className="w-16 h-3 bg-gray-200 rounded mt-1 animate-pulse"></div>
+                </div>
+              ))
+            ) : (
+              spotlightItems.map((item) => (
+                <button
+                  key={item.label}
+                  onClick={() => navigate(item.link)}
+                  className="flex flex-col items-center w-20 flex-shrink-0 p-2 rounded-lg hover:bg-gray-100 transition"
+                >
+                  <img
+                    src={`/spotlights/${item.image}`}
+                    alt={item.label}
+                    className="w-14 h-14 object-contain rounded-md"
+                  />
+                  <p className="text-xs font-medium text-gray-700 mt-1 text-center line-clamp-2">
+                    {item.label}
+                  </p>
+                </button>
+              ))
+            )}
           </div>
         </div>
       </div>
 
+          {/* Mobile View - Vertical Stack */}
+          <div className="flex flex-col gap-4 md:hidden mx-4 my-6">
+
+            <div
+              role="button"
+              onClick={() => navigate("/products?category=drinks")}
+              className="relative h-[200px] rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer group"
+            >
+              <img
+                src="/home-specials/drinks.png"
+                alt="Drinks Specials"
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                loading="lazy"
+                onError={(e) => (e.target.src = "/logo192.png")}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent flex items-end p-4">
+                <div>
+                  <h3 className="text-white font-bold text-xl mb-1">
+                    Breakfast Picks
+                  </h3>
+                  <p className="text-white text-sm opacity-90">
+                    Kickstart your day with healthy choices
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+          </div>
+
       {/* Category-Based Product Sections */}
-      <div className="pb-20 lg:pb-0">
+      <div className="pb-15 lg:pb-0">
         {categories.slice(0, 4).map((category) => (
           <div key={category.id} className="py-4">
             <div className="max-w-7xl mx-auto px-4">
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="text-lg font-semibold text-gray-900">
-                  {category.name}
-                </h2>
-                <Link
-                  to={`/products?category=${category.slug}`}
-                  className="text-sm text-green-600 hover:text-green-700"
-                >
-                  View All
-                </Link>
-              </div>
               {loading ? (
-                <div className="flex items-center justify-center py-8">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-600"></div>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="w-32 h-6 bg-gray-200 rounded animate-pulse"></div>
+                  <div className="w-16 h-4 bg-gray-200 rounded animate-pulse"></div>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="text-lg font-semibold text-gray-900">
+                    {category.name}
+                  </h2>
+                  <Link
+                    to={`/products?category=${category.slug}`}
+                    className="text-sm text-green-600 hover:text-green-700"
+                  >
+                    View All
+                  </Link>
+                </div>
+              )}
+              {loading ? (
+                <div className="flex gap-2 overflow-x-auto scrollbar-hide">
+                  {Array.from({ length: 6 }).map((_, index) => (
+                    <div
+                      key={index}
+                      className="flex-none w-44 sm:w-48 bg-white rounded-lg shadow-sm border border-gray-200"
+                    >
+                      <div className="relative">
+                        <div className="w-full h-32 sm:h-36 bg-gray-200 animate-pulse rounded-t-lg"></div>
+                      </div>
+                      <div className="p-2 sm:p-3">
+                        <div className="w-full h-4 bg-gray-200 rounded animate-pulse mb-2"></div>
+                        <div className="w-3/4 h-4 bg-gray-200 rounded animate-pulse mb-3"></div>
+                        <div className="w-20 h-5 bg-gray-200 rounded animate-pulse mb-3"></div>
+                        <div className="w-full h-8 bg-gray-200 rounded animate-pulse"></div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               ) : (
                 <div className="flex gap-2 overflow-x-auto scrollbar-hide">
@@ -885,61 +832,20 @@ function Home() {
                       return (
                         <div
                           key={product.id}
-                          className="flex-none w-36 sm:w-40 bg-white rounded-lg shadow-sm hover:shadow-md transform hover:scale-105 transition-all duration-200 cursor-pointer overflow-hidden group border border-gray-200"
+                          className="flex-none w-44 sm:w-48 bg-white rounded-lg shadow-sm hover:shadow-md transform hover:scale-105 transition-all duration-200 cursor-pointer overflow-hidden group border border-gray-200"
                           onClick={() => navigate(`/product/${product.id}`)}
                         >
                           <div className="relative">
                             <img
                               src={product.image_url}
                               alt={product.title}
-                              className="w-full h-28 object-cover group-hover:scale-105 transition-transform duration-200"
+                              className="w-full h-32 sm:h-36 object-cover group-hover:scale-105 transition-transform duration-200"
                             />
                             {hasDiscount && (
                               <div className="absolute top-1 left-1 bg-gradient-to-r from-emerald-500 to-teal-600 text-white px-1.5 py-0.5 rounded text-xs font-bold">
                                 {product.discount_percent}% OFF
                               </div>
                             )}
-                            <button
-                              onClick={(e) => handleWishlistToggle(e, product)}
-                              className={`absolute top-1 right-1 p-1.5 rounded-full shadow-md transition-all transform hover:scale-110 ${
-                                isInWishlist(product.id)
-                                  ? "bg-red-50 hover:bg-red-100 ring-2 ring-red-200"
-                                  : "bg-white/95 hover:bg-white"
-                              }`}
-                              aria-label={
-                                isInWishlist(product.id)
-                                  ? "Remove from wishlist"
-                                  : "Add to wishlist"
-                              }
-                            >
-                              {isInWishlist(product.id) ? (
-                                <svg
-                                  className="w-4 h-4 text-red-600"
-                                  fill="currentColor"
-                                  viewBox="0 0 20 20"
-                                >
-                                  <path
-                                    fillRule="evenodd"
-                                    d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"
-                                    clipRule="evenodd"
-                                  />
-                                </svg>
-                              ) : (
-                                <svg
-                                  className="w-4 h-4 text-gray-600 hover:text-red-500 transition-colors"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                                  />
-                                </svg>
-                              )}
-                            </button>
 
                             {product.stock_quantity <= 5 &&
                               product.stock_quantity > 0 && (
@@ -1017,6 +923,299 @@ function Home() {
       </div>
 
       <MobileBottomNav />
+      
+      {/* Home Specials - Responsive for Mobile and Desktop */}
+      <div className="bg-white py-6">
+        <div className="max-w-7xl mx-auto px-4">
+          {/* Header with Browse All Button */}
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
+              Special Offers
+            </h2>
+            <button
+              onClick={() => navigate("/products")}
+              className="inline-flex items-center gap-2 text-sm text-emerald-600 hover:text-emerald-700 font-medium"
+            >
+              Browse all
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 5l7 7-7 7"
+                />
+              </svg>
+            </button>
+          </div>
+
+          {/* Mobile View - Vertical Stack */}
+          <div className="flex flex-col gap-4 md:hidden">
+            <div
+              role="button"
+              onClick={() => navigate("/products?category=pantry")}
+              className="relative h-[200px] rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer group"
+            >
+              <img
+                src="/home-specials/pantry.png"
+                alt="Pantry Specials"
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                loading="lazy"
+                onError={(e) => (e.target.src = "/logo192.png")}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent flex items-end p-4">
+                <div>
+                  <h3 className="text-white font-bold text-xl mb-1">
+                    Pantry Essentials
+                  </h3>
+                  <p className="text-white text-sm opacity-90">
+                    Staples and bulk buys for your kitchen
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div
+              role="button"
+              onClick={() => navigate("/products?category=breakfast")}
+              className="relative h-[200px] rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer group"
+            >
+              <img
+                src="/home-specials/breakfast.png"
+                alt="Breakfast Specials"
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                loading="lazy"
+                onError={(e) => (e.target.src = "/logo192.png")}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent flex items-end p-4">
+                <div>
+                  <h3 className="text-white font-bold text-xl mb-1">
+                    Breakfast Picks
+                  </h3>
+                  <p className="text-white text-sm opacity-90">
+                    Kickstart your day with healthy choices
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div
+              role="button"
+              onClick={() => navigate("/products?category=drinks")}
+              className="relative h-[200px] rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer group"
+            >
+              <img
+                src="/home-specials/drinks.png"
+                alt="Drinks Specials"
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                loading="lazy"
+                onError={(e) => (e.target.src = "/logo192.png")}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent flex items-end p-4">
+                <div>
+                  <h3 className="text-white font-bold text-xl mb-1">
+                    Breakfast Picks
+                  </h3>
+                  <p className="text-white text-sm opacity-90">
+                    Kickstart your day with healthy choices
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div
+              role="button"
+              onClick={() => navigate("/products?category=snacks")}
+              className="relative h-[200px] rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer group"
+            >
+              <img
+                src="/home-specials/tasty-snacks.png"
+                alt="Tasty Snacks Specials"
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                loading="lazy"
+                onError={(e) => (e.target.src = "/logo192.png")}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent flex items-end p-4">
+                <div>
+                  <h3 className="text-white font-bold text-xl mb-1">
+                    Breakfast Picks
+                  </h3>
+                  <p className="text-white text-sm opacity-90">
+                    Kickstart your day with healthy choices
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Desktop/Tablet View - Side by Side Grid */}
+          <div className="hidden md:grid md:grid-cols-2 gap-6">
+            <div
+              role="button"
+              onClick={() => navigate("/products?category=pantry")}
+              className="relative h-[280px] lg:h-[320px] rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 cursor-pointer group"
+            >
+              <img
+                src="/home-specials/pantry.png"
+                alt="Pantry Specials"
+                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                loading="lazy"
+                onError={(e) => (e.target.src = "/logo192.png")}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent flex items-end p-6">
+                <div>
+                  <h3 className="text-white font-bold text-2xl lg:text-3xl mb-2">
+                    Pantry Essentials
+                  </h3>
+                  <p className="text-white text-base lg:text-lg opacity-95 mb-3">
+                    Staples and bulk buys for your kitchen
+                  </p>
+                  <span className="inline-flex items-center gap-2 text-white text-sm font-medium bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full hover:bg-white/30 transition-colors">
+                    Shop Now
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 5l7 7-7 7"
+                      />
+                    </svg>
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div
+              role="button"
+              onClick={() => navigate("/products?category=breakfast")}
+              className="relative h-[280px] lg:h-[320px] rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 cursor-pointer group"
+            >
+              <img
+                src="/home-specials/breakfast.png"
+                alt="Breakfast Specials"
+                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                loading="lazy"
+                onError={(e) => (e.target.src = "/logo192.png")}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent flex items-end p-6">
+                <div>
+                  <h3 className="text-white font-bold text-2xl lg:text-3xl mb-2">
+                    Breakfast Picks
+                  </h3>
+                  <p className="text-white text-base lg:text-lg opacity-95 mb-3">
+                    Kickstart your day with healthy choices
+                  </p>
+                  <span className="inline-flex items-center gap-2 text-white text-sm font-medium bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full hover:bg-white/30 transition-colors">
+                    Shop Now
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 5l7 7-7 7"
+                      />
+                    </svg>
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div
+              role="button"
+              onClick={() => navigate("/products?category=drinks")}
+              className="relative h-[280px] lg:h-[320px] rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 cursor-pointer group"
+            >
+              <img
+                src="/home-specials/drinks.png"
+                alt="Drinks Specials"
+                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                loading="lazy"
+                onError={(e) => (e.target.src = "/logo192.png")}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent flex items-end p-6">
+                <div>
+                  <h3 className="text-white font-bold text-2xl lg:text-3xl mb-2">
+                    Breakfast Picks
+                  </h3>
+                  <p className="text-white text-base lg:text-lg opacity-95 mb-3">
+                    Kickstart your day with healthy choices
+                  </p>
+                  <span className="inline-flex items-center gap-2 text-white text-sm font-medium bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full hover:bg-white/30 transition-colors">
+                    Shop Now
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 5l7 7-7 7"
+                      />
+                    </svg>
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div
+              role="button"
+              onClick={() => navigate("/products?category=tasty-snacks")}
+              className="relative h-[280px] lg:h-[320px] rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 cursor-pointer group"
+            >
+              <img
+                src="/home-specials/tasty-snacks.png"
+                alt="Tasty Snacks"
+                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                loading="lazy"
+                onError={(e) => (e.target.src = "/logo192.png")}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent flex items-end p-6">
+                <div>
+                  <h3 className="text-white font-bold text-2xl lg:text-3xl mb-2">
+                    Breakfast Picks
+                  </h3>
+                  <p className="text-white text-base lg:text-lg opacity-95 mb-3">
+                    Kickstart your day with healthy choices
+                  </p>
+                  <span className="inline-flex items-center gap-2 text-white text-sm font-medium bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full hover:bg-white/30 transition-colors">
+                    Shop Now
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 5l7 7-7 7"
+                      />
+                    </svg>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

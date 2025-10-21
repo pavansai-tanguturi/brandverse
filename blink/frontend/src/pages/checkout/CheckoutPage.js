@@ -319,9 +319,6 @@ const CheckoutPage = () => {
 
       const order = await response.json();
 
-      // Clear cart immediately after successful order creation
-      clearCart();
-
       // Handle different payment methods
       if (paymentMethod === "cod") {
         // Try to confirm COD order
@@ -403,75 +400,54 @@ const CheckoutPage = () => {
               />
             </Link>
 
-            {/* Progress Steps - Desktop */}
-            <div className="hidden md:flex items-center space-x-4">
-              {[
-                { num: 1, label: "Bag", icon: "🛍️" },
-                { num: 2, label: "Address", icon: "📍" },
-                { num: 3, label: "Payment", icon: "💳" },
-              ].map((item, idx) => (
-                <React.Fragment key={item.num}>
-                  <div className="flex items-center">
-                    <div
-                      className={`flex items-center space-x-2 px-3 py-1 rounded-full transition-all ${
-                        step >= item.num
-                          ? "bg-emerald-100 text-emerald-700 border border-emerald-200"
-                          : "bg-gray-50 text-gray-400 border border-gray-200"
-                      }`}
-                    >
-                      <span
-                        className={`text-sm font-bold ${
-                          step === item.num ? "scale-110" : ""
-                        }`}
-                      >
-                        {item.num}
-                      </span>
-                      <span className="text-xs font-medium">{item.label}</span>
-                    </div>
-                  </div>
-                  {idx < 2 && (
-                    <div
-                      className={`w-12 h-0.5 ${
-                        step > item.num ? "bg-emerald-500" : "bg-gray-200"
-                      }`}
-                    />
-                  )}
-                </React.Fragment>
-              ))}
-            </div>
+            {/* keep header minimal; progress bar rendered below the header */}
 
-            <div className="flex items-center space-x-3">
+            {/* <div className="flex items-center space-x-3">
               <div className="text-right hidden md:block">
                 <p className="text-gray-500 text-xs">Secure Checkout</p>
                 <p className="text-gray-900 font-semibold">
                   ₹{(getCartTotal() / 100).toFixed(2)}
                 </p>
               </div>
-            </div>
+            </div> */}
           </div>
         </div>
       </header>
 
-      {/* Mobile Progress */}
-      <div className="md:hidden bg-white py-2 shadow-sm mt-3">
-        <div className="flex items-center justify-between max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {[1, 2, 3].map((num) => (
-            <div key={num} className="flex-1 relative">
-              <div
-                className={`h-1 mx-auto ${
-                  step >= num ? "bg-emerald-500" : "bg-gray-200"
-                }`}
-                style={{ width: "100%" }}
-              />
-              <p
-                className={`text-xs mt-1 text-center ${
-                  step >= num ? "text-emerald-600" : "text-gray-400"
-                }`}
-              >
-                {num === 1 ? "Bag" : num === 2 ? "Address" : "Payment"}
-              </p>
-            </div>
-          ))}
+      {/* Progress Steps bar placed under the sticky navbar so it doesn't overlap content */}
+      <div className="bg-white border-b border-gray-200 sticky top-16 z-30">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-center items-center space-x-3 overflow-x-auto py-3">
+            {[
+              { num: 1, label: "Bag" },
+              { num: 2, label: "Address" },
+              { num: 3, label: "Payment" },
+            ].map((item, idx) => (
+              <React.Fragment key={item.num}>
+                <div className="flex items-center">
+                  <div
+                    className={`flex items-center space-x-2 px-3 py-1 rounded-full transition-all ${
+                      step >= item.num
+                        ? "bg-emerald-100 text-emerald-700 border border-emerald-200"
+                        : "bg-gray-50 text-gray-400 border border-gray-200"
+                    }`}
+                  >
+                    <span
+                      className={`text-sm font-bold ${step === item.num ? "scale-110" : ""}`}
+                    >
+                      {item.num}
+                    </span>
+                    <span className="text-xs font-medium">{item.label}</span>
+                  </div>
+                </div>
+                {idx < 2 && (
+                  <div
+                    className={`w-8 md:w-12 h-0.5 ${step > item.num ? "bg-emerald-500" : "bg-gray-200"}`}
+                  />
+                )}
+              </React.Fragment>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -629,22 +605,9 @@ const CheckoutPage = () => {
                       <button
                         type="button"
                         onClick={() => setShowAddressForm(true)}
-                        className="text-emerald-600 hover:text-emerald-800 font-medium flex items-center justify-center space-x-2"
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-lg transition-all shadow-sm hover:shadow-md font-medium w-full max-w-xs mx-auto"
                       >
-                        <svg
-                          className="w-5 h-5"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                          />
-                        </svg>
-                        <span>Add New Address</span>
+                        Add New Address
                       </button>
                     </div>
                     {showAddressForm && (
@@ -814,19 +777,22 @@ const CheckoutPage = () => {
                       </div>
                     )}
                     <div className="mt-6 flex justify-between">
-                      <button
-                        onClick={() => setStep(1)}
-                        className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-all"
-                      >
-                        Back to Bag
-                      </button>
-                      <button
-                        onClick={() => setStep(3)}
-                        disabled={!selectedAddress}
-                        className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-lg transition-all shadow-sm hover:shadow-md font-medium disabled:opacity-50"
-                      >
-                        Continue to Payment
-                      </button>
+                      <div className="flex flex-row gap-3 mt-4 flex-wrap">
+                        <button
+                          onClick={() => setStep(1)}
+                          className="flex-1 min-w-[120px] px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-all text-sm sm:text-base"
+                        >
+                          Back to Bag
+                        </button>
+
+                        <button
+                          onClick={() => setStep(3)}
+                          disabled={!selectedAddress}
+                          className="flex-1 min-w-[150px] bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-lg transition-all shadow-sm hover:shadow-md font-medium disabled:opacity-50 text-sm sm:text-base"
+                        >
+                          Continue to Payment
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ) : (
@@ -1049,17 +1015,14 @@ const CheckoutPage = () => {
                           </p>
                         </div>
                       </div>
-                      <div className="bg-emerald-100 text-emerald-800 px-2 py-1 rounded-full text-xs font-bold">
-                        Popular
-                      </div>
                     </div>
                   </div>
-                  {/* UPI Payment Option */}
-                  <div
-                    className={`p-4 border rounded-lg cursor-pointer transition-all duration-200 ${
+                  {/* UPI Payment Option - centered and visually merged with page bg when unselected */}
+                  {/* <div
+                    className={`p-4 border rounded-lg cursor-pointer transition-all duration-200 mx-auto w-full max-w-md ${
                       paymentMethod === "upi"
-                        ? "border-blue-500 bg-blue-50 shadow-sm"
-                        : "border-gray-200 hover:border-blue-300 hover:bg-gray-50"
+                        ? "border-blue-500 bg-transparent"
+                        : "border-transparent bg-transparent"
                     }`}
                     onClick={() => setPaymentMethod("upi")}
                   >
@@ -1077,20 +1040,14 @@ const CheckoutPage = () => {
                           )}
                         </div>
                         <div>
-                          <p className="font-semibold text-gray-900">
-                            UPI Payment
-                          </p>
+                          <p className="font-semibold text-gray-900">UPI Payment</p>
                           <p className="text-sm text-gray-600">
-                            Pay instantly using Google Pay, PhonePe, Paytm &
-                            more
+                            Pay instantly using Google Pay, PhonePe, Paytm & more
                           </p>
                         </div>
                       </div>
-                      <div className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-bold">
-                        Fast
-                      </div>
                     </div>
-                  </div>
+                  </div> */}
                   {/* Payment Info Box */}
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                     <div className="flex items-start space-x-2">
