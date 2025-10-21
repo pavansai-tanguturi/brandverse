@@ -747,6 +747,35 @@ function Home() {
         </div>
       </div>
 
+          {/* Mobile View - Vertical Stack */}
+          <div className="flex flex-col gap-4 md:hidden mx-4 my-6">
+
+            <div
+              role="button"
+              onClick={() => navigate("/products?category=drinks")}
+              className="relative h-[200px] rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer group"
+            >
+              <img
+                src="/home-specials/drinks.png"
+                alt="Drinks Specials"
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                loading="lazy"
+                onError={(e) => (e.target.src = "/logo192.png")}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent flex items-end p-4">
+                <div>
+                  <h3 className="text-white font-bold text-xl mb-1">
+                    Breakfast Picks
+                  </h3>
+                  <p className="text-white text-sm opacity-90">
+                    Kickstart your day with healthy choices
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+          </div>
+
       {/* Category-Based Product Sections */}
       <div className="pb-15 lg:pb-0">
         {categories.slice(0, 4).map((category) => (
@@ -973,6 +1002,54 @@ function Home() {
                 </div>
               </div>
             </div>
+
+            <div
+              role="button"
+              onClick={() => navigate("/products?category=drinks")}
+              className="relative h-[200px] rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer group"
+            >
+              <img
+                src="/home-specials/drinks.png"
+                alt="Drinks Specials"
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                loading="lazy"
+                onError={(e) => (e.target.src = "/logo192.png")}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent flex items-end p-4">
+                <div>
+                  <h3 className="text-white font-bold text-xl mb-1">
+                    Breakfast Picks
+                  </h3>
+                  <p className="text-white text-sm opacity-90">
+                    Kickstart your day with healthy choices
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div
+              role="button"
+              onClick={() => navigate("/products?category=snacks")}
+              className="relative h-[200px] rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer group"
+            >
+              <img
+                src="/home-specials/tasty-snacks.png"
+                alt="Tasty Snacks Specials"
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                loading="lazy"
+                onError={(e) => (e.target.src = "/logo192.png")}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent flex items-end p-4">
+                <div>
+                  <h3 className="text-white font-bold text-xl mb-1">
+                    Breakfast Picks
+                  </h3>
+                  <p className="text-white text-sm opacity-90">
+                    Kickstart your day with healthy choices
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Desktop/Tablet View - Side by Side Grid */}
@@ -1025,6 +1102,86 @@ function Home() {
               <img
                 src="/home-specials/breakfast.png"
                 alt="Breakfast Specials"
+                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                loading="lazy"
+                onError={(e) => (e.target.src = "/logo192.png")}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent flex items-end p-6">
+                <div>
+                  <h3 className="text-white font-bold text-2xl lg:text-3xl mb-2">
+                    Breakfast Picks
+                  </h3>
+                  <p className="text-white text-base lg:text-lg opacity-95 mb-3">
+                    Kickstart your day with healthy choices
+                  </p>
+                  <span className="inline-flex items-center gap-2 text-white text-sm font-medium bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full hover:bg-white/30 transition-colors">
+                    Shop Now
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 5l7 7-7 7"
+                      />
+                    </svg>
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div
+              role="button"
+              onClick={() => navigate("/products?category=drinks")}
+              className="relative h-[280px] lg:h-[320px] rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 cursor-pointer group"
+            >
+              <img
+                src="/home-specials/drinks.png"
+                alt="Drinks Specials"
+                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                loading="lazy"
+                onError={(e) => (e.target.src = "/logo192.png")}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent flex items-end p-6">
+                <div>
+                  <h3 className="text-white font-bold text-2xl lg:text-3xl mb-2">
+                    Breakfast Picks
+                  </h3>
+                  <p className="text-white text-base lg:text-lg opacity-95 mb-3">
+                    Kickstart your day with healthy choices
+                  </p>
+                  <span className="inline-flex items-center gap-2 text-white text-sm font-medium bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full hover:bg-white/30 transition-colors">
+                    Shop Now
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 5l7 7-7 7"
+                      />
+                    </svg>
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div
+              role="button"
+              onClick={() => navigate("/products?category=tasty-snacks")}
+              className="relative h-[280px] lg:h-[320px] rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 cursor-pointer group"
+            >
+              <img
+                src="/home-specials/tasty-snacks.png"
+                alt="Tasty Snacks"
                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                 loading="lazy"
                 onError={(e) => (e.target.src = "/logo192.png")}
