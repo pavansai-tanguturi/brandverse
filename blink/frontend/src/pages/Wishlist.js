@@ -18,9 +18,6 @@ const Wishlist = () => {
   const { addToCart } = useCart();
   const [loadingItemId, setLoadingItemId] = useState(null);
 
-  // Debug logging
-  console.log("Wishlist Debug:", { wishlistItems, isLoading });
-
   // Ensure wishlist is loaded
   useEffect(() => {
     if (fetchWishlist) {

@@ -237,19 +237,12 @@ function Home() {
     if (localBannerTimerRef2.current)
       clearInterval(localBannerTimerRef2.current);
     if (!isBannerPaused2) {
-      console.debug("carousel2: starting autoplay", {
-        groupCount2,
-        isBannerPaused2,
-      });
       localBannerTimerRef2.current = setInterval(() => {
         setLocalBannerIndex2((prev) => {
           const next = (prev + 1) % groupCount2;
-          console.debug("carousel2: tick", { prev, next });
           return next;
         });
       }, 4000);
-    } else {
-      console.debug("carousel2: paused", { isBannerPaused2 });
     }
     return () =>
       localBannerTimerRef2.current &&

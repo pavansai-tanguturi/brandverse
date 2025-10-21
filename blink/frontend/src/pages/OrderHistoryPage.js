@@ -154,13 +154,11 @@ const OrderHistoryPage = () => {
   };
 
   const toggleOrderItems = (orderId) => {
-    console.log('Toggling order:', orderId, 'Current state:', expandedOrders[orderId]);
     setExpandedOrders(prev => {
       const newState = {
         ...prev,
         [orderId]: !prev[orderId]
       };
-      console.log('New state:', newState);
       return newState;
     });
   };
