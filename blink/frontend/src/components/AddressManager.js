@@ -120,7 +120,7 @@ const AddressManager = () => {
     <div className="space-y-8">
       {/* Header */}
       <div className="bg-white p-6 rounded-lg border border-gray-200">
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
           <div>
             <h3 className="text-2xl font-bold text-gray-900 mb-2">
               Manage Addresses
@@ -135,7 +135,7 @@ const AddressManager = () => {
               resetForm();
               setShowAddForm(true);
             }}
-            className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-lg hover:from-emerald-600 hover:to-teal-700 transition-all duration-300 shadow-lg hover:shadow-xl"
+            className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-lg hover:from-emerald-600 hover:to-teal-700 transition-all duration-300 shadow-lg hover:shadow-xl w-full sm:w-auto"
           >
             Add New Address
           </button>
@@ -353,10 +353,10 @@ const AddressManager = () => {
               </label>
             </div>
 
-            <div className="flex gap-3 pt-4">
+            <div className="flex flex-col sm:flex-row gap-3 pt-4">
               <button
                 type="submit"
-                className="px-6 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-lg hover:from-emerald-600 hover:to-teal-700 transition-all duration-300 shadow-lg hover:shadow-xl"
+                className="px-6 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-lg hover:from-emerald-600 hover:to-teal-700 transition-all duration-300 shadow-lg hover:shadow-xl w-full sm:w-auto"
               >
                 {editingAddress ? "Update Address" : "Save Address"}
               </button>
@@ -367,7 +367,7 @@ const AddressManager = () => {
                   setEditingAddress(null);
                   resetForm();
                 }}
-                className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors w-full sm:w-auto"
               >
                 Cancel
               </button>
@@ -379,7 +379,7 @@ const AddressManager = () => {
       {/* Address List */}
       <div className="space-y-6">
         {addresses.length === 0 ? (
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-12 text-center">
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-12 text-center">
             <div className="bg-gradient-to-br from-emerald-100 to-teal-200 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6">
               <svg
                 className="w-12 h-12 text-emerald-600"
@@ -409,7 +409,7 @@ const AddressManager = () => {
             </p>
             <button
               onClick={() => setShowAddForm(true)}
-              className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-lg hover:from-emerald-600 hover:to-teal-700 transition-all duration-300 shadow-lg hover:shadow-xl"
+              className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-lg hover:from-emerald-600 hover:to-teal-700 transition-all duration-300 shadow-lg hover:shadow-xl w-full sm:w-auto"
             >
               Add Address
             </button>
@@ -420,7 +420,7 @@ const AddressManager = () => {
               key={address.id}
               className="bg-white border border-gray-100 rounded-2xl p-6 hover:shadow-xl transition-all duration-200 transform hover:-translate-y-1 hover:border-emerald-200"
             >
-              <div className="flex justify-between items-start">
+              <div className="flex flex-col sm:flex-row justify-between items-start">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-4">
                     <div className="w-3 h-3 rounded-full bg-emerald-400"></div>
@@ -480,10 +480,11 @@ const AddressManager = () => {
                     </p>
                   )}
                 </div>
-                <div className="flex flex-col gap-3 ml-6">
+                <div className="flex flex-col gap-3 ml-0 sm:ml-6 mt-4 sm:mt-0 w-full sm:w-auto">
                   <button
                     onClick={() => handleEdit(address)}
                     className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                    style={{ width: "100%" }}
                   >
                     Edit
                   </button>
@@ -491,6 +492,7 @@ const AddressManager = () => {
                     <button
                       onClick={() => handleSetDefault(address.id)}
                       className="px-4 py-2 bg-emerald-100 text-emerald-700 rounded-lg hover:bg-emerald-200 transition-colors"
+                      style={{ width: "100%" }}
                     >
                       Set Default
                     </button>
@@ -498,6 +500,7 @@ const AddressManager = () => {
                   <button
                     onClick={() => handleDelete(address.id)}
                     className="px-3 py-1 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors"
+                    style={{ width: "100%" }}
                   >
                     Delete
                   </button>

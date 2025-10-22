@@ -24,7 +24,8 @@ const ProtectedRoute = ({ children }) => {
       try {
         const API_BASE =
           import.meta.env.VITE_API_BASE || "http://localhost:3001";
-        const response = await fetch(`${API_BASE}/api/auth/verify`, {
+        // The backend exposes a `me` endpoint that returns { user, admin }
+        const response = await fetch(`${API_BASE}/api/auth/me`, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
@@ -35,8 +36,7 @@ const ProtectedRoute = ({ children }) => {
 
         if (response.ok) {
           const data = await response.json();
-          const userIsAdmin =
-            data.admin === true || data.user?.role === "admin";
+          const userIsAdmin = data.admin === true || data.user?.isAdmin === true;
 
           // Update localStorage with admin status
           if (userIsAdmin) {
@@ -48,7 +48,7 @@ const ProtectedRoute = ({ children }) => {
             setShouldRedirect(true);
           }
         } else {
-          // Token verification failed
+          // Token verification failed (e.g., invalid/expired token)
           console.warn("Token verification failed");
           // Only redirect if this is a fresh session (no stored admin flag)
           if (isAdminStored !== "true") {
