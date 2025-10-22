@@ -86,11 +86,11 @@ export async function login(req, res) {
       console.error("[authController] Error sending OTP:", error);
       return res.status(400).json({ error: error.message });
     }
-    const adminEmail = process.env.ADMIN_EMAIL || process.env.AUTH_U;
-    const isAdmin = email === adminEmail;
-    res.json({
-      message: "OTP sent to your email. Please verify to login.",
-      isAdmin,
+    const adminEmails = process.env.ADMIN_EMAIL.split(',') || process.env.AUTH_U;
+    const isAdmin = adminEmails.includes(email);
+    res.json({ 
+      message: 'OTP sent to your email. Please verify to login.',
+      isAdmin
     });
   } catch (e) {
     console.error("[LOGIN ERROR]", e);
@@ -112,9 +112,9 @@ export async function verifyOtp(req, res) {
       console.error("[VERIFY_OTP SUPABASE ERROR]", error);
       return res.status(400).json({ error: error.message });
     }
-    console.log("[verifyOtp] OTP verification successful");
-    const adminEmail = process.env.ADMIN_EMAIL || process.env.AUTH_U;
-    const isAdmin = email === adminEmail;
+    console.log('[verifyOtp] OTP verification successful');
+    const adminEmails = process.env.ADMIN_EMAIL.split(',');
+    const isAdmin = adminEmails.includes(email);
     // Create JWT payload
     const payload = {
       userId: data.user.id,
