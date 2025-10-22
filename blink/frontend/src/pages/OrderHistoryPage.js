@@ -13,6 +13,8 @@ const OrderHistoryPage = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [activeFilter, setActiveFilter] = useState("all");
   const [expandedOrders, setExpandedOrders] = useState({});
+  const [pageSize] = useState(10); // number of orders to show initially
+  const [visibleCount, setVisibleCount] = useState(pageSize);
 
   useEffect(() => {
     if (user) {
@@ -154,19 +156,36 @@ const OrderHistoryPage = () => {
   };
 
   const toggleOrderItems = (orderId) => {
-    setExpandedOrders(prev => {
+    setExpandedOrders((prev) => {
       const newState = {
         ...prev,
-        [orderId]: !prev[orderId]
+        [orderId]: !prev[orderId],
       };
       return newState;
     });
+  };
+
+  // Navigate to product page when a user clicks a product in order items
+  const openProduct = (item) => {
+    // Prefer slug when available, fallback to product_id or id
+    const slug = item.slug || item.product_slug || item.product?.slug;
+    const id = item.product_id || item.productId || item.product?.id || item.id;
+    if (slug) {
+      navigate(`/product/${slug}`);
+    } else if (id) {
+      navigate(`/product/${id}`);
+    } else {
+      console.warn("openProduct: no product identifier available", item);
+    }
   };
 
   const filteredOrders = orders.filter((order) => {
     if (activeFilter === "all") return true;
     return order.status === activeFilter;
   });
+
+  // Only show a subset of orders initially to reduce loading time
+  const visibleOrders = filteredOrders.slice(0, visibleCount);
 
   const orderFilters = [
     { key: "all", label: "All Orders", count: orders.length },
@@ -410,7 +429,7 @@ const OrderHistoryPage = () => {
             </div>
           ) : (
             <div className="space-y-4">
-              {filteredOrders.map((order) => (
+              {visibleOrders.map((order) => (
                 <div
                   key={order.id}
                   className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-all duration-200"
@@ -420,8 +439,18 @@ const OrderHistoryPage = () => {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-3">
                         <div className="bg-emerald-50 p-2 rounded-lg">
-                          <svg className="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                          <svg
+                            className="w-4 h-4 text-emerald-600"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                            />
                           </svg>
                         </div>
                         <div>
@@ -429,12 +458,15 @@ const OrderHistoryPage = () => {
                             Order #{order.id.slice(-8).toUpperCase()}
                           </h3>
                           <p className="text-xs text-gray-500">
-                            {new Date(order.created_at).toLocaleDateString("en-IN", {
-                              month: "short",
-                              day: "numeric",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
+                            {new Date(order.created_at).toLocaleDateString(
+                              "en-IN",
+                              {
+                                month: "short",
+                                day: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              },
+                            )}
                           </p>
                         </div>
                       </div>
@@ -443,8 +475,11 @@ const OrderHistoryPage = () => {
                           ₹{(order.total_cents / 100).toFixed(2)}
                         </p>
                         <div className="flex gap-1 mt-1">
-                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
-                            {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}
+                          >
+                            {order.status.charAt(0).toUpperCase() +
+                              order.status.slice(1)}
                           </span>
                         </div>
                       </div>
@@ -454,23 +489,40 @@ const OrderHistoryPage = () => {
                   {/* Compact Progress Tracker */}
                   <div className="px-4 py-3 bg-gray-50">
                     {(() => {
-                      const steps = ['placed', 'confirmed', 'processing', 'shipped', 'delivered'];
+                      const steps = [
+                        "placed",
+                        "confirmed",
+                        "processing",
+                        "shipped",
+                        "delivered",
+                      ];
                       const currentStepIndex = (() => {
                         switch (order.status) {
-                          case 'pending': return 0;
-                          case 'confirmed': return 1;
-                          case 'processing': return 2;
-                          case 'shipped': return 3;
-                          case 'delivered': return 4;
-                          default: return 0;
+                          case "pending":
+                            return 0;
+                          case "confirmed":
+                            return 1;
+                          case "processing":
+                            return 2;
+                          case "shipped":
+                            return 3;
+                          case "delivered":
+                            return 4;
+                          default:
+                            return 0;
                         }
                       })();
 
-                      if (order.status === 'cancelled' || order.payment_status === 'failed') {
+                      if (
+                        order.status === "cancelled" ||
+                        order.payment_status === "failed"
+                      ) {
                         return (
                           <div className="flex items-center justify-center py-2">
                             <span className="text-red-600 text-xs font-medium">
-                              {order.payment_status === 'failed' ? 'Payment Failed' : 'Order Cancelled'}
+                              {order.payment_status === "failed"
+                                ? "Payment Failed"
+                                : "Order Cancelled"}
                             </span>
                           </div>
                         );
@@ -479,24 +531,47 @@ const OrderHistoryPage = () => {
                       return (
                         <div className="flex items-center justify-between">
                           {steps.map((step, index) => (
-                            <div key={step} className="flex flex-col items-center flex-1 relative">
+                            <div
+                              key={step}
+                              className="flex flex-col items-center flex-1 relative"
+                            >
                               {index < steps.length - 1 && (
-                                <div className={`absolute top-2 left-1/2 w-full h-0.5 ${
-                                  index < currentStepIndex ? 'bg-emerald-400' : 'bg-gray-300'
-                                }`} style={{ left: '50%', right: '-50%', zIndex: 1 }} />
+                                <div
+                                  className={`absolute top-2 left-1/2 w-full h-0.5 ${
+                                    index < currentStepIndex
+                                      ? "bg-emerald-400"
+                                      : "bg-gray-300"
+                                  }`}
+                                  style={{
+                                    left: "50%",
+                                    right: "-50%",
+                                    zIndex: 1,
+                                  }}
+                                />
                               )}
-                              <div className={`relative z-10 w-4 h-4 rounded-full border-2 ${
-                                index <= currentStepIndex 
-                                  ? 'bg-emerald-500 border-emerald-500' 
-                                  : 'bg-white border-gray-300'
-                              }`} />
-                              <span className={`text-xs mt-1 ${
-                                index <= currentStepIndex ? 'text-emerald-600' : 'text-gray-400'
-                              }`}>
-                                {step === 'placed' ? 'Placed' : 
-                                 step === 'confirmed' ? 'Confirmed' :
-                                 step === 'processing' ? 'Processing' :
-                                 step === 'shipped' ? 'Shipped' : 'Delivered'}
+                              <div
+                                className={`relative z-10 w-4 h-4 rounded-full border-2 ${
+                                  index <= currentStepIndex
+                                    ? "bg-emerald-500 border-emerald-500"
+                                    : "bg-white border-gray-300"
+                                }`}
+                              />
+                              <span
+                                className={`text-xs mt-1 ${
+                                  index <= currentStepIndex
+                                    ? "text-emerald-600"
+                                    : "text-gray-400"
+                                }`}
+                              >
+                                {step === "placed"
+                                  ? "Placed"
+                                  : step === "confirmed"
+                                    ? "Confirmed"
+                                    : step === "processing"
+                                      ? "Processing"
+                                      : step === "shipped"
+                                        ? "Shipped"
+                                        : "Delivered"}
                               </span>
                             </div>
                           ))}
@@ -516,7 +591,7 @@ const OrderHistoryPage = () => {
                           <span>Items ({order.order_items.length})</span>
                           <svg
                             className={`w-4 h-4 transition-transform duration-200 ${
-                              expandedOrders[order.id] ? 'rotate-180' : ''
+                              expandedOrders[order.id] ? "rotate-180" : ""
                             }`}
                             fill="none"
                             stroke="currentColor"
@@ -531,36 +606,65 @@ const OrderHistoryPage = () => {
                           </svg>
                         </button>
                         <span className="text-xs text-gray-500">
-                          {order.payment_method === "cod" ? "Cash on Delivery" : "Online Payment"}
+                          {order.payment_method === "cod"
+                            ? "Cash on Delivery"
+                            : "Online Payment"}
                         </span>
                       </div>
-                      
+
                       {/* Conditional rendering based on expandedOrders state */}
                       {expandedOrders[order.id] && (
                         <div className="space-y-2 animate-fadeIn">
                           {order.order_items.map((item, index) => (
-                            <div key={index} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
-                              <div className="flex items-center space-x-3 flex-1">
-                                <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <div
+                              key={index}
+                              className="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0"
+                            >
+                              <div
+                                className="flex items-center space-x-3 flex-1 cursor-pointer hover:bg-gray-50 rounded-md p-1"
+                                role="button"
+                                tabIndex={0}
+                                onClick={() => openProduct(item)}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter" || e.key === " ") {
+                                    openProduct(item);
+                                  }
+                                }}
+                              >
+                                <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
                                   {item.image_url ? (
                                     <img
                                       src={item.image_url}
                                       alt={item.title}
-                                      className="w-6 h-6 object-cover rounded"
+                                      className="w-12 h-12 object-cover rounded"
+                                      loading="lazy"
+                                      decoding="async"
+                                      width={48}
+                                      height={48}
                                       onError={(e) => {
-                                        e.target.style.display = 'none';
-                                        e.target.nextSibling.style.display = 'block';
+                                        e.target.style.display = "none";
+                                        e.target.nextSibling.style.display =
+                                          "block";
                                       }}
                                     />
                                   ) : null}
-                                  <svg 
-                                    className="w-4 h-4 text-gray-400" 
-                                    fill="none" 
-                                    stroke="currentColor" 
+                                  <svg
+                                    className="w-6 h-6 text-gray-400"
+                                    fill="none"
+                                    stroke="currentColor"
                                     viewBox="0 0 24 24"
-                                    style={{ display: item.image_url ? 'none' : 'block' }}
+                                    style={{
+                                      display: item.image_url
+                                        ? "none"
+                                        : "block",
+                                    }}
                                   >
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth="2"
+                                      d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                                    />
                                   </svg>
                                 </div>
                                 <div className="flex-1 min-w-0">
@@ -568,7 +672,8 @@ const OrderHistoryPage = () => {
                                     {item.title}
                                   </p>
                                   <p className="text-xs text-gray-500">
-                                    Qty: {item.quantity} × ₹{(item.unit_price_cents / 100).toFixed(2)}
+                                    Qty: {item.quantity} × ₹
+                                    {(item.unit_price_cents / 100).toFixed(2)}
                                   </p>
                                 </div>
                               </div>
@@ -581,31 +686,62 @@ const OrderHistoryPage = () => {
                       )}
 
                       {/* Delivery Estimate for active orders */}
-                      {order.status !== 'delivered' && order.status !== 'cancelled' && order.payment_status !== 'failed' && (
-                        <div className="mt-3 p-2 bg-emerald-50 rounded-lg">
-                          <div className="flex items-center space-x-2">
-                            <svg className="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            <span className="text-xs text-emerald-700">
-                              Est. delivery: {(() => {
-                                const orderDate = new Date(order.created_at);
-                                const estimatedDays = order.payment_method === 'cod' ? 5 : 3;
-                                const estimatedDelivery = new Date(orderDate);
-                                estimatedDelivery.setDate(orderDate.getDate() + estimatedDays);
-                                return estimatedDelivery.toLocaleDateString('en-IN', {
-                                  month: 'short',
-                                  day: 'numeric'
-                                });
-                              })()}
-                            </span>
+                      {order.status !== "delivered" &&
+                        order.status !== "cancelled" &&
+                        order.payment_status !== "failed" && (
+                          <div className="mt-3 p-2 bg-emerald-50 rounded-lg">
+                            <div className="flex items-center space-x-2">
+                              <svg
+                                className="w-3 h-3 text-emerald-600"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth="2"
+                                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                                />
+                              </svg>
+                              <span className="text-xs text-emerald-700">
+                                Est. delivery:{" "}
+                                {(() => {
+                                  const orderDate = new Date(order.created_at);
+                                  const estimatedDays =
+                                    order.payment_method === "cod" ? 5 : 3;
+                                  const estimatedDelivery = new Date(orderDate);
+                                  estimatedDelivery.setDate(
+                                    orderDate.getDate() + estimatedDays,
+                                  );
+                                  return estimatedDelivery.toLocaleDateString(
+                                    "en-IN",
+                                    {
+                                      month: "short",
+                                      day: "numeric",
+                                    },
+                                  );
+                                })()}
+                              </span>
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        )}
                     </div>
                   )}
                 </div>
               ))}
+
+              {/* Load more button for pagination */}
+              {visibleCount < filteredOrders.length && (
+                <div className="flex justify-center mt-4">
+                  <button
+                    onClick={() => setVisibleCount((v) => v + pageSize)}
+                    className="px-4 py-2 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md"
+                  >
+                    Load more
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>
