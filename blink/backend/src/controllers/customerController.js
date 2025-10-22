@@ -1,22 +1,21 @@
-import { supabaseAdmin } from '../config/supabaseClient.js';
-import { nanoid } from 'nanoid';
-
+import { supabaseAdmin } from "../config/supabaseClient.js";
+import { nanoid } from "nanoid";
 
 // 🔐 GET /api/customers/me
 export async function getMe(req, res) {
-  if (!req.user) return res.status(401).json({ error: 'Login required' });
+  if (!req.user) return res.status(401).json({ error: "Login required" });
   const userId = req.user.id;
   const { data, error } = await supabaseAdmin
-    .from('customers')
-    .select('*')
-    .eq('auth_user_id', userId)
+    .from("customers")
+    .select("*")
+    .eq("auth_user_id", userId)
     .single();
-  if (error) return res.status(404).json({ error: 'Customer record not found' });
+  if (error)
+    return res.status(404).json({ error: "Customer record not found" });
   try {
     const bucket = process.env.PRODUCT_IMAGES_BUCKET;
-    if (data?.avatar_url && !data.avatar_url.startsWith('http') && bucket) {
-      const { data: signed } = await supabaseAdmin
-        .storage
+    if (data?.avatar_url && !data.avatar_url.startsWith("http") && bucket) {
+      const { data: signed } = await supabaseAdmin.storage
         .from(bucket)
         .createSignedUrl(data.avatar_url, 60 * 60);
       data.avatar_url = signed?.signedUrl || null;
@@ -27,16 +26,16 @@ export async function getMe(req, res) {
 
 // 📝 PUT /api/customers/me
 export async function updateMe(req, res) {
-  if (!req.user) return res.status(401).json({ error: 'Login required' });
+  if (!req.user) return res.status(401).json({ error: "Login required" });
   const userId = req.user.id;
   const patch = req.body || {};
   delete patch.auth_user_id;
   delete patch.email;
   const { data, error } = await supabaseAdmin
-    .from('customers')
+    .from("customers")
     .update(patch)
-    .eq('auth_user_id', userId)
-    .select('*')
+    .eq("auth_user_id", userId)
+    .select("*")
     .single();
   if (error) return res.status(400).json({ error: error.message });
   res.json(data);
@@ -44,27 +43,26 @@ export async function updateMe(req, res) {
 
 // 🖼️ POST /api/customers/me/avatar
 export async function uploadAvatar(req, res) {
-  if (!req.user) return res.status(401).json({ error: 'Login required' });
+  if (!req.user) return res.status(401).json({ error: "Login required" });
   const userId = req.user.id;
   if (!req.files || req.files.length === 0)
-    return res.status(400).json({ error: 'No file uploaded' });
+    return res.status(400).json({ error: "No file uploaded" });
   const file = req.files[0];
-  const ext = (file.originalname.split('.').pop() || 'png').toLowerCase();
+  const ext = (file.originalname.split(".").pop() || "png").toLowerCase();
   const filename = `${userId}/${nanoid(8)}.${ext}`;
   const bucket = process.env.PRODUCT_IMAGES_BUCKET;
   const { error: uErr } = await supabaseAdmin.storage
     .from(bucket)
     .upload(filename, file.buffer, {
       contentType: file.mimetype,
-      upsert: false
+      upsert: false,
     });
   if (uErr) return res.status(400).json({ error: uErr.message });
   await supabaseAdmin
-    .from('customers')
+    .from("customers")
     .update({ avatar_url: filename })
-    .eq('auth_user_id', userId);
-  const { data: signed } = await supabaseAdmin
-    .storage
+    .eq("auth_user_id", userId);
+  const { data: signed } = await supabaseAdmin.storage
     .from(bucket)
     .createSignedUrl(filename, 60 * 60);
   res.json({ avatar_url: signed?.signedUrl || null, path: filename });
@@ -72,22 +70,26 @@ export async function uploadAvatar(req, res) {
 
 // ❌ DELETE /api/customers/me
 export async function deleteMe(req, res) {
-  if (!req.user) return res.status(401).json({ error: 'Login required' });
+  if (!req.user) return res.status(401).json({ error: "Login required" });
   const userId = req.user.id;
   const anonEmail = `deleted+${userId}@example.invalid`;
   try {
     const { data: customer } = await supabaseAdmin
-      .from('customers')
-      .select('avatar_url')
-      .eq('auth_user_id', userId)
+      .from("customers")
+      .select("avatar_url")
+      .eq("auth_user_id", userId)
       .single();
     const bucket = process.env.PRODUCT_IMAGES_BUCKET;
-    if (customer?.avatar_url && bucket && !customer.avatar_url.startsWith('http')) {
+    if (
+      customer?.avatar_url &&
+      bucket &&
+      !customer.avatar_url.startsWith("http")
+    ) {
       await supabaseAdmin.storage.from(bucket).remove([customer.avatar_url]);
     }
   } catch (e) {}
   const { data, error } = await supabaseAdmin
-    .from('customers')
+    .from("customers")
     .update({
       deleted_at: new Date().toISOString(),
       email: anonEmail,
@@ -95,10 +97,10 @@ export async function deleteMe(req, res) {
       phone: null,
       bio: null,
       marketing_opt_in: false,
-      avatar_url: null
+      avatar_url: null,
     })
-    .eq('auth_user_id', userId)
-    .select('*')
+    .eq("auth_user_id", userId)
+    .select("*")
     .single();
   if (error) return res.status(400).json({ error: error.message });
   res.json({ deleted: true });
@@ -111,39 +113,56 @@ export async function deleteMe(req, res) {
 // 🔍 GET /api/admin/customers
 export async function listCustomers(req, res) {
   if (!req.user || !req.user.isAdmin)
-    return res.status(403).json({ error: 'Admin only' });
+    return res.status(403).json({ error: "Admin only" });
 
   try {
     const { data: allCustomers, error: allError } = await supabaseAdmin
-      .from('customers')
-      .select('*')
-      .order('created_at', { ascending: false });
+      .from("customers")
+      .select("*")
+      .order("created_at", { ascending: false });
 
     if (allError) throw allError;
 
     const calculateCustomerTier = (totalSpent, orderCount) => {
       const rupees = totalSpent / 100;
       if (rupees >= 100000 || orderCount >= 50)
-        return { name: 'Platinum', color: 'text-purple-600', bgColor: 'bg-purple-100' };
+        return {
+          name: "Platinum",
+          color: "text-purple-600",
+          bgColor: "bg-purple-100",
+        };
       if (rupees >= 50000 || orderCount >= 25)
-        return { name: 'Gold', color: 'text-yellow-600', bgColor: 'bg-yellow-100' };
+        return {
+          name: "Gold",
+          color: "text-yellow-600",
+          bgColor: "bg-yellow-100",
+        };
       if (rupees >= 20000 || orderCount >= 10)
-        return { name: 'Silver', color: 'text-gray-600', bgColor: 'bg-gray-100' };
+        return {
+          name: "Silver",
+          color: "text-gray-600",
+          bgColor: "bg-gray-100",
+        };
       if (rupees >= 5000 || orderCount >= 3)
-        return { name: 'Bronze', color: 'text-orange-600', bgColor: 'bg-orange-100' };
-      return { name: 'New', color: 'text-blue-600', bgColor: 'bg-blue-100' };
+        return {
+          name: "Bronze",
+          color: "text-orange-600",
+          bgColor: "bg-orange-100",
+        };
+      return { name: "New", color: "text-blue-600", bgColor: "bg-blue-100" };
     };
 
     const customerStats = {};
 
     for (const customer of allCustomers) {
       const { data: orders, error: ordersError } = await supabaseAdmin
-        .from('orders')
-        .select('id, total_cents, created_at')
-        .eq('customer_id', customer.id);
+        .from("orders")
+        .select("id, total_cents, created_at")
+        .eq("customer_id", customer.id);
 
       const orderCount = orders?.length || 0;
-      const totalSpent = orders?.reduce((sum, order) => sum + (order.total_cents || 0), 0) || 0;
+      const totalSpent =
+        orders?.reduce((sum, order) => sum + (order.total_cents || 0), 0) || 0;
       const tier = calculateCustomerTier(totalSpent, orderCount);
 
       customerStats[customer.id] = {
@@ -151,13 +170,13 @@ export async function listCustomers(req, res) {
         order_count: orderCount,
         total_spent: totalSpent,
         last_order_date: orders?.[0]?.created_at || null,
-        tier
+        tier,
       };
     }
 
     res.json(Object.values(customerStats));
   } catch (error) {
-    console.error('List customers error:', error);
+    console.error("List customers error:", error);
     res.status(500).json({ error: error.message });
   }
 }
@@ -165,24 +184,24 @@ export async function listCustomers(req, res) {
 // 🔍 GET /api/admin/customers/:id
 export async function getCustomerDetails(req, res) {
   if (!req.user || !req.user.isAdmin)
-    return res.status(403).json({ error: 'Admin only' });
+    return res.status(403).json({ error: "Admin only" });
 
   try {
     const { id } = req.params;
 
     const { data: customer, error: customerError } = await supabaseAdmin
-      .from('customers')
-      .select('*')
-      .eq('id', id)
+      .from("customers")
+      .select("*")
+      .eq("id", id)
       .single();
 
     if (customerError) throw customerError;
 
     const { data: orders, error: ordersError } = await supabaseAdmin
-      .from('orders')
-      .select('*')
-      .eq('customer_id', id)
-      .order('created_at', { ascending: false })
+      .from("orders")
+      .select("*")
+      .eq("customer_id", id)
+      .order("created_at", { ascending: false })
       .limit(10);
 
     if (ordersError) throw ordersError;
@@ -190,16 +209,16 @@ export async function getCustomerDetails(req, res) {
     const addresses = [];
 
     const { data: addressData, error: addressError } = await supabaseAdmin
-      .from('addresses')
-      .select('*')
-      .eq('customer_id', id)
-      .order('is_default', { ascending: false });
+      .from("addresses")
+      .select("*")
+      .eq("customer_id", id)
+      .order("is_default", { ascending: false });
 
     if (!addressError && addressData?.length > 0) {
-      addressData.forEach(addr => {
+      addressData.forEach((addr) => {
         addresses.push({
-          type: addr.is_default ? 'shipping' : 'additional',
-          address: { ...addr }
+          type: addr.is_default ? "shipping" : "additional",
+          address: { ...addr },
         });
       });
 
@@ -208,25 +227,47 @@ export async function getCustomerDetails(req, res) {
       customer.billing_address = { ...defaultAddr };
     } else {
       if (customer.shipping_address)
-        addresses.push({ type: 'shipping', address: customer.shipping_address });
+        addresses.push({
+          type: "shipping",
+          address: customer.shipping_address,
+        });
       if (customer.billing_address)
-        addresses.push({ type: 'billing', address: customer.billing_address });
+        addresses.push({ type: "billing", address: customer.billing_address });
     }
 
     const orderCount = orders.length;
-    const totalSpent = orders.reduce((sum, order) => sum + (order.total_cents || 0), 0);
+    const totalSpent = orders.reduce(
+      (sum, order) => sum + (order.total_cents || 0),
+      0,
+    );
 
     const calculateCustomerTier = (total, count) => {
       const rupees = total / 100;
       if (rupees >= 100000 || count >= 50)
-        return { name: 'Platinum', color: 'text-purple-600', bgColor: 'bg-purple-100' };
+        return {
+          name: "Platinum",
+          color: "text-purple-600",
+          bgColor: "bg-purple-100",
+        };
       if (rupees >= 50000 || count >= 25)
-        return { name: 'Gold', color: 'text-yellow-600', bgColor: 'bg-yellow-100' };
+        return {
+          name: "Gold",
+          color: "text-yellow-600",
+          bgColor: "bg-yellow-100",
+        };
       if (rupees >= 20000 || count >= 10)
-        return { name: 'Silver', color: 'text-gray-600', bgColor: 'bg-gray-100' };
+        return {
+          name: "Silver",
+          color: "text-gray-600",
+          bgColor: "bg-gray-100",
+        };
       if (rupees >= 5000 || count >= 3)
-        return { name: 'Bronze', color: 'text-orange-600', bgColor: 'bg-orange-100' };
-      return { name: 'New', color: 'text-blue-600', bgColor: 'bg-blue-100' };
+        return {
+          name: "Bronze",
+          color: "text-orange-600",
+          bgColor: "bg-orange-100",
+        };
+      return { name: "New", color: "text-blue-600", bgColor: "bg-blue-100" };
     };
 
     const tier = calculateCustomerTier(totalSpent, orderCount);
@@ -237,10 +278,10 @@ export async function getCustomerDetails(req, res) {
       total_spent: totalSpent,
       recent_orders: orders,
       addresses,
-      tier
+      tier,
     });
   } catch (error) {
-    console.error('Get customer details error:', error);
+    console.error("Get customer details error:", error);
     res.status(500).json({ error: error.message });
   }
 }
@@ -248,7 +289,7 @@ export async function getCustomerDetails(req, res) {
 // ✏️ PUT /api/admin/customers/:id
 export async function updateCustomerAdmin(req, res) {
   if (!req.user || !req.user.isAdmin)
-    return res.status(403).json({ error: 'Admin only' });
+    return res.status(403).json({ error: "Admin only" });
 
   try {
     const { id } = req.params;
@@ -259,9 +300,9 @@ export async function updateCustomerAdmin(req, res) {
     delete updates.created_at;
 
     const { data, error } = await supabaseAdmin
-      .from('customers')
+      .from("customers")
       .update(updates)
-      .eq('id', id)
+      .eq("id", id)
       .select()
       .single();
 
@@ -269,7 +310,7 @@ export async function updateCustomerAdmin(req, res) {
 
     res.json(data);
   } catch (error) {
-    console.error('Update customer error:', error);
+    console.error("Update customer error:", error);
     res.status(500).json({ error: error.message });
   }
 }

@@ -9,7 +9,7 @@ const ProtectedRoute = ({ children }) => {
     const verifyAdminAccess = async () => {
       const token = localStorage.getItem("auth_token");
       const isAdminStored = localStorage.getItem("is_admin");
-      
+
       // Quick check: if no token AND no admin flag, redirect immediately
       if (!token && isAdminStored !== "true") {
         setShouldRedirect(true);
@@ -22,7 +22,8 @@ const ProtectedRoute = ({ children }) => {
 
       // Background verification - doesn't block UI
       try {
-        const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3001";
+        const API_BASE =
+          import.meta.env.VITE_API_BASE || "http://localhost:3001";
         const response = await fetch(`${API_BASE}/api/auth/verify`, {
           method: "GET",
           headers: {
@@ -34,8 +35,9 @@ const ProtectedRoute = ({ children }) => {
 
         if (response.ok) {
           const data = await response.json();
-          const userIsAdmin = data.admin === true || data.user?.role === "admin";
-          
+          const userIsAdmin =
+            data.admin === true || data.user?.role === "admin";
+
           // Update localStorage with admin status
           if (userIsAdmin) {
             localStorage.setItem("is_admin", "true");
@@ -55,14 +57,18 @@ const ProtectedRoute = ({ children }) => {
             setShouldRedirect(true);
           } else {
             // Keep user in, they might be offline or server issue
-            console.warn("Keeping admin in despite verification failure (stored admin flag exists)");
+            console.warn(
+              "Keeping admin in despite verification failure (stored admin flag exists)",
+            );
           }
         }
       } catch (error) {
         console.error("Admin verification error:", error);
         // Network error - if admin flag exists, keep user in
         if (isAdminStored === "true") {
-          console.warn("Network error during verification, but admin flag exists. Allowing access.");
+          console.warn(
+            "Network error during verification, but admin flag exists. Allowing access.",
+          );
         } else {
           // Fresh session with network error - only remove admin flag, keep auth_token
           localStorage.removeItem("is_admin");

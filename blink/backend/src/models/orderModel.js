@@ -1,9 +1,9 @@
-import { supabaseAdmin } from '../config/supabaseClient.js';
+import { supabaseAdmin } from "../config/supabaseClient.js";
 
 export async function createOrder(payload) {
   return await supabaseAdmin
-    .from('orders')
+    .from("orders")
     .insert(payload)
-    .select('*')
+    .select("*")
     .single();
 }
