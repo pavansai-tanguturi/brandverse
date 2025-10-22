@@ -1,42 +1,42 @@
-import express from 'express';
+import express from "express";
 // ...existing code...
-import { 
-  getCustomerAddresses, 
-  getAddress, 
-  createAddress, 
-  updateAddress, 
+import {
+  getCustomerAddresses,
+  getAddress,
+  createAddress,
+  updateAddress,
   deleteAddress,
   setDefaultAddress,
   getCurrentUserAddresses,
-  createCurrentUserAddress
-} from '../controllers/addressController.js';
+  createCurrentUserAddress,
+} from "../controllers/addressController.js";
 
 const router = express.Router();
 
 // Get all addresses for current authenticated user
-import { authenticateJWT } from '../controllers/authController.js';
+import { authenticateJWT } from "../controllers/authController.js";
 // ...existing code...
-router.get('/', authenticateJWT, getCurrentUserAddresses);
+router.get("/", authenticateJWT, getCurrentUserAddresses);
 
 // Create address for current authenticated user
-router.post('/', authenticateJWT, createCurrentUserAddress);
+router.post("/", authenticateJWT, createCurrentUserAddress);
 
 // Get all addresses for a customer
-router.get('/customer/:customer_id', getCustomerAddresses);
+router.get("/customer/:customer_id", getCustomerAddresses);
 
 // Get a specific address by ID
-router.get('/:id', getAddress);
+router.get("/:id", getAddress);
 
 // Create a new address for a customer
-router.post('/customer/:customer_id', createAddress);
+router.post("/customer/:customer_id", createAddress);
 
 // Update an address
-router.put('/:id', authenticateJWT, updateAddress);
+router.put("/:id", authenticateJWT, updateAddress);
 
 // Delete an address
-router.delete('/:id', authenticateJWT, deleteAddress);
+router.delete("/:id", authenticateJWT, deleteAddress);
 
 // Set an address as default
-router.patch('/:id/default', authenticateJWT, setDefaultAddress);
+router.patch("/:id/default", authenticateJWT, setDefaultAddress);
 
 export default router;
