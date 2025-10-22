@@ -379,7 +379,7 @@ const AddressManager = () => {
       {/* Address List */}
       <div className="space-y-6">
         {addresses.length === 0 ? (
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-12 text-center">
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-12 text-center">
             <div className="bg-gradient-to-br from-emerald-100 to-teal-200 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6">
               <svg
                 className="w-12 h-12 text-emerald-600"

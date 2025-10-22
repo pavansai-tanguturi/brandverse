@@ -36,7 +36,8 @@ const ProtectedRoute = ({ children }) => {
 
         if (response.ok) {
           const data = await response.json();
-          const userIsAdmin = data.admin === true || data.user?.isAdmin === true;
+          const userIsAdmin =
+            data.admin === true || data.user?.isAdmin === true;
 
           // Update localStorage with admin status
           if (userIsAdmin) {
