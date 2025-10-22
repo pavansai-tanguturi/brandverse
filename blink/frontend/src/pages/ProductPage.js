@@ -150,10 +150,6 @@ const ProductPage = () => {
       if (response.ok) {
         const data = await response.json();
         setProduct(data);
-
-        if (data && data.category && data.category.slug) {
-          fetchRelatedProducts(data.category.slug, data.id);
-        }
       } else {
         console.error("Failed to fetch product");
         navigate("/");
@@ -224,6 +220,26 @@ const ProductPage = () => {
     [product],
   );
 
+  // Defer fetching related products so main product renders quickly.
+  useEffect(() => {
+    if (!product || !product.category || !product.category.slug) return;
+
+    const schedule = () => {
+      startTransition(() => {
+        fetchRelatedProducts(product.category.slug, product.id);
+      });
+    };
+
+    if (typeof window !== "undefined" && "requestIdleCallback" in window) {
+      const idHandle = window.requestIdleCallback(schedule, { timeout: 1000 });
+      return () => window.cancelIdleCallback && window.cancelIdleCallback(idHandle);
+    }
+
+    // Fallback to small timeout so it runs after paint
+    const t = setTimeout(schedule, 200);
+    return () => clearTimeout(t);
+  }, [product, fetchRelatedProducts, startTransition]);
+
   useEffect(() => {
     fetchProduct();
   }, [fetchProduct]);
@@ -267,10 +283,61 @@ const ProductPage = () => {
     return (
       <div className="min-h-screen bg-white">
         <ModernNavbar showSearch={true} />
-        <div className="flex items-center justify-center min-h-screen pt-20">
-          <div className="text-center">
-            <div className="w-16 h-16 border-4 border-gray-300 border-t-emerald-500 rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading product details...</p>
+
+        <div className="container mx-auto px-3 sm:px-4 py-8 pt-20">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
+            {/* Image skeleton */}
+            <div className="rounded-lg bg-white border border-gray-200 p-4">
+              <div className="bg-gray-200 rounded-lg w-full" style={{ aspectRatio: '4/5', maxHeight: '600px' }} />
+              <div className="mt-4 space-y-3">
+                <div className="h-4 bg-gray-200 rounded w-3/4 animate-pulse" />
+                <div className="h-3 bg-gray-200 rounded w-1/2 animate-pulse" />
+              </div>
+            </div>
+
+            {/* Details skeleton */}
+            <div className="space-y-4 sm:space-y-6">
+              <div className="space-y-3">
+                <div className="h-6 bg-gray-200 rounded w-3/4 animate-pulse" />
+                <div className="h-4 bg-gray-200 rounded w-1/3 animate-pulse" />
+                <div className="flex items-center gap-3 mt-2">
+                  <div className="h-5 w-16 bg-gray-200 rounded animate-pulse" />
+                  <div className="h-5 w-8 bg-gray-200 rounded animate-pulse" />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <div className="h-6 bg-gray-200 rounded w-1/3 animate-pulse" />
+                <div className="h-4 bg-gray-200 rounded w-1/4 animate-pulse" />
+              </div>
+
+              <div className="space-y-3">
+                <div className="h-10 bg-gray-200 rounded w-full animate-pulse" />
+                <div className="h-10 bg-gray-200 rounded w-full animate-pulse" />
+              </div>
+
+              <div className="border-t border-gray-100 pt-4">
+                <div className="h-4 bg-gray-200 rounded w-1/2 animate-pulse mb-3" />
+                <div className="space-y-2">
+                  <div className="h-3 bg-gray-200 rounded w-full animate-pulse" />
+                  <div className="h-3 bg-gray-200 rounded w-5/6 animate-pulse" />
+                  <div className="h-3 bg-gray-200 rounded w-2/3 animate-pulse" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Related products skeleton */}
+          <div className="border-t border-gray-200 pt-6 sm:pt-8 mt-8">
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+              {[1, 2, 3, 4].map((n) => (
+                <div key={n} className="space-y-2">
+                  <div className="bg-gray-200 aspect-square rounded-lg animate-pulse" />
+                  <div className="h-3 bg-gray-200 rounded w-3/4 animate-pulse" />
+                  <div className="h-2 bg-gray-200 rounded w-1/2 animate-pulse" />
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -447,6 +514,11 @@ const ProductPage = () => {
                 src={productImages[selectedImage]}
                 alt={product.title}
                 className="w-full h-full object-contain p-2"
+                loading={selectedImage === 0 ? "eager" : "lazy"}
+                decoding="async"
+                fetchPriority={selectedImage === 0 ? "high" : "auto"}
+                width={800}
+                height={1000}
                 onError={(e) => {
                   e.target.src =
                     "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?auto=format&fit=crop&w=600&q=80";
@@ -967,6 +1039,10 @@ const ProductPage = () => {
                           }
                           alt={relatedProduct.title}
                           className="w-full h-full object-contain p-3 sm:p-4"
+                          loading="lazy"
+                          decoding="async"
+                          width={300}
+                          height={300}
                         />
                         {relatedProduct.discount_percent > 0 && (
                           <div className="absolute top-1 sm:top-2 left-1 sm:left-2 bg-red-500 text-white px-1 sm:px-2 py-0.5 sm:py-1 rounded text-xs font-medium">

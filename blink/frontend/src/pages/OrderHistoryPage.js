@@ -13,6 +13,8 @@ const OrderHistoryPage = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [activeFilter, setActiveFilter] = useState("all");
   const [expandedOrders, setExpandedOrders] = useState({});
+  const [pageSize] = useState(10); // number of orders to show initially
+  const [visibleCount, setVisibleCount] = useState(pageSize);
 
   useEffect(() => {
     if (user) {
@@ -163,10 +165,27 @@ const OrderHistoryPage = () => {
     });
   };
 
+  // Navigate to product page when a user clicks a product in order items
+  const openProduct = (item) => {
+    // Prefer slug when available, fallback to product_id or id
+    const slug = item.slug || item.product_slug || item.product?.slug;
+    const id = item.product_id || item.productId || item.product?.id || item.id;
+    if (slug) {
+      navigate(`/product/${slug}`);
+    } else if (id) {
+      navigate(`/product/${id}`);
+    } else {
+      console.warn("openProduct: no product identifier available", item);
+    }
+  };
+
   const filteredOrders = orders.filter((order) => {
     if (activeFilter === "all") return true;
     return order.status === activeFilter;
   });
+
+  // Only show a subset of orders initially to reduce loading time
+  const visibleOrders = filteredOrders.slice(0, visibleCount);
 
   const orderFilters = [
     { key: "all", label: "All Orders", count: orders.length },
@@ -410,7 +429,7 @@ const OrderHistoryPage = () => {
             </div>
           ) : (
             <div className="space-y-4">
-              {filteredOrders.map((order) => (
+              {visibleOrders.map((order) => (
                 <div
                   key={order.id}
                   className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-all duration-200"
@@ -601,13 +620,27 @@ const OrderHistoryPage = () => {
                               key={index}
                               className="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0"
                             >
-                              <div className="flex items-center space-x-3 flex-1">
-                                <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                              <div
+                                className="flex items-center space-x-3 flex-1 cursor-pointer hover:bg-gray-50 rounded-md p-1"
+                                role="button"
+                                tabIndex={0}
+                                onClick={() => openProduct(item)}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter" || e.key === " ") {
+                                    openProduct(item);
+                                  }
+                                }}
+                              >
+                                <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
                                   {item.image_url ? (
                                     <img
                                       src={item.image_url}
                                       alt={item.title}
-                                      className="w-6 h-6 object-cover rounded"
+                                      className="w-12 h-12 object-cover rounded"
+                                      loading="lazy"
+                                      decoding="async"
+                                      width={48}
+                                      height={48}
                                       onError={(e) => {
                                         e.target.style.display = "none";
                                         e.target.nextSibling.style.display =
@@ -616,7 +649,7 @@ const OrderHistoryPage = () => {
                                     />
                                   ) : null}
                                   <svg
-                                    className="w-4 h-4 text-gray-400"
+                                    className="w-6 h-6 text-gray-400"
                                     fill="none"
                                     stroke="currentColor"
                                     viewBox="0 0 24 24"
@@ -697,6 +730,18 @@ const OrderHistoryPage = () => {
                   )}
                 </div>
               ))}
+
+              {/* Load more button for pagination */}
+              {visibleCount < filteredOrders.length && (
+                <div className="flex justify-center mt-4">
+                  <button
+                    onClick={() => setVisibleCount((v) => v + pageSize)}
+                    className="px-4 py-2 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md"
+                  >
+                    Load more
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>
