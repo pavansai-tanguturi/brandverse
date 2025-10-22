@@ -232,7 +232,8 @@ const ProductPage = () => {
 
     if (typeof window !== "undefined" && "requestIdleCallback" in window) {
       const idHandle = window.requestIdleCallback(schedule, { timeout: 1000 });
-      return () => window.cancelIdleCallback && window.cancelIdleCallback(idHandle);
+      return () =>
+        window.cancelIdleCallback && window.cancelIdleCallback(idHandle);
     }
 
     // Fallback to small timeout so it runs after paint
@@ -288,7 +289,10 @@ const ProductPage = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
             {/* Image skeleton */}
             <div className="rounded-lg bg-white border border-gray-200 p-4">
-              <div className="bg-gray-200 rounded-lg w-full" style={{ aspectRatio: '4/5', maxHeight: '600px' }} />
+              <div
+                className="bg-gray-200 rounded-lg w-full"
+                style={{ aspectRatio: "4/5", maxHeight: "600px" }}
+              />
               <div className="mt-4 space-y-3">
                 <div className="h-4 bg-gray-200 rounded w-3/4 animate-pulse" />
                 <div className="h-3 bg-gray-200 rounded w-1/2 animate-pulse" />
