@@ -11,7 +11,7 @@ const UnauthorizedPage = () => {
     const checkAdminStatus = () => {
       const token = localStorage.getItem("auth_token");
       const isAdminStored = localStorage.getItem("is_admin");
-      
+
       // If user is already an admin, set the flag
       if (token && isAdminStored === "true") {
         setIsAdmin(true);
@@ -92,10 +92,9 @@ const UnauthorizedPage = () => {
 
         <div className="mt-8">
           <p className="text-sm text-gray-500">
-            {isAdmin 
+            {isAdmin
               ? "You're already logged in as admin. Click above to access the dashboard."
-              : "If you believe this is an error, please contact your system administrator."
-            }
+              : "If you believe this is an error, please contact your system administrator."}
           </p>
         </div>
       </div>

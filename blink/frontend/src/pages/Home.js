@@ -433,60 +433,58 @@ function Home() {
       {/* Category Navigation */}
       <div className="bg-white py-4 sm:py-6 border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between overflow-x-auto scrollbar-hide space-x-4 sm:space-x-6">
-          {loading ? (
-            // Category skeleton loader
-            Array.from({ length: 8 }).map((_, index) => (
-              <div
-                key={index}
-                className="flex flex-col items-center justify-center flex-shrink-0 w-20 sm:w-24"
-              >
-                <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-200 rounded-full animate-pulse"></div>
-                <div className="w-16 h-3 sm:h-4 bg-gray-200 rounded mt-1 sm:mt-2 animate-pulse"></div>
-              </div>
-            ))
-          ) : (
-            categories.map((cat) => (
-              <div
-                key={cat.id}
-                onClick={() => navigate(`/products?category=${cat.slug}`)}
-                className="flex flex-col items-center justify-center flex-shrink-0 w-20 sm:w-24 cursor-pointer hover:scale-105 transition-transform"
-              >
-                <div className="w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center">
-                  <img
-                    src={cat.image_url || `/categories/${cat.slug}.png`}
-                    alt={cat.name}
-                    className="w-full h-full object-contain rounded-full"
-                    loading="lazy"
-                    onError={(e) => {
-                      // Fallback to local image if database image fails
-                      e.target.src = `/categories/${cat.slug}.png`;
-                    }}
-                  />
+          {loading
+            ? // Category skeleton loader
+              Array.from({ length: 8 }).map((_, index) => (
+                <div
+                  key={index}
+                  className="flex flex-col items-center justify-center flex-shrink-0 w-20 sm:w-24"
+                >
+                  <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-200 rounded-full animate-pulse"></div>
+                  <div className="w-16 h-3 sm:h-4 bg-gray-200 rounded mt-1 sm:mt-2 animate-pulse"></div>
                 </div>
-                <div className="flex items-center gap-1 mt-1 sm:mt-2">
-                  <p className="text-xs sm:text-sm font-semibold text-gray-800 text-center whitespace-nowrap">
-                    {cat.name}
-                  </p>
-                  {cat.hasDropdown && (
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="w-3 h-3 text-gray-500"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 9l-7 7-7-7"
-                      />
-                    </svg>
-                  )}
+              ))
+            : categories.map((cat) => (
+                <div
+                  key={cat.id}
+                  onClick={() => navigate(`/products?category=${cat.slug}`)}
+                  className="flex flex-col items-center justify-center flex-shrink-0 w-20 sm:w-24 cursor-pointer hover:scale-105 transition-transform"
+                >
+                  <div className="w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center">
+                    <img
+                      src={cat.image_url || `/categories/${cat.slug}.png`}
+                      alt={cat.name}
+                      className="w-full h-full object-contain rounded-full"
+                      loading="lazy"
+                      onError={(e) => {
+                        // Fallback to local image if database image fails
+                        e.target.src = `/categories/${cat.slug}.png`;
+                      }}
+                    />
+                  </div>
+                  <div className="flex items-center gap-1 mt-1 sm:mt-2">
+                    <p className="text-xs sm:text-sm font-semibold text-gray-800 text-center whitespace-nowrap">
+                      {cat.name}
+                    </p>
+                    {cat.hasDropdown && (
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="w-3 h-3 text-gray-500"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 9l-7 7-7-7"
+                        />
+                      </svg>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))
-          )}
+              ))}
         </div>
       </div>
 
@@ -515,192 +513,358 @@ function Home() {
             </>
           )}
         </div>
-        {/* Carousel 1 */}
-        {loading ? (
-          // Carousel 1 skeleton
-          <div className="relative w-full bg-white min-h-[180px] sm:min-h-[220px] md:min-h-[240px]">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 h-full">
-              {Array.from({ length: 3 }).map((_, index) => (
-                <div key={index} className="relative w-full h-full">
-                  <div className="w-full h-[180px] sm:h-[220px] md:h-[240px] bg-gray-200 animate-pulse"></div>
-                  <div className="absolute bottom-4 left-4">
-                    <div className="w-32 h-5 bg-gray-300 rounded animate-pulse"></div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : (
-          <div
-            className="relative rounded-none overflow-hidden shadow-none mb-0" // Removed rounded, shadow, and mb (margin-bottom)
-            onMouseEnter={() => setIsBannerPaused(true)}
-            onMouseLeave={() => setIsBannerPaused(false)}
-            onTouchStart={(e) => {
-              setIsBannerPaused(true);
-              touchStartXRef.current = e.touches?.[0]?.clientX ?? null;
-            }}
-            onTouchEnd={(e) => {
-              const endX = e.changedTouches?.[0]?.clientX ?? null;
-              const startX = touchStartXRef.current;
-              if (startX != null && endX != null) {
-                const delta = endX - startX;
-                if (Math.abs(delta) > SWIPE_THRESHOLD) {
-                  if (delta < 0) handleNextLocalBanner();
-                  else handlePrevLocalBanner();
-                }
-              }
-              touchStartXRef.current = null;
-              setTimeout(() => setIsBannerPaused(false), 150);
-            }}
-          >
-          {/* Slides - single banner on mobile, grid on larger screens */}
-          <div className="relative w-full bg-white min-h-[180px] sm:min-h-[220px] md:min-h-[240px]">
-            {" "}
-            {/* Changed bg-gray-50 to bg-white for a cleaner look */}
-            {(() => {
-              // Group banners using the responsive groupSize state (1/2/3)
-              const groups = [];
-              for (let i = 0; i < localCategoryBanners.length; i += groupSize) {
-                groups.push(localCategoryBanners.slice(i, i + groupSize));
-              }
-              return groups.map((group, groupIndex) => (
-                <div
-                  key={groupIndex}
-                  className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
-                    groupIndex === localBannerIndex
-                      ? "opacity-100 z-10"
-                      : "opacity-0 z-0"
-                  } sm:grid sm:grid-cols-2 sm:gap-0 lg:grid-cols-3 lg:gap-0 p-0`} // Removed all gap and padding for maximum density
-                >
-                  {group.map((item) => (
-                    <div
-                      key={item.key}
-                      className="relative w-full h-full rounded-none overflow-hidden shadow-none sm:hover:shadow-md sm:transition-transform sm:transform sm:hover:-translate-y-0.5 cursor-pointer" // Removed rounded, shadow, subtle hover effect
-                      onClick={() => navigate(item.link)}
-                      role="button"
-                    >
-                      <img
-                        src={item.src}
-                        alt={item.title}
-                        className="w-full h-[180px] sm:h-[200px] md:h-[220px] lg:h-[260px] object-cover"
-                        draggable={false}
-                        onDragStart={(e) => e.preventDefault()}
-                        loading="lazy"
-                      />
-                      <div className="absolute inset-0 flex flex-col sm:flex-row sm:items-end sm:justify-between p-3 sm:p-4 bg-gradient-to-t from-black/70 to-transparent">
-                        <div className="text-white text-base sm:text-lg font-semibold max-w-[80%] sm:max-w-[70%] leading-tight drop-shadow">
-                          {item.title}
-                        </div>
-                        {/* <button
+        {/* Desktop View - Side by Side Carousels */}
+        <div className="hidden lg:flex lg:gap-6 lg:px-4 lg:py-6">
+          {/* Carousel 1 - Left Side */}
+          {loading ? (
+            <div className="flex-1 min-h-[400px] bg-gray-100 animate-pulse rounded-lg"></div>
+          ) : (
+            <div
+              className="flex-1 relative overflow-hidden h-[400px] rounded-lg"
+              onMouseEnter={() => setIsBannerPaused(true)}
+              onMouseLeave={() => setIsBannerPaused(false)}
+            >
+              <div className="relative w-full h-full">
+                {localCategoryBanners.map((item, index) => (
+                  <div
+                    key={item.key}
+                    className={`absolute inset-0 transition-opacity duration-700 ease-in-out cursor-pointer ${
+                      index === localBannerIndex
+                        ? "opacity-100 z-10"
+                        : "opacity-0 z-0"
+                    }`}
                     onClick={() => navigate(item.link)}
-                    className="mt-2 sm:mt-0 bg-emerald-500 text-white font-medium text-sm px-4 py-2 rounded-full shadow hover:bg-emerald-600 transition whitespace-nowrap"
                   >
-                    Shop Now
-                  </button> */}
-                      </div>
+                    <img
+                      src={item.src}
+                      alt={item.title}
+                      className="w-full h-full object-cover rounded-lg"
+                      draggable={false}
+                      onDragStart={(e) => e.preventDefault()}
+                      loading={index === localBannerIndex ? "eager" : "lazy"}
+                      decoding="async"
+                      fetchPriority={
+                        index === localBannerIndex ? "high" : "auto"
+                      }
+                      width="800"
+                      height="400"
+                      onError={(e) => {
+                        console.log(`Failed to load image: ${item.src}`);
+                        e.target.src = "/logo192.png";
+                      }}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-8 rounded-lg">
+                      <h2 className="text-white text-3xl font-bold drop-shadow-lg max-w-[80%]">
+                        {item.title}
+                      </h2>
                     </div>
-                  ))}
-                </div>
-              ));
-            })()}
-          </div>
-
-          {/* Dots removed */}
-        </div>
-        )}
-        <hr className="border-gray-200" />{" "}
-        {/* Added a divider for visual separation since margins are removed */}
-        {/* Carousel 2 */}
-        {loading ? (
-          // Carousel 2 skeleton
-          <div className="relative w-full bg-white min-h-[180px] sm:min-h-[220px] md:min-h-[240px]">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 h-full">
-              {Array.from({ length: 3 }).map((_, index) => (
-                <div key={index} className="relative w-full h-full">
-                  <div className="w-full h-[180px] sm:h-[220px] md:h-[240px] bg-gray-200 animate-pulse"></div>
-                  <div className="absolute bottom-4 left-4">
-                    <div className="w-28 h-5 bg-gray-300 rounded animate-pulse"></div>
                   </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : (
-          <div
-            className="relative rounded-none overflow-hidden shadow-none mb-0" // Removed rounded, shadow, and mb (margin-bottom)
-            onMouseEnter={() => setIsBannerPaused2(true)}
-            onMouseLeave={() => setIsBannerPaused2(false)}
-            onTouchStart={(e) => {
-              setIsBannerPaused2(true);
-              touchStartXRef2.current = e.touches?.[0]?.clientX ?? null;
-            }}
-            onTouchEnd={(e) => {
-              const endX = e.changedTouches?.[0]?.clientX ?? null;
-              const startX = touchStartXRef2.current;
-              if (startX != null && endX != null) {
-                const delta = endX - startX;
-                if (Math.abs(delta) > SWIPE_THRESHOLD) {
-                  if (delta < 0) handleNextLocalBanner2();
-                  else handlePrevLocalBanner2();
-                }
-              }
-              touchStartXRef2.current = null;
-              setTimeout(() => setIsBannerPaused2(false), 150);
-            }}
-          >
-          {/* Slides - single banner on mobile, grid on larger screens */}
-          <div className="relative w-full bg-white min-h-[180px] sm:min-h-[220px] md:min-h-[240px]">
-            {" "}
-            {/* Changed bg-gray-50 to bg-white for a cleaner look */}
-            {(() => {
-              // Group banners using the responsive groupSize state (1/2/3)
-              const groups2 = [];
-              for (
-                let i = 0;
-                i < localCategoryBanners2.length;
-                i += groupSize
-              ) {
-                groups2.push(localCategoryBanners2.slice(i, i + groupSize));
-              }
-              return groups2.map((group, groupIndex) => (
-                <div
-                  key={groupIndex}
-                  className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
-                    groupIndex === localBannerIndex2
-                      ? "opacity-100 z-10"
-                      : "opacity-0 z-0"
-                  } sm:grid sm:grid-cols-2 sm:gap-0 lg:grid-cols-3 lg:gap-0 p-0`} // Removed all gap and padding for maximum density
-                >
-                  {group.map((item) => (
-                    <div
-                      key={item.key}
-                      className="relative w-full h-full rounded-none overflow-hidden shadow-none sm:hover:shadow-md sm:transition-transform sm:transform sm:hover:-translate-y-0.5 cursor-pointer" // Removed rounded, shadow, subtle hover effect
-                      onClick={() => navigate(item.link)}
-                      role="button"
-                    >
-                      <img
-                        src={item.src}
-                        alt={item.title}
-                        className="w-full h-[180px] sm:h-[200px] md:h-[220px] lg:h-[260px] object-cover"
-                        draggable={false}
-                        onDragStart={(e) => e.preventDefault()}
-                        loading="lazy"
-                      />
-                      <div className="absolute inset-0 flex flex-col sm:flex-row sm:items-end sm:justify-between p-3 sm:p-4 bg-gradient-to-t from-black/70 to-transparent">
-                        <div className="text-white text-base sm:text-lg font-semibold max-w-[80%] sm:max-w-[70%] leading-tight drop-shadow">
-                          {item.title}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ));
-            })()}
-          </div>
+                ))}
+              </div>
 
-          {/* Dots removed */}
+              {/* Navigation Arrows */}
+              <button
+                onClick={handlePrevLocalBanner}
+                className="absolute left-3 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white p-2 rounded-full z-20"
+              >
+                ‹
+              </button>
+              <button
+                onClick={handleNextLocalBanner}
+                className="absolute right-3 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white p-2 rounded-full z-20"
+              >
+                ›
+              </button>
+
+              {/* Dots */}
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-20">
+                {localCategoryBanners.map((_, dotIndex) => (
+                  <div
+                    key={dotIndex}
+                    className={`h-2 w-2 rounded-full cursor-pointer ${
+                      dotIndex === localBannerIndex
+                        ? "bg-white"
+                        : "bg-white/40 hover:bg-white/70"
+                    }`}
+                    onClick={() => setLocalBannerIndex(dotIndex)}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Carousel 2 - Right Side */}
+          {loading ? (
+            <div className="flex-1 min-h-[400px] bg-gray-100 animate-pulse rounded-lg"></div>
+          ) : (
+            <div
+              className="flex-1 relative overflow-hidden h-[400px] rounded-lg"
+              onMouseEnter={() => setIsBannerPaused2(true)}
+              onMouseLeave={() => setIsBannerPaused2(false)}
+            >
+              <div className="relative w-full h-full">
+                {localCategoryBanners2.map((item, index) => (
+                  <div
+                    key={item.key}
+                    className={`absolute inset-0 transition-opacity duration-700 ease-in-out cursor-pointer ${
+                      index === localBannerIndex2
+                        ? "opacity-100 z-10"
+                        : "opacity-0 z-0"
+                    }`}
+                    onClick={() => navigate(item.link)}
+                  >
+                    <img
+                      src={item.src}
+                      alt={item.title}
+                      className="w-full h-full object-cover rounded-lg"
+                      draggable={false}
+                      onDragStart={(e) => e.preventDefault()}
+                      loading={index === localBannerIndex2 ? "eager" : "lazy"}
+                      decoding="async"
+                      fetchPriority={
+                        index === localBannerIndex2 ? "high" : "auto"
+                      }
+                      width="800"
+                      height="400"
+                      onError={(e) => {
+                        console.log(`Failed to load image: ${item.src}`);
+                        e.target.src = "/logo192.png";
+                      }}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-8 rounded-lg">
+                      <h2 className="text-white text-3xl font-bold drop-shadow-lg max-w-[80%]">
+                        {item.title}
+                      </h2>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Navigation Arrows */}
+              <button
+                onClick={handlePrevLocalBanner2}
+                className="absolute left-3 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white p-2 rounded-full z-20"
+              >
+                ‹
+              </button>
+              <button
+                onClick={handleNextLocalBanner2}
+                className="absolute right-3 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white p-2 rounded-full z-20"
+              >
+                ›
+              </button>
+
+              {/* Dots */}
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-20">
+                {localCategoryBanners2.map((_, dotIndex) => (
+                  <div
+                    key={dotIndex}
+                    className={`h-2 w-2 rounded-full cursor-pointer ${
+                      dotIndex === localBannerIndex2
+                        ? "bg-white"
+                        : "bg-white/40 hover:bg-white/70"
+                    }`}
+                    onClick={() => setLocalBannerIndex2(dotIndex)}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
-        )}
+        {/* Mobile/Tablet View - Stacked Carousels */}
+        <div className="lg:hidden">
+          {/* Carousel 1 */}
+          {loading ? (
+            <div className="relative w-full min-h-[180px] sm:min-h-[240px] md:min-h-[320px] bg-gray-100 animate-pulse rounded-lg"></div>
+          ) : (
+            <div
+              className="relative w-full overflow-hidden h-[180px] sm:h-[240px] md:h-[320px]"
+              onMouseEnter={() => setIsBannerPaused(true)}
+              onMouseLeave={() => setIsBannerPaused(false)}
+              onTouchStart={(e) => {
+                setIsBannerPaused(true);
+                touchStartXRef.current = e.touches?.[0]?.clientX ?? null;
+              }}
+              onTouchEnd={(e) => {
+                const endX = e.changedTouches?.[0]?.clientX ?? null;
+                const startX = touchStartXRef.current;
+                if (startX != null && endX != null) {
+                  const delta = endX - startX;
+                  if (Math.abs(delta) > SWIPE_THRESHOLD) {
+                    if (delta < 0) handleNextLocalBanner();
+                    else handlePrevLocalBanner();
+                  }
+                }
+                touchStartXRef.current = null;
+                setTimeout(() => setIsBannerPaused(false), 150);
+              }}
+            >
+              <div className="relative w-full h-full">
+                {localCategoryBanners.map((item, index) => (
+                  <div
+                    key={item.key}
+                    className={`absolute inset-0 transition-opacity duration-700 ease-in-out cursor-pointer ${
+                      index === localBannerIndex
+                        ? "opacity-100 z-10"
+                        : "opacity-0 z-0"
+                    }`}
+                    onClick={() => navigate(item.link)}
+                  >
+                    <img
+                      src={item.src}
+                      alt={item.title}
+                      className="w-full h-full object-cover rounded-none"
+                      draggable={false}
+                      onDragStart={(e) => e.preventDefault()}
+                      loading={index === localBannerIndex ? "eager" : "lazy"}
+                      decoding="async"
+                      fetchPriority={
+                        index === localBannerIndex ? "high" : "auto"
+                      }
+                      width="1600"
+                      height="600"
+                      onError={(e) => {
+                        console.log(`Failed to load image: ${item.src}`);
+                        e.target.src = "/logo192.png";
+                      }}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-6 sm:p-10">
+                      <h2 className="text-white text-2xl sm:text-3xl font-bold drop-shadow-lg max-w-[80%]">
+                        {item.title}
+                      </h2>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Navigation Arrows */}
+              <button
+                onClick={handlePrevLocalBanner}
+                className="absolute left-3 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white p-2 rounded-full z-20"
+              >
+                ‹
+              </button>
+              <button
+                onClick={handleNextLocalBanner}
+                className="absolute right-3 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white p-2 rounded-full z-20"
+              >
+                ›
+              </button>
+
+              {/* Dots */}
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-20">
+                {localCategoryBanners.map((_, dotIndex) => (
+                  <div
+                    key={dotIndex}
+                    className={`h-2 w-2 rounded-full cursor-pointer ${
+                      dotIndex === localBannerIndex
+                        ? "bg-white"
+                        : "bg-white/40 hover:bg-white/70"
+                    }`}
+                    onClick={() => setLocalBannerIndex(dotIndex)}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          <hr className="border-gray-200 my-6" />
+
+          {/* Carousel 2 */}
+          {loading ? (
+            <div className="relative w-full min-h-[180px] sm:min-h-[240px] md:min-h-[320px] bg-gray-100 animate-pulse rounded-lg"></div>
+          ) : (
+            <div
+              className="relative w-full overflow-hidden h-[180px] sm:h-[240px] md:h-[320px]"
+              onMouseEnter={() => setIsBannerPaused2(true)}
+              onMouseLeave={() => setIsBannerPaused2(false)}
+              onTouchStart={(e) => {
+                setIsBannerPaused2(true);
+                touchStartXRef2.current = e.touches?.[0]?.clientX ?? null;
+              }}
+              onTouchEnd={(e) => {
+                const endX = e.changedTouches?.[0]?.clientX ?? null;
+                const startX = touchStartXRef2.current;
+                if (startX != null && endX != null) {
+                  const delta = endX - startX;
+                  if (Math.abs(delta) > SWIPE_THRESHOLD) {
+                    if (delta < 0) handleNextLocalBanner2();
+                    else handlePrevLocalBanner2();
+                  }
+                }
+                touchStartXRef2.current = null;
+                setTimeout(() => setIsBannerPaused2(false), 150);
+              }}
+            >
+              <div className="relative w-full h-full">
+                {localCategoryBanners2.map((item, index) => (
+                  <div
+                    key={item.key}
+                    className={`absolute inset-0 transition-opacity duration-700 ease-in-out cursor-pointer ${
+                      index === localBannerIndex2
+                        ? "opacity-100 z-10"
+                        : "opacity-0 z-0"
+                    }`}
+                    onClick={() => navigate(item.link)}
+                  >
+                    <img
+                      src={item.src}
+                      alt={item.title}
+                      className="w-full h-full object-cover"
+                      draggable={false}
+                      onDragStart={(e) => e.preventDefault()}
+                      loading={index === localBannerIndex2 ? "eager" : "lazy"}
+                      decoding="async"
+                      fetchPriority={
+                        index === localBannerIndex2 ? "high" : "auto"
+                      }
+                      width="1600"
+                      height="600"
+                      onError={(e) => {
+                        console.log(`Failed to load image: ${item.src}`);
+                        e.target.src = "/logo192.png";
+                      }}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-6 sm:p-10">
+                      <h2 className="text-white text-2xl sm:text-3xl font-bold drop-shadow-lg max-w-[80%]">
+                        {item.title}
+                      </h2>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Navigation Arrows */}
+              <button
+                onClick={handlePrevLocalBanner2}
+                className="absolute left-3 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white p-2 rounded-full z-20"
+              >
+                ‹
+              </button>
+              <button
+                onClick={handleNextLocalBanner2}
+                className="absolute right-3 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white p-2 rounded-full z-20"
+              >
+                ›
+              </button>
+
+              {/* Dots */}
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-20">
+                {localCategoryBanners2.map((_, dotIndex) => (
+                  <div
+                    key={dotIndex}
+                    className={`h-2 w-2 rounded-full cursor-pointer ${
+                      dotIndex === localBannerIndex2
+                        ? "bg-white"
+                        : "bg-white/40 hover:bg-white/70"
+                    }`}
+                    onClick={() => setLocalBannerIndex2(dotIndex)}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Spotlight Section */}
@@ -714,67 +878,63 @@ function Home() {
             </h2>
           )}
           <div className="flex gap-2 overflow-x-auto scrollbar-hide">
-            {loading ? (
-              // Spotlight skeleton
-              Array.from({ length: 5 }).map((_, index) => (
-                <div
-                  key={index}
-                  className="flex flex-col items-center w-20 flex-shrink-0 p-2"
-                >
-                  <div className="w-14 h-14 bg-gray-200 rounded-md animate-pulse"></div>
-                  <div className="w-16 h-3 bg-gray-200 rounded mt-1 animate-pulse"></div>
-                </div>
-              ))
-            ) : (
-              spotlightItems.map((item) => (
-                <button
-                  key={item.label}
-                  onClick={() => navigate(item.link)}
-                  className="flex flex-col items-center w-20 flex-shrink-0 p-2 rounded-lg hover:bg-gray-100 transition"
-                >
-                  <img
-                    src={`/spotlights/${item.image}`}
-                    alt={item.label}
-                    className="w-14 h-14 object-contain rounded-md"
-                  />
-                  <p className="text-xs font-medium text-gray-700 mt-1 text-center line-clamp-2">
-                    {item.label}
-                  </p>
-                </button>
-              ))
-            )}
+            {loading
+              ? // Spotlight skeleton
+                Array.from({ length: 5 }).map((_, index) => (
+                  <div
+                    key={index}
+                    className="flex flex-col items-center w-20 flex-shrink-0 p-2"
+                  >
+                    <div className="w-14 h-14 bg-gray-200 rounded-md animate-pulse"></div>
+                    <div className="w-16 h-3 bg-gray-200 rounded mt-1 animate-pulse"></div>
+                  </div>
+                ))
+              : spotlightItems.map((item) => (
+                  <button
+                    key={item.label}
+                    onClick={() => navigate(item.link)}
+                    className="flex flex-col items-center w-20 flex-shrink-0 p-2 rounded-lg hover:bg-gray-100 transition"
+                  >
+                    <img
+                      src={`/spotlights/${item.image}`}
+                      alt={item.label}
+                      className="w-14 h-14 object-contain rounded-md"
+                    />
+                    <p className="text-xs font-medium text-gray-700 mt-1 text-center line-clamp-2">
+                      {item.label}
+                    </p>
+                  </button>
+                ))}
           </div>
         </div>
       </div>
 
-          {/* Mobile View - Vertical Stack */}
-          <div className="flex flex-col gap-4 md:hidden mx-4 my-6">
-
-            <div
-              role="button"
-              onClick={() => navigate("/products?category=drinks")}
-              className="relative h-[200px] rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer group"
-            >
-              <img
-                src="/home-specials/drinks.png"
-                alt="Drinks Specials"
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                loading="lazy"
-                onError={(e) => (e.target.src = "/logo192.png")}
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent flex items-end p-4">
-                <div>
-                  <h3 className="text-white font-bold text-xl mb-1">
-                    Breakfast Picks
-                  </h3>
-                  <p className="text-white text-sm opacity-90">
-                    Kickstart your day with healthy choices
-                  </p>
-                </div>
-              </div>
+      {/* Mobile View - Vertical Stack */}
+      <div className="flex flex-col gap-4 md:hidden mx-4 my-6">
+        <div
+          role="button"
+          onClick={() => navigate("/products?category=drinks")}
+          className="relative h-[200px] rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer group"
+        >
+          <img
+            src="/home-specials/drinks.png"
+            alt="Drinks Specials"
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            loading="lazy"
+            onError={(e) => (e.target.src = "/logo192.png")}
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent flex items-end p-4">
+            <div>
+              <h3 className="text-white font-bold text-xl mb-1">
+                Breakfast Picks
+              </h3>
+              <p className="text-white text-sm opacity-90">
+                Kickstart your day with healthy choices
+              </p>
             </div>
-            
           </div>
+        </div>
+      </div>
 
       {/* Category-Based Product Sections */}
       <div className="pb-15 lg:pb-0">
@@ -923,7 +1083,7 @@ function Home() {
       </div>
 
       <MobileBottomNav />
-      
+
       {/* Home Specials - Responsive for Mobile and Desktop */}
       <div className="bg-white py-6">
         <div className="max-w-7xl mx-auto px-4">

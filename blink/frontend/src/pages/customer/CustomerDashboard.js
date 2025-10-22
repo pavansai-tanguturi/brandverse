@@ -303,7 +303,7 @@ const CustomerDashboard = () => {
   const location = useLocation();
   const { items: wishlistItems, removeFromWishlist } = useWishlist();
   const { addToCart } = useCart();
-  const { addresses } = useAddress();
+  const { addresses, fetchAddresses } = useAddress();
   const [activeTab, setActiveTab] = useState("");
   const [userInfo, setUserInfo] = useState({
     name: "",
@@ -437,6 +437,12 @@ const CustomerDashboard = () => {
     if (user) {
       fetchUserProfile();
       fetchOrders();
+      try {
+        fetchAddresses(user.id);
+      } catch (err) {
+        // swallow errors here; AddressContext will handle dispatching errors
+        console.debug("Failed to fetch addresses on dashboard mount:", err);
+      }
     }
 
     // Check URL parameter for tab
@@ -451,7 +457,14 @@ const CustomerDashboard = () => {
       // If no tab parameter or tab parameter is not valid, set to empty (recents view)
       setActiveTab("");
     }
-  }, [user, loading, navigate, fetchUserProfile, location.search]);
+  }, [
+    user,
+    loading,
+    navigate,
+    fetchUserProfile,
+    fetchAddresses,
+    location.search,
+  ]);
 
   const handleLogout = async () => {
     try {
@@ -1178,11 +1191,10 @@ const CustomerDashboard = () => {
                 </div>
               )} */}
 
-                {/* Wishlist Tab */}
                 {activeTab === "wishlist" && (
                   <div>
                     {wishlist.length > 0 ? (
-                      <div className="space-y-6">
+                      <div className="divide-y divide-gray-200 border border-gray-100 rounded-2xl overflow-hidden">
                         {wishlist.map((item) => {
                           const discountedPrice =
                             item.discount_percent > 0
@@ -1193,286 +1205,159 @@ const CustomerDashboard = () => {
                           return (
                             <div
                               key={item.id}
-                              className="flex flex-col sm:flex-row gap-6 p-6 bg-gray-50 rounded-2xl hover:shadow-md transition-all duration-300 border border-gray-100"
+                              className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 hover:bg-gray-50 transition-all duration-300"
                             >
-                              {/* Product Image */}
-                              <div
-                                className="relative flex-shrink-0 cursor-pointer group"
-                                onClick={() => navigate(`/product/${item.id}`)}
-                              >
-                                <img
-                                  src={
-                                    item.image_url ||
-                                    "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?auto=format&fit=crop&w=300&q=80"
+                              {/* Left: Image + Title */}
+                              <div className="flex items-center gap-4 w-full sm:w-auto">
+                                <div
+                                  className="relative w-20 h-20 flex-shrink-0 cursor-pointer group"
+                                  onClick={() =>
+                                    navigate(`/product/${item.id}`)
                                   }
-                                  alt={item.title}
-                                  className="w-full sm:w-32 h-32 sm:h-32 object-cover rounded-xl group-hover:scale-105 transition-transform duration-300"
-                                />
-                                {item.discount_percent > 0 && (
-                                  <div className="absolute top-2 left-2">
-                                    <span className="px-2 py-1 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-lg text-xs font-bold shadow-lg flex items-center gap-1">
-                                      <svg
-                                        className="w-3 h-3"
-                                        fill="currentColor"
-                                        viewBox="0 0 20 20"
-                                      >
-                                        <path
-                                          fillRule="evenodd"
-                                          d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z"
-                                          clipRule="evenodd"
-                                        />
-                                      </svg>
-                                      {item.discount_percent}% OFF
-                                    </span>
-                                  </div>
-                                )}
-                                {item.stock_quantity <= 0 && (
-                                  <div className="absolute top-2 right-2">
-                                    <span className="px-2 py-1 bg-rose-100 text-rose-800 rounded-lg text-xs font-bold border border-rose-200 flex items-center gap-1">
-                                      <svg
-                                        className="w-3 h-3"
-                                        fill="currentColor"
-                                        viewBox="0 0 20 20"
-                                      >
-                                        <path
-                                          fillRule="evenodd"
-                                          d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-                                          clipRule="evenodd"
-                                        />
-                                      </svg>
-                                      Out of Stock
-                                    </span>
-                                  </div>
-                                )}
-                              </div>
+                                >
+                                  <img
+                                    src={
+                                      item.image_url ||
+                                      "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?auto=format&fit=crop&w=300&q=80"
+                                    }
+                                    alt={item.title}
+                                    className="w-full h-full object-cover rounded-lg group-hover:scale-105 transition-transform duration-300"
+                                  />
+                                  {item.discount_percent > 0 && (
+                                    <div className="absolute top-1 left-1 bg-emerald-500 text-white text-[10px] px-1.5 py-0.5 rounded-md font-semibold">
+                                      -{item.discount_percent}%
+                                    </div>
+                                  )}
+                                </div>
 
-                              {/* Product Details */}
-                              <div className="flex-1 space-y-4">
-                                <div>
+                                <div className="flex flex-col justify-center">
                                   <h3
-                                    className="text-xl font-bold text-gray-900 cursor-pointer hover:text-emerald-600 transition-colors line-clamp-2 mb-2"
+                                    className="text-base font-semibold text-gray-900 hover:text-emerald-600 cursor-pointer line-clamp-2"
                                     onClick={() =>
                                       navigate(`/product/${item.id}`)
                                     }
                                   >
                                     {item.title}
                                   </h3>
-
-                                  {/* Price Section */}
-                                  <div className="flex items-center gap-3 mb-3">
+                                  <div className="flex items-center gap-2 mt-1">
                                     {item.discount_percent > 0 ? (
-                                      <div className="flex items-center gap-3">
-                                        <span className="text-2xl font-bold text-emerald-600">
+                                      <>
+                                        <span className="text-lg font-bold text-emerald-600">
                                           ₹{discountedPrice.toFixed(2)}
                                         </span>
-                                        <span className="text-lg text-gray-500 line-through">
+                                        <span className="text-sm text-gray-400 line-through">
                                           ₹{(item.price_cents / 100).toFixed(2)}
                                         </span>
-                                        <span className="px-2 py-1 bg-emerald-100 text-emerald-700 rounded-full text-sm font-bold flex items-center gap-1">
-                                          <svg
-                                            className="w-3 h-3"
-                                            fill="currentColor"
-                                            viewBox="0 0 20 20"
-                                          >
-                                            <path
-                                              fillRule="evenodd"
-                                              d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z"
-                                              clipRule="evenodd"
-                                            />
-                                          </svg>
-                                          Save ₹
-                                          {(
-                                            item.price_cents / 100 -
-                                            discountedPrice
-                                          ).toFixed(2)}
-                                        </span>
-                                      </div>
+                                      </>
                                     ) : (
-                                      <span className="text-2xl font-bold text-emerald-600">
+                                      <span className="text-lg font-bold text-emerald-600">
                                         ₹{(item.price_cents / 100).toFixed(2)}
                                       </span>
                                     )}
                                   </div>
-
-                                  {/* Stock Status */}
-                                  <div className="flex items-center gap-2 mb-4">
-                                    <div
-                                      className={`w-3 h-3 rounded-full ${
-                                        item.stock_quantity > 10
-                                          ? "bg-emerald-500"
-                                          : item.stock_quantity > 0
-                                            ? "bg-amber-500"
-                                            : "bg-rose-500"
-                                      }`}
-                                    ></div>
-                                    <span
-                                      className={`text-sm font-medium flex items-center gap-1 ${
-                                        item.stock_quantity > 10
-                                          ? "text-emerald-700"
-                                          : item.stock_quantity > 0
-                                            ? "text-amber-700"
-                                            : "text-rose-700"
-                                      }`}
-                                    >
-                                      {item.stock_quantity > 10 ? (
-                                        <>
-                                          <svg
-                                            className="w-4 h-4"
-                                            fill="currentColor"
-                                            viewBox="0 0 20 20"
-                                          >
-                                            <path
-                                              fillRule="evenodd"
-                                              d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                                              clipRule="evenodd"
-                                            />
-                                          </svg>
-                                          In Stock
-                                        </>
-                                      ) : item.stock_quantity > 0 ? (
-                                        <>
-                                          <svg
-                                            className="w-4 h-4"
-                                            fill="currentColor"
-                                            viewBox="0 0 20 20"
-                                          >
-                                            <path
-                                              fillRule="evenodd"
-                                              d="M13.477 14.89A6 6 0 015.11 6.524l8.367 8.368zm1.414-1.414L6.524 5.11a6 6 0 018.367 8.367zM18 10a8 8 0 11-16 0 8 8 0 0116 0z"
-                                              clipRule="evenodd"
-                                            />
-                                          </svg>
-                                          Only {item.stock_quantity} left
-                                        </>
-                                      ) : (
-                                        <>
-                                          <svg
-                                            className="w-4 h-4"
-                                            fill="currentColor"
-                                            viewBox="0 0 20 20"
-                                          >
-                                            <path
-                                              fillRule="evenodd"
-                                              d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                                              clipRule="evenodd"
-                                            />
-                                          </svg>
-                                          Out of Stock
-                                        </>
-                                      )}
-                                    </span>
-                                  </div>
                                 </div>
+                              </div>
 
-                                {/* Action Buttons */}
-                                <div className="flex flex-col sm:flex-row gap-3">
-                                  <button
-                                    className={`flex-1 px-6 py-3 rounded-xl transition-all duration-300 font-bold text-sm ${
-                                      item.stock_quantity > 0
-                                        ? "bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white shadow-lg hover:shadow-xl hover:scale-105"
-                                        : "bg-gray-300 text-gray-500 cursor-not-allowed"
-                                    }`}
-                                    disabled={item.stock_quantity <= 0}
-                                    onClick={async () => {
+                              {/* Right: Actions */}
+                              <div className="flex items-center justify-between w-full mt-2 sm:mt-0 px-1">
+                                {/* Add to Cart */}
+                                <button
+                                  className={`p-2 rounded-lg ${
+                                    item.stock_quantity > 0
+                                      ? "text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700"
+                                      : "text-gray-400 cursor-not-allowed"
+                                  }`}
+                                  disabled={item.stock_quantity <= 0}
+                                  onClick={async () => {
+                                    if (item.stock_quantity > 0) {
                                       try {
                                         await addToCart(item, 1);
                                       } catch (error) {
-                                        // Error adding to cart
+                                        // handle error
                                       }
-                                    }}
-                                  >
-                                    {item.stock_quantity > 0 ? (
-                                      <span className="flex items-center gap-2">
-                                        <svg
-                                          className="w-4 h-4"
-                                          fill="none"
-                                          stroke="currentColor"
-                                          viewBox="0 0 24 24"
-                                        >
-                                          <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth={2}
-                                            d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5M7 13l2.5 5m0 0h7m-7 0v4a1 1 0 001 1h4a1 1 0 001-1v-4m-5 0h5"
-                                          />
-                                        </svg>
-                                        Add to Cart
-                                      </span>
-                                    ) : (
-                                      <span className="flex items-center gap-2">
-                                        <svg
-                                          className="w-4 h-4"
-                                          fill="currentColor"
-                                          viewBox="0 0 20 20"
-                                        >
-                                          <path
-                                            fillRule="evenodd"
-                                            d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                                            clipRule="evenodd"
-                                          />
-                                        </svg>
-                                        Unavailable
-                                      </span>
-                                    )}
-                                  </button>
-
-                                  <button
-                                    className="px-6 py-3 border-2 border-gray-300 text-gray-700 hover:text-emerald-600 hover:border-emerald-300 hover:bg-emerald-50 rounded-xl transition-all duration-300 font-bold text-sm hover:scale-105 flex items-center gap-2"
-                                    onClick={() =>
-                                      navigate(`/product/${item.id}`)
                                     }
-                                  >
-                                    <svg
-                                      className="w-4 h-4"
-                                      fill="none"
-                                      stroke="currentColor"
-                                      viewBox="0 0 24 24"
-                                    >
-                                      <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                                      />
-                                      <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                                      />
-                                    </svg>
-                                    View Details
-                                  </button>
+                                  }}
+                                  title={
+                                    item.stock_quantity > 0
+                                      ? "Add to Cart"
+                                      : "Out of Stock"
+                                  }
+                                >
+            <svg
+              className="w-6 h-6"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <g id="SVGRepo_bgCarrier" strokeWidth="0"></g>
+              <g
+                id="SVGRepo_tracerCarrier"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              ></g>
+              <g id="SVGRepo_iconCarrier">
+                <path
+                  strokeWidth={1.5}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M6.29977 5H21L19 12H7.37671M20 16H8L6 3H3M9 20C9 20.5523 8.55228 21 8 21C7.44772 21 7 20.5523 7 20C7 19.4477 7.44772 19 8 19C8.55228 19 9 19.4477 9 20ZM20 20C20 20.5523 19.5523 21 19 21C18.4477 21 18 20.5523 18 20C18 19.4477 18.4477 19 19 19C19.5523 19 20 19.4477 20 20Z"
+                ></path>
+              </g>
+            </svg>
+                                </button>
 
-                                  <button
-                                    className="px-4 py-3 text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded-xl transition-all duration-300 border-2 border-rose-200 hover:border-rose-300 font-bold hover:scale-105 flex items-center gap-2"
-                                    onClick={() => {
-                                      if (
-                                        window.confirm(
-                                          "Remove this item from your wishlist?",
-                                        )
-                                      ) {
-                                        removeFromWishlist(item.id);
-                                      }
-                                    }}
-                                    title="Remove from wishlist"
+                                {/* View Details */}
+                                <button
+                                  className="p-2 text-gray-600 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition"
+                                  title="View Details"
+                                  onClick={() =>
+                                    navigate(`/product/${item.id}`)
+                                  }
+                                >
+                                  <svg
+                                    className="w-5 h-5"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
                                   >
-                                    <svg
-                                      className="w-4 h-4"
-                                      fill="none"
-                                      stroke="currentColor"
-                                      viewBox="0 0 24 24"
-                                    >
-                                      <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                      />
-                                    </svg>
-                                    Remove
-                                  </button>
-                                </div>
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                                    />
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                                    />
+                                  </svg>
+                                </button>
+
+                                {/* Remove */}
+                                <button
+                                  className="p-2 text-rose-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
+                                  title="Remove from Wishlist"
+                                  onClick={() => {
+                                    removeFromWishlist(item.id);
+                                  }}
+                                >
+                                  <svg
+                                    className="w-5 h-5"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 4h6a1 1 0 011 1v2H8V5a1 1 0 011-1z"
+                                    />
+                                  </svg>
+                                </button>
                               </div>
                             </div>
                           );
@@ -1480,9 +1365,9 @@ const CustomerDashboard = () => {
                       </div>
                     ) : (
                       <div className="text-center py-16">
-                        <div className="w-24 h-24 mx-auto mb-6 bg-gradient-to-br from-emerald-100 to-teal-100 rounded-full flex items-center justify-center shadow-lg">
+                        <div className="w-20 h-20 mx-auto mb-6 bg-emerald-100 rounded-full flex items-center justify-center shadow-md">
                           <svg
-                            className="w-12 h-12 text-emerald-600"
+                            className="w-10 h-10 text-emerald-600"
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
@@ -1495,43 +1380,16 @@ const CustomerDashboard = () => {
                             />
                           </svg>
                         </div>
-                        <h3 className="text-2xl font-bold text-gray-900 mb-4 flex items-center justify-center gap-2">
-                          <svg
-                            className="w-6 h-6 text-emerald-600"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                            />
-                          </svg>
+                        <h3 className="text-2xl font-bold text-gray-900 mb-2">
                           Your wishlist is empty
                         </h3>
-                        <p className="text-gray-600 mb-8 text-lg max-w-md mx-auto">
-                          Discover amazing products and add them to your
-                          wishlist for later!
+                        <p className="text-gray-600 mb-6">
+                          Browse our collection and add your favorite items!
                         </p>
                         <button
                           onClick={() => navigate("/")}
-                          className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white px-8 py-4 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl font-bold text-lg hover:scale-105 flex items-center gap-2"
+                          className="bg-gradient-to-r from-emerald-500 to-teal-600 text-white px-6 py-3 rounded-lg font-semibold hover:scale-105 shadow-md transition"
                         >
-                          <svg
-                            className="w-5 h-5"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
-                            />
-                          </svg>
                           Start Shopping
                         </button>
                       </div>
@@ -1657,7 +1515,9 @@ const CustomerDashboard = () => {
                                   clipRule="evenodd"
                                 />
                               </svg>
-                              <span>Email cannot be changed for security reasons</span>
+                              <span>
+                                Email cannot be changed for security reasons
+                              </span>
                             </p>
                           </div>
 
@@ -1695,26 +1555,6 @@ const CustomerDashboard = () => {
 
                         <div className="flex flex-col sm:flex-row justify-end gap-3 sm:gap-4 pt-6 sm:pt-8 border-t border-gray-200">
                           <button
-                            type="button"
-                            onClick={() => fetchUserProfile()}
-                            className="w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 text-sm sm:text-base border-2 border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 hover:border-gray-400 transition-all duration-300 font-bold flex items-center justify-center gap-2"
-                          >
-                            <svg
-                              className="w-4 h-4 flex-shrink-0"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                              />
-                            </svg>
-                            <span className="truncate">Reset Changes</span>
-                          </button>
-                          <button
                             type="submit"
                             disabled={updating}
                             className="w-full sm:w-auto bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white px-6 sm:px-8 py-3 sm:py-4 text-sm sm:text-base rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl font-bold disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 flex items-center justify-center gap-2"
@@ -1732,7 +1572,9 @@ const CustomerDashboard = () => {
                                 d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"
                               />
                             </svg>
-                            <span className="truncate">{updating ? "Updating..." : "Save Changes"}</span>
+                            <span className="truncate">
+                              {updating ? "Updating..." : "Save Changes"}
+                            </span>
                           </button>
                         </div>
                       </form>

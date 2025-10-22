@@ -51,10 +51,10 @@ const AdminOrders = () => {
   // Set filteredOrders directly from orders (backend already filters)
   useEffect(() => {
     let filtered = orders;
-    
+
     // Apply status filter
     if (filterStatus !== "all") {
-      filtered = filtered.filter(order => {
+      filtered = filtered.filter((order) => {
         if (filterStatus === "cod") {
           return order.payment_method === "cod";
         } else if (filterStatus === "online") {
@@ -64,7 +64,7 @@ const AdminOrders = () => {
         }
       });
     }
-    
+
     setFilteredOrders(filtered);
     setCurrentPage(1);
   }, [orders, filterStatus]);
@@ -97,7 +97,7 @@ const AdminOrders = () => {
         const data = await res.json();
         setOrders(data);
         setError(""); // Clear any previous errors
-            } else if (res.status === 401) {
+      } else if (res.status === 401) {
         setError("Authentication failed. Please login again.");
         // Optionally redirect to login page
         // window.location.href = '/admin/login';
@@ -285,8 +285,10 @@ const AdminOrders = () => {
   };
 
   const canAccept = (status) => status === "pending" || status === "paid";
-  const canReject = (status) => status === "pending" || status === "paid" || status === "confirmed";
-  const canStartPacking = (status) => status === "accepted" || status === "confirmed";
+  const canReject = (status) =>
+    status === "pending" || status === "paid" || status === "confirmed";
+  const canStartPacking = (status) =>
+    status === "accepted" || status === "confirmed";
   const canMarkReady = (status) => status === "packing";
   const canShip = (status) => status === "ready";
   const canDeliver = (status) => status === "shipped";
@@ -301,16 +303,16 @@ const AdminOrders = () => {
 
   const sortOrdersByStatus = (orders) => {
     const statusPriority = {
-      pending: 1,      // New orders waiting for payment or acceptance (COD)
-      paid: 2,         // Paid but not accepted yet - needs admin action
-      confirmed: 3,    // Admin confirmed - ready for preparation
-      accepted: 4,     // Accepted - needs to start packing
-      packing: 5,      // In packing process
-      ready: 6,        // Ready to ship - waiting for pickup
-      shipped: 7,      // Out for delivery
-      delivered: 8,    // Completed successfully
-      cancelled: 9,    // Cancelled by admin or customer
-      refunded: 10,    // Refunded
+      pending: 1, // New orders waiting for payment or acceptance (COD)
+      paid: 2, // Paid but not accepted yet - needs admin action
+      confirmed: 3, // Admin confirmed - ready for preparation
+      accepted: 4, // Accepted - needs to start packing
+      packing: 5, // In packing process
+      ready: 6, // Ready to ship - waiting for pickup
+      shipped: 7, // Out for delivery
+      delivered: 8, // Completed successfully
+      cancelled: 9, // Cancelled by admin or customer
+      refunded: 10, // Refunded
     };
 
     return [...orders].sort((a, b) => {
@@ -355,8 +357,8 @@ const AdminOrders = () => {
   const downloadTodaysOrders = () => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
-    const todaysOrders = orders.filter(order => {
+
+    const todaysOrders = orders.filter((order) => {
       const orderDate = new Date(order.created_at);
       orderDate.setHours(0, 0, 0, 0);
       return orderDate.getTime() === today.getTime();
@@ -369,78 +371,85 @@ const AdminOrders = () => {
 
     // Prepare CSV data
     const csvRows = [];
-    
+
     // Headers
     const headers = [
-      'Order ID',
-      'Date',
-      'Customer Name',
-      'Email',
-      'Phone',
-      'Payment Method',
-      'Status',
-      'Items Count',
-      'Total Amount',
-      'Shipping Address',
-      'Products'
+      "Order ID",
+      "Date",
+      "Customer Name",
+      "Email",
+      "Phone",
+      "Payment Method",
+      "Status",
+      "Items Count",
+      "Total Amount",
+      "Shipping Address",
+      "Products",
     ];
-    csvRows.push(headers.join(','));
+    csvRows.push(headers.join(","));
 
     // Data rows
-    todaysOrders.forEach(order => {
+    todaysOrders.forEach((order) => {
       const customer = order.customers || {};
       const items = order.order_items || [];
-      const productsList = items.map(item => 
-        `${item.title} (Qty: ${item.quantity} @ ₹${(item.unit_price_cents / 100).toFixed(2)})`
-      ).join('; ');
-      
+      const productsList = items
+        .map(
+          (item) =>
+            `${item.title} (Qty: ${item.quantity} @ ₹${(item.unit_price_cents / 100).toFixed(2)})`,
+        )
+        .join("; ");
+
       // Format address
-      let address = '';
+      let address = "";
       const addr = order.shipping_address || customer.shipping_address;
-      if (typeof addr === 'string') {
-        address = addr.replace(/,/g, ';'); // Replace commas with semicolons to avoid CSV issues
-      } else if (addr && typeof addr === 'object') {
-        address = `${addr.street || ''} ${addr.city || ''} ${addr.state || ''} ${addr.postal_code || ''} ${addr.country || ''}`.replace(/,/g, ';');
+      if (typeof addr === "string") {
+        address = addr.replace(/,/g, ";"); // Replace commas with semicolons to avoid CSV issues
+      } else if (addr && typeof addr === "object") {
+        address =
+          `${addr.street || ""} ${addr.city || ""} ${addr.state || ""} ${addr.postal_code || ""} ${addr.country || ""}`.replace(
+            /,/g,
+            ";",
+          );
       }
 
       const row = [
         order.id.slice(0, 8),
-        new Date(order.created_at).toLocaleString('en-US', {
-          year: 'numeric',
-          month: 'short',
-          day: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit'
+        new Date(order.created_at).toLocaleString("en-US", {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
         }),
-        `"${customer.full_name || 'Unknown'}"`,
-        customer.email || '',
-        customer.phone || '',
-        order.payment_method ? order.payment_method.toUpperCase() : '',
+        `"${customer.full_name || "Unknown"}"`,
+        customer.email || "",
+        customer.phone || "",
+        order.payment_method ? order.payment_method.toUpperCase() : "",
         getStatusDisplayName(order.status),
         items.length,
         `₹${(order.total_cents / 100).toFixed(2)}`,
         `"${address}"`,
-        `"${productsList}"`
+        `"${productsList}"`,
       ];
-      csvRows.push(row.join(','));
+      csvRows.push(row.join(","));
     });
 
     // Create CSV content
-    const csvContent = csvRows.join('\n');
-    
+    const csvContent = csvRows.join("\n");
+
     // Create blob and download
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
-    
-    const dateStr = today.toISOString().split('T')[0];
-    link.setAttribute('href', url);
-    link.setAttribute('download', `orders_${dateStr}.csv`);
-    link.style.visibility = 'hidden';
+
+    const dateStr = today.toISOString().split("T")[0];
+    link.setAttribute("href", url);
+    link.setAttribute("download", `orders_${dateStr}.csv`);
+    link.style.visibility = "hidden";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    
+
     setMessage(`Downloaded ${todaysOrders.length} orders for today`);
   };
 
@@ -570,10 +579,13 @@ const AdminOrders = () => {
                 </svg>
                 <div className="flex-1">
                   <p className="text-sm text-blue-800 font-medium">
-                    <strong>Order Approval Required:</strong> All orders (both COD and Online Paid) require manual acceptance before processing.
+                    <strong>Order Approval Required:</strong> All orders (both
+                    COD and Online Paid) require manual acceptance before
+                    processing.
                   </p>
                   <p className="text-xs text-blue-700 mt-1">
-                    Review orders and accept if items are in stock, or cancel promptly to notify the customer.
+                    Review orders and accept if items are in stock, or cancel
+                    promptly to notify the customer.
                   </p>
                 </div>
               </div>
@@ -723,7 +735,9 @@ const AdminOrders = () => {
             <div className="mb-6 p-4 bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl border border-gray-200">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-sm font-semibold text-gray-700">
-                  {filterStatus === "all" ? "Order Status Summary" : `Filtered: ${filterStatus.toUpperCase()}`}
+                  {filterStatus === "all"
+                    ? "Order Status Summary"
+                    : `Filtered: ${filterStatus.toUpperCase()}`}
                 </h3>
                 {filterStatus !== "all" && (
                   <button
@@ -739,20 +753,30 @@ const AdminOrders = () => {
                 <div className="col-span-2 sm:col-span-4 lg:col-span-8 mb-2">
                   <div className="flex gap-3">
                     <div className="flex-1 bg-orange-50 border border-orange-200 rounded-lg p-2">
-                      <div className="text-xs text-orange-600 font-medium">COD Orders</div>
+                      <div className="text-xs text-orange-600 font-medium">
+                        COD Orders
+                      </div>
                       <div className="text-lg font-bold text-orange-700">
-                        {orders.filter(o => o.payment_method === "cod").length}
+                        {
+                          orders.filter((o) => o.payment_method === "cod")
+                            .length
+                        }
                       </div>
                     </div>
                     <div className="flex-1 bg-blue-50 border border-blue-200 rounded-lg p-2">
-                      <div className="text-xs text-blue-600 font-medium">Online Paid</div>
+                      <div className="text-xs text-blue-600 font-medium">
+                        Online Paid
+                      </div>
                       <div className="text-lg font-bold text-blue-700">
-                        {orders.filter(o => o.payment_method === "razorpay").length}
+                        {
+                          orders.filter((o) => o.payment_method === "razorpay")
+                            .length
+                        }
                       </div>
                     </div>
                   </div>
                 </div>
-                
+
                 {/* Status Summary */}
                 {[
                   { status: "pending", label: "Pending" },
@@ -1022,7 +1046,8 @@ const AdminOrders = () => {
                                   </svg>
                                 )}
                                 {order.payment_method.toUpperCase()}
-                                {order.payment_method === "cod" && " (Pay on Delivery)"}
+                                {order.payment_method === "cod" &&
+                                  " (Pay on Delivery)"}
                               </span>
                             )}
                           </div>
