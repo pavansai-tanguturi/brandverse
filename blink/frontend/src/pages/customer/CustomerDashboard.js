@@ -303,7 +303,7 @@ const CustomerDashboard = () => {
   const location = useLocation();
   const { items: wishlistItems, removeFromWishlist } = useWishlist();
   const { addToCart } = useCart();
-  const { addresses } = useAddress();
+  const { addresses, fetchAddresses } = useAddress();
   const [activeTab, setActiveTab] = useState("");
   const [userInfo, setUserInfo] = useState({
     name: "",
@@ -437,6 +437,12 @@ const CustomerDashboard = () => {
     if (user) {
       fetchUserProfile();
       fetchOrders();
+      try {
+        fetchAddresses(user.id);
+      } catch (err) {
+        // swallow errors here; AddressContext will handle dispatching errors
+        console.debug("Failed to fetch addresses on dashboard mount:", err);
+      }
     }
 
     // Check URL parameter for tab
@@ -451,7 +457,14 @@ const CustomerDashboard = () => {
       // If no tab parameter or tab parameter is not valid, set to empty (recents view)
       setActiveTab("");
     }
-  }, [user, loading, navigate, fetchUserProfile, location.search]);
+  }, [
+    user,
+    loading,
+    navigate,
+    fetchUserProfile,
+    fetchAddresses,
+    location.search,
+  ]);
 
   const handleLogout = async () => {
     try {
@@ -1515,25 +1528,27 @@ const CustomerDashboard = () => {
                           Discover amazing products and add them to your
                           wishlist for later!
                         </p>
-                        <button
-                          onClick={() => navigate("/")}
-                          className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white px-8 py-4 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl font-bold text-lg hover:scale-105 flex items-center gap-2"
-                        >
-                          <svg
-                            className="w-5 h-5"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
+                        <div className="flex justify-center">
+                          <button
+                            onClick={() => navigate("/")}
+                            className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white px-8 py-4 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl font-bold text-lg hover:scale-105 flex items-center gap-2"
                           >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
-                            />
-                          </svg>
-                          Start Shopping
-                        </button>
+                            <svg
+                              className="w-5 h-5"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
+                              />
+                            </svg>
+                            Start Shopping
+                          </button>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -1657,7 +1672,9 @@ const CustomerDashboard = () => {
                                   clipRule="evenodd"
                                 />
                               </svg>
-                              <span>Email cannot be changed for security reasons</span>
+                              <span>
+                                Email cannot be changed for security reasons
+                              </span>
                             </p>
                           </div>
 
@@ -1732,7 +1749,9 @@ const CustomerDashboard = () => {
                                 d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"
                               />
                             </svg>
-                            <span className="truncate">{updating ? "Updating..." : "Save Changes"}</span>
+                            <span className="truncate">
+                              {updating ? "Updating..." : "Save Changes"}
+                            </span>
                           </button>
                         </div>
                       </form>

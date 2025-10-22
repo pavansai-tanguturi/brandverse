@@ -42,7 +42,7 @@ const AdminLogin = () => {
         if (data.admin) {
           navigate("/admin/dashboard");
         }
-      } 
+      }
     } catch (err) {
       console.error("Token verification failed:", err);
     }

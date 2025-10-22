@@ -65,38 +65,77 @@ const CookieConsent = () => {
                 </h3>
 
                 <p className="text-gray-600 text-xs sm:text-sm mb-3 leading-relaxed">
-                  We use essential cookies to provide you with the best shopping experience. 
-                  These help us keep you logged in and remember your cart items.
+                  We use essential cookies to provide you with the best shopping
+                  experience. These help us keep you logged in and remember your
+                  cart items.
                 </p>
 
                 {showDetails && (
                   <div className="bg-gradient-to-br from-emerald-50 to-green-50 p-3 sm:p-4 rounded-xl mb-3 text-xs sm:text-sm border border-emerald-100">
                     <h4 className="font-bold text-gray-900 mb-2 flex items-center gap-2">
-                      <svg className="w-4 h-4 text-emerald-600" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                      <svg
+                        className="w-4 h-4 text-emerald-600"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                          clipRule="evenodd"
+                        />
                       </svg>
                       What we use cookies for:
                     </h4>
                     <ul className="space-y-2 text-gray-700">
                       <li className="flex items-start gap-2">
-                        <span className="text-emerald-600 font-bold mt-0.5">✓</span>
-                        <span><strong className="text-gray-900">Authentication:</strong> Keep you securely logged in</span>
+                        <span className="text-emerald-600 font-bold mt-0.5">
+                          ✓
+                        </span>
+                        <span>
+                          <strong className="text-gray-900">
+                            Authentication:
+                          </strong>{" "}
+                          Keep you securely logged in
+                        </span>
                       </li>
                       <li className="flex items-start gap-2">
-                        <span className="text-emerald-600 font-bold mt-0.5">✓</span>
-                        <span><strong className="text-gray-900">Shopping Cart:</strong> Remember your selected items</span>
+                        <span className="text-emerald-600 font-bold mt-0.5">
+                          ✓
+                        </span>
+                        <span>
+                          <strong className="text-gray-900">
+                            Shopping Cart:
+                          </strong>{" "}
+                          Remember your selected items
+                        </span>
                       </li>
                       <li className="flex items-start gap-2">
-                        <span className="text-emerald-600 font-bold mt-0.5">✓</span>
-                        <span><strong className="text-gray-900">Security:</strong> Protect against fraud and unauthorized access</span>
+                        <span className="text-emerald-600 font-bold mt-0.5">
+                          ✓
+                        </span>
+                        <span>
+                          <strong className="text-gray-900">Security:</strong>{" "}
+                          Protect against fraud and unauthorized access
+                        </span>
                       </li>
                     </ul>
                     <div className="mt-3 pt-3 border-t border-emerald-200">
                       <p className="text-xs text-gray-600 flex items-start gap-2">
-                        <svg className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        <svg
+                          className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                            clipRule="evenodd"
+                          />
                         </svg>
-                        <span>We respect your privacy. No tracking or third-party advertising cookies are used.</span>
+                        <span>
+                          We respect your privacy. No tracking or third-party
+                          advertising cookies are used.
+                        </span>
                       </p>
                     </div>
                   </div>
@@ -108,15 +147,35 @@ const CookieConsent = () => {
                 >
                   {showDetails ? (
                     <>
-                      <svg className="w-4 h-4 transition-transform group-hover:-translate-y-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                      <svg
+                        className="w-4 h-4 transition-transform group-hover:-translate-y-0.5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M5 15l7-7 7 7"
+                        />
                       </svg>
                       Hide Details
                     </>
                   ) : (
                     <>
-                      <svg className="w-4 h-4 transition-transform group-hover:translate-y-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      <svg
+                        className="w-4 h-4 transition-transform group-hover:translate-y-0.5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 9l-7 7-7-7"
+                        />
                       </svg>
                       Show Cookie Details
                     </>
@@ -153,8 +212,14 @@ const CookieConsent = () => {
           {/* Footer note */}
           <div className="mt-3 sm:mt-4 pt-3 border-t border-gray-100">
             <p className="text-xs text-gray-500 text-center leading-relaxed">
-              By continuing to browse, you agree to our use of essential cookies. 
-              <a href="/cookie-policy" className="text-emerald-600 hover:text-emerald-700 font-medium ml-1">Learn more</a>
+              By continuing to browse, you agree to our use of essential
+              cookies.
+              <a
+                href="/cookie-policy"
+                className="text-emerald-600 hover:text-emerald-700 font-medium ml-1"
+              >
+                Learn more
+              </a>
             </p>
           </div>
         </div>

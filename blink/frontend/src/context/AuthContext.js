@@ -28,8 +28,6 @@ export const AuthProvider = ({ children }) => {
 
   const checkUserSession = useCallback(async () => {
     try {
-      console.log("[AuthContext] Checking user session...");
-
       // Get token from localStorage for authorization
       const token = localStorage.getItem("auth_token");
 
@@ -42,16 +40,12 @@ export const AuthProvider = ({ children }) => {
           : {},
       });
 
-      console.log("[AuthContext] Session check response:", response);
-
       if (response.user) {
-        console.log("[AuthContext] User found:", response.user);
         setUser(response.user);
       } else {
         setUser(null);
       }
     } catch (error) {
-      console.error("[AuthContext] Session check failed:", error);
       setUser(null);
     } finally {
       setLoading(false);

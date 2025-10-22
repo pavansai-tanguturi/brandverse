@@ -92,37 +92,37 @@ function App() {
 
                 {/* Admin Routes */}
                 <Route path="/admin/login" element={<AdminLogin />} />
-                <Route 
-                  path="/admin/dashboard" 
+                <Route
+                  path="/admin/dashboard"
                   element={
                     <ProtectedRoute>
                       <AdminDashboard />
                     </ProtectedRoute>
-                  } 
+                  }
                 />
-                <Route 
-                  path="/admin/products" 
+                <Route
+                  path="/admin/products"
                   element={
                     <ProtectedRoute>
                       <AdminProducts />
                     </ProtectedRoute>
-                  } 
+                  }
                 />
-                <Route 
-                  path="/admin/orders" 
+                <Route
+                  path="/admin/orders"
                   element={
                     <ProtectedRoute>
                       <AdminOrders />
                     </ProtectedRoute>
-                  } 
+                  }
                 />
-                <Route 
-                  path="/admin/users" 
+                <Route
+                  path="/admin/users"
                   element={
                     <ProtectedRoute>
                       <AdminUsers />
                     </ProtectedRoute>
-                  } 
+                  }
                 />
                 <Route
                   path="/admin/delivery-locations"
@@ -140,26 +140,29 @@ function App() {
                     </ProtectedRoute>
                   }
                 />
-                <Route 
-                  path="/admin/categories" 
+                <Route
+                  path="/admin/categories"
                   element={
                     <ProtectedRoute>
                       <AdminCategories />
                     </ProtectedRoute>
-                  } 
+                  }
                 />
-                <Route 
-                  path="/admin/banners" 
+                <Route
+                  path="/admin/banners"
                   element={
                     <ProtectedRoute>
                       <AdminBanners />
                     </ProtectedRoute>
-                  } 
+                  }
                 />
                 <Route path="/admin/logout" element={<Logout />} />
 
                 {/* Catch any other /admin/* routes that aren't defined */}
-                <Route path="/admin/*" element={<Navigate to="/401" replace />} />
+                <Route
+                  path="/admin/*"
+                  element={<Navigate to="/401" replace />}
+                />
 
                 {/* 404 - Catch all undefined routes */}
                 <Route path="*" element={<Navigate to="/" replace />} />
