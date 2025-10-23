@@ -204,20 +204,27 @@ function AdminCategories() {
     setSuccess("");
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = async (id, force = false) => {
     const category = categories.find((cat) => cat.id === id);
-    const confirmMessage =
-      category?.count > 0
-        ? `This category has ${category.count} products. Are you sure you want to delete "${category.name}"?`
-        : `Are you sure you want to delete "${category?.name}"?`;
 
-    if (!window.confirm(confirmMessage)) return;
+    if (!force) {
+      const confirmMessage =
+        category?.count > 0
+          ? `This category has ${category.count} products. Are you sure you want to delete "${category.name}"?`
+          : `Are you sure you want to delete "${category?.name}"?`;
+
+      if (!window.confirm(confirmMessage)) return;
+    }
 
     setError("");
     setSuccess("");
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/categories/${id}`, {
+      const url = force
+        ? `${API_BASE_URL}/api/categories/${id}?force=true`
+        : `${API_BASE_URL}/api/categories/${id}`;
+
+      const response = await fetch(url, {
         method: "DELETE",
         headers: getAuthHeaders(),
         credentials: "include",
@@ -232,13 +239,30 @@ function AdminCategories() {
         }
         if (response.status === 404) {
           setError("Category not found. It may have already been deleted.");
-        } else {
-          throw new Error(responseData.error || "Failed to delete category");
+          return;
         }
-        return;
+
+        // Check if category has products and needs force delete
+        if (response.status === 400 && responseData.productCount > 0) {
+          const forceDelete = window.confirm(
+            `${responseData.message}\n\n⚠️ WARNING: This will permanently delete the category and all ${responseData.productCount} product(s) within it. This action cannot be undone.\n\nDo you want to proceed?`,
+          );
+
+          if (forceDelete) {
+            return handleDelete(id, true);
+          }
+          return;
+        }
+
+        throw new Error(responseData.error || "Failed to delete category");
       }
 
-      setSuccess("Category deleted successfully!");
+      const successMsg =
+        responseData.deletedProducts > 0
+          ? `Category and ${responseData.deletedProducts} product(s) deleted successfully!`
+          : "Category deleted successfully!";
+
+      setSuccess(successMsg);
       fetchCategories();
 
       // Clear success message after 3 seconds

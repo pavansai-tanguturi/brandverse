@@ -232,7 +232,7 @@ const AdminDashboard = () => {
   const fetchSummary = useCallback(
     async (attempt = 0) => {
       // Don't fetch if user is not authenticated or not admin
-      if (!user || !user.isAdmin) {
+      if (!user?.isAdmin) {
         setLoading(false);
         return;
       }
@@ -287,20 +287,20 @@ const AdminDashboard = () => {
         setLoading(false);
       }
     },
-    [API_BASE, user],
+    [API_BASE, user?.isAdmin],
   );
 
   // Single effect to handle data fetching
   useEffect(() => {
     // Only fetch if auth is complete and user is admin
     if (!authLoading) {
-      if (user && user.isAdmin) {
+      if (user?.isAdmin) {
         fetchSummary();
       } else {
         setLoading(false);
       }
     }
-  }, [authLoading, user, fetchSummary]);
+  }, [authLoading, user?.isAdmin, fetchSummary]);
 
   const handleRetry = useCallback(() => {
     setRetryCount(0);
