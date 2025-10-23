@@ -17,8 +17,7 @@ export const ProductProvider = ({ children }) => {
   const [lastFetch, setLastFetch] = useState(null);
   const [imageCache, setImageCache] = useState(new Set());
 
-  const API_BASE_URL =
-    import.meta.env.VITE_API_BASE || "http://localhost:3001";
+  const API_BASE_URL = import.meta.env.VITE_API_BASE || "http://localhost:3001";
 
   // Cache duration: 5 minutes
   const CACHE_DURATION = 5 * 60 * 1000;
@@ -26,20 +25,20 @@ export const ProductProvider = ({ children }) => {
   // Preload images
   const preloadImage = (url) => {
     if (!url || imageCache.has(url)) return Promise.resolve();
-    
+
     return new Promise((resolve, reject) => {
       const img = new Image();
       img.onload = () => {
-        setImageCache(prev => new Set([...prev, url]));
+        setImageCache((prev) => new Set([...prev, url]));
         resolve();
       };
       img.onerror = (error) => {
-        console.warn('Failed to preload image:', url);
+        console.warn("Failed to preload image:", url);
         resolve(); // Resolve instead of reject to continue batch
       };
       // Set crossOrigin for Supabase images
-      if (url.includes('supabase')) {
-        img.crossOrigin = 'anonymous';
+      if (url.includes("supabase")) {
+        img.crossOrigin = "anonymous";
       }
       img.src = url;
     });
@@ -49,16 +48,16 @@ export const ProductProvider = ({ children }) => {
   const preloadProductImages = async (productList) => {
     const imagesToPreload = productList
       .slice(0, 10) // Reduced from 20 to 10 for better performance
-      .map(product => product.image_url)
-      .filter(url => url && !imageCache.has(url));
+      .map((product) => product.image_url)
+      .filter((url) => url && !imageCache.has(url));
 
     // Batch load images - 3 at a time to avoid network congestion
     const batchSize = 3;
     for (let i = 0; i < imagesToPreload.length; i += batchSize) {
       const batch = imagesToPreload.slice(i, i + batchSize);
-      await Promise.allSettled(batch.map(url => preloadImage(url)));
+      await Promise.allSettled(batch.map((url) => preloadImage(url)));
       // Small delay between batches to prevent blocking
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
     }
   };
 
@@ -107,7 +106,12 @@ export const ProductProvider = ({ children }) => {
   };
 
   const fetchAll = async (force = false) => {
-    if (!force && products.length > 0 && categories.length > 0 && !shouldRefetch()) {
+    if (
+      !force &&
+      products.length > 0 &&
+      categories.length > 0 &&
+      !shouldRefetch()
+    ) {
       setLoading(false);
       return;
     }

@@ -20,23 +20,23 @@ const OptimizedImage = ({
   // Generate optimized image URL with size hints
   const getOptimizedSrc = (originalSrc) => {
     if (!originalSrc) return fallbackSrc;
-    
+
     // If it's a Supabase URL, add transformation params
-    if (originalSrc.includes('supabase.co/storage')) {
+    if (originalSrc.includes("supabase.co/storage")) {
       try {
         const url = new URL(originalSrc);
         // Supabase storage transformation parameters
-        if (width) url.searchParams.set('width', width);
-        if (height) url.searchParams.set('height', height);
-        url.searchParams.set('quality', '85');
-        url.searchParams.set('format', 'auto'); // Auto-detect WebP support
+        if (width) url.searchParams.set("width", width);
+        if (height) url.searchParams.set("height", height);
+        url.searchParams.set("quality", "85");
+        url.searchParams.set("format", "auto"); // Auto-detect WebP support
         return url.toString();
       } catch (e) {
-        console.warn('Failed to optimize Supabase URL:', e);
+        console.warn("Failed to optimize Supabase URL:", e);
         return originalSrc;
       }
     }
-    
+
     return originalSrc;
   };
 
@@ -58,8 +58,8 @@ const OptimizedImage = ({
       },
       {
         rootMargin: "100px", // Increased from 50px to 100px for smoother experience
-        threshold: 0.01 // Load when even 1% is visible
-      }
+        threshold: 0.01, // Load when even 1% is visible
+      },
     );
 
     if (imgRef.current) {
@@ -76,27 +76,27 @@ const OptimizedImage = ({
   const loadImage = () => {
     const optimizedSrc = getOptimizedSrc(src);
     const img = new Image();
-    
+
     // Set CORS for Supabase images
-    if (optimizedSrc && optimizedSrc.includes('supabase')) {
-      img.crossOrigin = 'anonymous';
+    if (optimizedSrc && optimizedSrc.includes("supabase")) {
+      img.crossOrigin = "anonymous";
     }
-    
+
     img.src = optimizedSrc;
-    
+
     img.onload = () => {
       setImageSrc(optimizedSrc);
       setIsLoading(false);
       if (onLoad) onLoad();
     };
-    
+
     img.onerror = () => {
-      console.warn('Image load failed:', optimizedSrc);
+      console.warn("Image load failed:", optimizedSrc);
       // Try original src if optimized fails
       if (optimizedSrc !== src && src) {
         const fallbackImg = new Image();
-        if (src.includes('supabase')) {
-          fallbackImg.crossOrigin = 'anonymous';
+        if (src.includes("supabase")) {
+          fallbackImg.crossOrigin = "anonymous";
         }
         fallbackImg.src = src;
         fallbackImg.onload = () => {
@@ -104,7 +104,7 @@ const OptimizedImage = ({
           setIsLoading(false);
         };
         fallbackImg.onerror = () => {
-          console.error('Final fallback failed, using placeholder');
+          console.error("Final fallback failed, using placeholder");
           setImageSrc(fallbackSrc);
           setIsLoading(false);
           setHasError(true);
@@ -120,9 +120,9 @@ const OptimizedImage = ({
   return (
     <div ref={imgRef} className="relative">
       {isLoading && !priority && (
-        <div 
+        <div
           className="absolute inset-0 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 animate-pulse"
-          style={{ width: width || '100%', height: height || '100%' }}
+          style={{ width: width || "100%", height: height || "100%" }}
         />
       )}
       <img

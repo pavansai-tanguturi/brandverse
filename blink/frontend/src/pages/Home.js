@@ -37,37 +37,37 @@ function Home() {
       key: "dairy",
       src: "/carousel1/dairy.png",
       title: "Dairy Deals",
-      link: "/products?category=dairy",
+      link: "/products?category=dairy-varieties",
     },
     {
       key: "basmati",
       src: "/carousel1/basmati.png",
       title: "Basmati Rice",
-      link: "/products?category=basmati",
+      link: "/products?category",
     },
     {
       key: "veggies",
       src: "/carousel1/veggies.png",
       title: "Fresh Veggies",
-      link: "/products?category=veggies",
+      link: "/products?category",
     },
     {
       key: "cooking",
       src: "/carousel1/cooking.png",
       title: "Cooking Essentials",
-      link: "/products?category=cooking",
+      link: "/products?category",
     },
     {
       key: "pet",
       src: "/carousel1/pet.png",
       title: "Pet Care",
-      link: "/products?category=pet",
+      link: "/products?category",
     },
     {
       key: "cleaning",
       src: "/carousel1/cleaning.png",
       title: "Home Cleaning",
-      link: "/products?category=cleaning",
+      link: "/products?category",
     },
   ];
 
@@ -77,37 +77,37 @@ function Home() {
       key: "fruits",
       src: "/carousel2/fruits.png",
       title: "Fresh Fruits",
-      link: "/products?category=fruits",
+      link: "/products?category",
     },
     {
       key: "snacks",
       src: "/carousel2/snacks.png",
       title: "Snacks & Munchies",
-      link: "/products?category=snacks",
+      link: "/products?category",
     },
     {
       key: "beverages",
       src: "/carousel2/beverages.png",
       title: "Beverages",
-      link: "/products?category=beverages",
+      link: "/products?category=baverages",
     },
     {
       key: "bakery",
       src: "/carousel2/bakery.png",
       title: "Bakery",
-      link: "/products?category=bakery",
+      link: "/products?category",
     },
     {
       key: "babycare",
       src: "/carousel2/babycare.png",
       title: "Baby Care",
-      link: "/products?category=babycare",
+      link: "/products?category",
     },
     {
       key: "stationery",
       src: "/carousel2/stationery.png",
       title: "Stationery",
-      link: "/products?category=stationery",
+      link: "/products?category",
     },
   ];
 
@@ -125,17 +125,17 @@ function Home() {
     },
     {
       label: "Great Deal",
-      link: "/products?tag=great-deal",
+      link: "/products",
       image: "great-deal.png",
     },
     {
       label: "New Arrivals",
-      link: "/products?sort=new",
+      link: "/products",
       image: "new-arrivals.png",
     },
     {
-      label: "Flat 50% Off",
-      link: "/products?discount=50",
+      label: "Flat 10% Off",
+      link: "/products?discount=10",
       image: "flat-50.png",
     },
   ];
@@ -880,12 +880,12 @@ function Home() {
       <div className="flex flex-col gap-4 md:hidden mx-4 my-6">
         <div
           role="button"
-          onClick={() => navigate("/products?category=drinks")}
+          onClick={() => navigate("/products?category=dairy-varieties")}
           className="relative h-[200px] rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer group"
         >
           <img
-            src="/home-specials/drinks.png"
-            alt="Drinks Specials"
+            src="/home-specials/dairy.png"
+            alt="Dairy Varieties"
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             loading="lazy"
             onError={(e) => (e.target.src = "/logo192.png")}
@@ -893,10 +893,10 @@ function Home() {
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent flex items-end p-4">
             <div>
               <h3 className="text-white font-bold text-xl mb-1">
-                Breakfast Picks
+                Dairy Varieties
               </h3>
               <p className="text-white text-sm opacity-90">
-                Kickstart your day with healthy choices
+                Discover our range of dairy products
               </p>
             </div>
           </div>
@@ -1089,12 +1089,12 @@ function Home() {
           <div className="flex flex-col gap-4 md:hidden">
             <div
               role="button"
-              onClick={() => navigate("/products?category=pantry")}
+              onClick={() => navigate("/products?category=baking")}
               className="relative h-[200px] rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer group"
             >
               <img
-                src="/home-specials/pantry.png"
-                alt="Pantry Specials"
+                src="/home-specials/baking.png"
+                alt="Baking Specials"
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 loading="lazy"
                 onError={(e) => (e.target.src = "/logo192.png")}
@@ -1102,10 +1102,10 @@ function Home() {
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent flex items-end p-4">
                 <div>
                   <h3 className="text-white font-bold text-xl mb-1">
-                    Pantry Essentials
+                    Baking Essentials
                   </h3>
                   <p className="text-white text-sm opacity-90">
-                    Staples and bulk buys for your kitchen
+                    Essential baking ingredients
                   </p>
                 </div>
               </div>
@@ -1113,12 +1113,12 @@ function Home() {
 
             <div
               role="button"
-              onClick={() => navigate("/products?category=breakfast")}
+              onClick={() => navigate("/products?category=dairy-varieties")}
               className="relative h-[200px] rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer group"
             >
               <img
-                src="/home-specials/breakfast.png"
-                alt="Breakfast Specials"
+                src="/home-specials/dairy.png"
+                alt="Dairy Varieties"
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 loading="lazy"
                 onError={(e) => (e.target.src = "/logo192.png")}
@@ -1126,10 +1126,10 @@ function Home() {
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent flex items-end p-4">
                 <div>
                   <h3 className="text-white font-bold text-xl mb-1">
-                    Breakfast Picks
+                    Dairy Varieties
                   </h3>
                   <p className="text-white text-sm opacity-90">
-                    Kickstart your day with healthy choices
+                    Discover our range of dairy products
                   </p>
                 </div>
               </div>
@@ -1137,12 +1137,12 @@ function Home() {
 
             <div
               role="button"
-              onClick={() => navigate("/products?category=drinks")}
+              onClick={() => navigate("/products?category=dal-varieties")}
               className="relative h-[200px] rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer group"
             >
               <img
-                src="/home-specials/drinks.png"
-                alt="Drinks Specials"
+                src="/home-specials/dal.png"
+                alt="Dal Varieties"
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 loading="lazy"
                 onError={(e) => (e.target.src = "/logo192.png")}
@@ -1150,10 +1150,10 @@ function Home() {
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent flex items-end p-4">
                 <div>
                   <h3 className="text-white font-bold text-xl mb-1">
-                    Breakfast Picks
+                    Dal varieties
                   </h3>
                   <p className="text-white text-sm opacity-90">
-                    Kickstart your day with healthy choices
+                    Nutritious and diverse lentil options
                   </p>
                 </div>
               </div>
@@ -1161,12 +1161,12 @@ function Home() {
 
             <div
               role="button"
-              onClick={() => navigate("/products?category=snacks")}
+              onClick={() => navigate("/products?category=oil-varieties")}
               className="relative h-[200px] rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer group"
             >
               <img
-                src="/home-specials/tasty-snacks.png"
-                alt="Tasty Snacks Specials"
+                src="/home-specials/oil.png"
+                alt="Oil Varieties"
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 loading="lazy"
                 onError={(e) => (e.target.src = "/logo192.png")}
@@ -1174,10 +1174,10 @@ function Home() {
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent flex items-end p-4">
                 <div>
                   <h3 className="text-white font-bold text-xl mb-1">
-                    Breakfast Picks
+                    Oil Varieties
                   </h3>
                   <p className="text-white text-sm opacity-90">
-                    Kickstart your day with healthy choices
+                    Elevate your cooking with our premium oils
                   </p>
                 </div>
               </div>
@@ -1188,12 +1188,12 @@ function Home() {
           <div className="hidden md:grid md:grid-cols-2 gap-6">
             <div
               role="button"
-              onClick={() => navigate("/products?category=pantry")}
+              onClick={() => navigate("/products?category=baking")}
               className="relative h-[280px] lg:h-[320px] rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 cursor-pointer group"
             >
               <img
-                src="/home-specials/pantry.png"
-                alt="Pantry Specials"
+                src="/home-specials/baking.png"
+                alt="Baking Specials"
                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                 loading="lazy"
                 onError={(e) => (e.target.src = "/logo192.png")}
@@ -1201,7 +1201,7 @@ function Home() {
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent flex items-end p-6">
                 <div>
                   <h3 className="text-white font-bold text-2xl lg:text-3xl mb-2">
-                    Pantry Essentials
+                    Baking Essentials
                   </h3>
                   <p className="text-white text-base lg:text-lg opacity-95 mb-3">
                     Staples and bulk buys for your kitchen
@@ -1228,12 +1228,12 @@ function Home() {
 
             <div
               role="button"
-              onClick={() => navigate("/products?category=breakfast")}
+              onClick={() => navigate("/products?category=dairy-varieties")}
               className="relative h-[280px] lg:h-[320px] rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 cursor-pointer group"
             >
               <img
-                src="/home-specials/breakfast.png"
-                alt="Breakfast Specials"
+                src="/home-specials/dairy.png"
+                alt="Dairy Specials"
                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                 loading="lazy"
                 onError={(e) => (e.target.src = "/logo192.png")}
@@ -1241,7 +1241,47 @@ function Home() {
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent flex items-end p-6">
                 <div>
                   <h3 className="text-white font-bold text-2xl lg:text-3xl mb-2">
-                    Breakfast Picks
+                    Dairy Picks
+                  </h3>
+                  <p className="text-white text-base lg:text-lg opacity-95 mb-3">
+                    Start your day with healthy choices
+                  </p>
+                  <span className="inline-flex items-center gap-2 text-white text-sm font-medium bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full hover:bg-white/30 transition-colors">
+                    Shop Now
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 5l7 7-7 7"
+                      />
+                    </svg>
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div
+              role="button"
+              onClick={() => navigate("/products?category=dal-varieties")}
+              className="relative h-[280px] lg:h-[320px] rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 cursor-pointer group"
+            >
+              <img
+                src="/home-specials/dal.png"
+                alt="Dal Specials"
+                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                loading="lazy"
+                onError={(e) => (e.target.src = "/logo192.png")}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent flex items-end p-6">
+                <div>
+                  <h3 className="text-white font-bold text-2xl lg:text-3xl mb-2">
+                    
                   </h3>
                   <p className="text-white text-base lg:text-lg opacity-95 mb-3">
                     Kickstart your day with healthy choices
@@ -1268,12 +1308,12 @@ function Home() {
 
             <div
               role="button"
-              onClick={() => navigate("/products?category=drinks")}
+              onClick={() => navigate("/products?category=Oil-varieties")}
               className="relative h-[280px] lg:h-[320px] rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 cursor-pointer group"
             >
               <img
-                src="/home-specials/drinks.png"
-                alt="Drinks Specials"
+                src="/home-specials/oil.png"
+                alt="Oil Varieties"
                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                 loading="lazy"
                 onError={(e) => (e.target.src = "/logo192.png")}
@@ -1281,50 +1321,10 @@ function Home() {
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent flex items-end p-6">
                 <div>
                   <h3 className="text-white font-bold text-2xl lg:text-3xl mb-2">
-                    Breakfast Picks
+                    Oil Varieties
                   </h3>
                   <p className="text-white text-base lg:text-lg opacity-95 mb-3">
-                    Kickstart your day with healthy choices
-                  </p>
-                  <span className="inline-flex items-center gap-2 text-white text-sm font-medium bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full hover:bg-white/30 transition-colors">
-                    Shop Now
-                    <svg
-                      className="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 5l7 7-7 7"
-                      />
-                    </svg>
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div
-              role="button"
-              onClick={() => navigate("/products?category=tasty-snacks")}
-              className="relative h-[280px] lg:h-[320px] rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 cursor-pointer group"
-            >
-              <img
-                src="/home-specials/tasty-snacks.png"
-                alt="Tasty Snacks"
-                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                loading="lazy"
-                onError={(e) => (e.target.src = "/logo192.png")}
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent flex items-end p-6">
-                <div>
-                  <h3 className="text-white font-bold text-2xl lg:text-3xl mb-2">
-                    Breakfast Picks
-                  </h3>
-                  <p className="text-white text-base lg:text-lg opacity-95 mb-3">
-                    Kickstart your day with healthy choices
+                    Enhance your culinary creations
                   </p>
                   <span className="inline-flex items-center gap-2 text-white text-sm font-medium bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full hover:bg-white/30 transition-colors">
                     Shop Now
