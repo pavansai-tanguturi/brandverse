@@ -17,7 +17,11 @@ function Products() {
     removeFromWishlist,
   } = useWishlist();
   const { addToCart } = useCart();
-  const { products: cachedProducts, categories, loading: productsLoading } = useProducts();
+  const {
+    products: cachedProducts,
+    categories,
+    loading: productsLoading,
+  } = useProducts();
   const [searchParams, setSearchParams] = useSearchParams();
   const [locationName, setLocationName] = useState("Fetching location...");
 
@@ -69,7 +73,7 @@ function Products() {
   useEffect(() => {
     if (!productsLoading && cachedProducts.length > 0) {
       const searchTerm = searchQuery.trim();
-      
+
       if (searchTerm) {
         // Perform search on cached products
         const filtered = cachedProducts.filter((product) => {
@@ -792,7 +796,7 @@ function Products() {
                   >
                     {/* Image Skeleton */}
                     <div className="w-full h-28 sm:h-32 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 animate-pulse"></div>
-                    
+
                     {/* Content Skeleton */}
                     <div className="p-2 sm:p-3 space-y-2">
                       {/* Title Skeleton */}
@@ -800,13 +804,13 @@ function Products() {
                         <div className="h-3 bg-gray-200 rounded animate-pulse"></div>
                         <div className="h-3 bg-gray-200 rounded w-3/4 animate-pulse"></div>
                       </div>
-                      
+
                       {/* Price Skeleton */}
                       <div className="space-y-1">
                         <div className="h-4 bg-gray-300 rounded w-1/2 animate-pulse"></div>
                         <div className="h-3 bg-gray-200 rounded w-1/3 animate-pulse"></div>
                       </div>
-                      
+
                       {/* Button Skeleton */}
                       <div className="h-8 bg-gray-200 rounded animate-pulse"></div>
                     </div>
