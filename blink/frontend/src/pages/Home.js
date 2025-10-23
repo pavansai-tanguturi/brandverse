@@ -336,131 +336,272 @@ function Home() {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-16 lg:pb-0">
-      <ModernNavbar showSearch={true} />
+      {/* Background Image Container - Mobile Only (covers navbar and categories) */}
+      <div className="relative md:hidden">
+        <div className="absolute inset-0 z-0">
+          <img
+            src="/background.png"
+            alt="Background"
+            className="w-full h-full object-cover"
+            loading="eager"
+          />
+        </div>
 
-      {/* Delivery Status Strip */}
-      {!checkingDelivery && showDeliveryStatus && (
-        <div
-          className={`mx-2 sm:mx-4 my-2 px-2 sm:px-3 py-2 rounded-lg text-xs sm:text-sm transition-all duration-500 ${
-            deliveryAvailable
-              ? "bg-green-100 text-green-800"
-              : "bg-yellow-100 text-yellow-800"
-          }`}
-        >
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            {/* Left side: location + status */}
-            <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink min-w-0">
-              <svg
-                className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M17.657 16.657L13.414 20.9a2 2 0 01-2.828 0l-4.243-4.243a8 8 0 1111.314 0z"
-                />
-              </svg>
+        {/* Content with higher z-index */}
+        <div className="relative z-10">
+          <ModernNavbar showSearch={true} />
 
-              {/* Responsive text truncation */}
-              <span className="truncate max-w-[160px] sm:max-w-xs">
-                {locationName} •{" "}
-                {deliveryAvailable
-                  ? "Delivery Available"
-                  : "Delivery Unavailable"}
-              </span>
-            </div>
-
-            {/* Close button */}
-            <button
-              onClick={() => setShowDeliveryStatus(false)}
-              className="p-1 hover:bg-black/10 rounded-full transition-colors"
+          {/* Delivery Status Strip */}
+          {!checkingDelivery && showDeliveryStatus && (
+            <div
+              className={`mx-2 sm:mx-4 my-2 px-2 sm:px-3 py-2 rounded-lg text-xs sm:text-sm transition-all duration-500 ${
+                deliveryAvailable
+                  ? "bg-green-100 text-green-800"
+                  : "bg-yellow-100 text-yellow-800"
+              }`}
             >
-              <svg
-                className="w-3 h-3 sm:w-4 sm:h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-            </button>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                {/* Left side: location + status */}
+                <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink min-w-0">
+                  <svg
+                    className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M17.657 16.657L13.414 20.9a2 2 0 01-2.828 0l-4.243-4.243a8 8 0 1111.314 0z"
+                    />
+                  </svg>
+
+                  {/* Responsive text truncation */}
+                  <span className="truncate max-w-[160px] sm:max-w-xs">
+                    {locationName} •{" "}
+                    {deliveryAvailable
+                      ? "Delivery Available"
+                      : "Delivery Unavailable"}
+                  </span>
+                </div>
+
+                {/* Close button */}
+                <button
+                  onClick={() => setShowDeliveryStatus(false)}
+                  className="p-1 hover:bg-black/10 rounded-full transition-colors"
+                >
+                  <svg
+                    className="w-3 h-3 sm:w-4 sm:h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Category Navigation */}
+          <div className="bg-transparent py-4 sm:py-6 border-b border-gray-100">
+            {/* Categories - Positioned at bottom with higher z-index */}
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              {/* Spacer for mobile to push categories down */}
+              <div className="h-32"></div>
+              
+              <div className="flex items-center justify-between overflow-x-auto scrollbar-hide space-x-4 sm:space-x-6">
+                {loading
+                  ? // Category skeleton loader
+                    Array.from({ length: 8 }).map((_, index) => (
+                      <div
+                        key={index}
+                        className="flex flex-col items-center justify-center flex-shrink-0 w-20 sm:w-24"
+                      >
+                        <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-200 rounded-full animate-pulse"></div>
+                        <div className="w-16 h-3 sm:h-4 bg-gray-200 rounded mt-1 sm:mt-2 animate-pulse"></div>
+                      </div>
+                    ))
+                  : categories.map((cat) => (
+                      <div
+                        key={cat.id}
+                        onClick={() => navigate(`/products?category=${cat.slug}`)}
+                        className="flex flex-col items-center justify-center flex-shrink-0 w-20 sm:w-24 h-24 sm:h-28 cursor-pointer hover:scale-105 transition-transform bg-white rounded-lg p-2 shadow-sm"
+                      >
+                        <div className="w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center">
+                          <img
+                            src={cat.image_url || `/categories/${cat.slug}.png`}
+                            alt={cat.name}
+                            className="w-full h-full object-contain rounded-full"
+                            loading="eager"
+                            fetchPriority="high"
+                            onError={(e) => {
+                              // Fallback to local image if database image fails
+                              e.target.src = `/categories/${cat.slug}.png`;
+                            }}
+                          />
+                        </div>
+                        <div className="flex items-center gap-1 mt-1 sm:mt-2">
+                          <p className="text-xs sm:text-sm font-semibold text-gray-800 text-center break-words line-clamp-2">
+                            {cat.name}
+                          </p>
+                          {cat.hasDropdown && (
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="w-3 h-3 text-gray-500"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M19 9l-7 7-7-7"
+                              />
+                            </svg>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+              </div>
+            </div>
           </div>
         </div>
-      )}
+      </div>
 
-      {/* Category Navigation */}
-      <div className="bg-white py-4 sm:py-6 border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between overflow-x-auto scrollbar-hide space-x-4 sm:space-x-6">
-          {loading
-            ? // Category skeleton loader
-              Array.from({ length: 8 }).map((_, index) => (
-                <div
-                  key={index}
-                  className="flex flex-col items-center justify-center flex-shrink-0 w-20 sm:w-24"
+      {/* Desktop View - Original Layout */}
+      <div className="hidden md:block">
+        <ModernNavbar showSearch={true} />
+
+        {/* Delivery Status Strip */}
+        {!checkingDelivery && showDeliveryStatus && (
+          <div
+            className={`mx-2 sm:mx-4 my-2 px-2 sm:px-3 py-2 rounded-lg text-xs sm:text-sm transition-all duration-500 ${
+              deliveryAvailable
+                ? "bg-green-100 text-green-800"
+                : "bg-yellow-100 text-yellow-800"
+            }`}
+          >
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              {/* Left side: location + status */}
+              <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink min-w-0">
+                <svg
+                  className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
                 >
-                  <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-200 rounded-full animate-pulse"></div>
-                  <div className="w-16 h-3 sm:h-4 bg-gray-200 rounded mt-1 sm:mt-2 animate-pulse"></div>
-                </div>
-              ))
-            : categories.map((cat) => (
-                <div
-                  key={cat.id}
-                  onClick={() => navigate(`/products?category=${cat.slug}`)}
-                  className="flex flex-col items-center justify-center flex-shrink-0 w-20 sm:w-24 cursor-pointer hover:scale-105 transition-transform"
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M17.657 16.657L13.414 20.9a2 2 0 01-2.828 0l-4.243-4.243a8 8 0 1111.314 0z"
+                  />
+                </svg>
+
+                {/* Responsive text truncation */}
+                <span className="truncate max-w-[160px] sm:max-w-xs">
+                  {locationName} •{" "}
+                  {deliveryAvailable
+                    ? "Delivery Available"
+                    : "Delivery Unavailable"}
+                </span>
+              </div>
+
+              {/* Close button */}
+              <button
+                onClick={() => setShowDeliveryStatus(false)}
+                className="p-1 hover:bg-black/10 rounded-full transition-colors"
+              >
+                <svg
+                  className="w-3 h-3 sm:w-4 sm:h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
                 >
-                  <div className="w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center">
-                    <img
-                      src={cat.image_url || `/categories/${cat.slug}.png`}
-                      alt={cat.name}
-                      className="w-full h-full object-contain rounded-full"
-                      loading="eager"
-                      fetchpriority="high"
-                      onError={(e) => {
-                        // Fallback to local image if database image fails
-                        e.target.src = `/categories/${cat.slug}.png`;
-                      }}
-                    />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Category Navigation */}
+        <div className="bg-white py-4 sm:py-6 border-b border-gray-100">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between overflow-x-auto scrollbar-hide space-x-4 sm:space-x-6">
+            {loading
+              ? // Category skeleton loader
+                Array.from({ length: 8 }).map((_, index) => (
+                  <div
+                    key={index}
+                    className="flex flex-col items-center justify-center flex-shrink-0 w-20 sm:w-24"
+                  >
+                    <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-200 rounded-full animate-pulse"></div>
+                    <div className="w-16 h-3 sm:h-4 bg-gray-200 rounded mt-1 sm:mt-2 animate-pulse"></div>
                   </div>
-                  <div className="flex items-center gap-1 mt-1 sm:mt-2">
-                    <p className="text-xs sm:text-sm font-semibold text-gray-800 text-center whitespace-nowrap">
-                      {cat.name}
-                    </p>
-                    {cat.hasDropdown && (
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="w-3 h-3 text-gray-500"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M19 9l-7 7-7-7"
-                        />
-                      </svg>
-                    )}
+                ))
+              : categories.map((cat) => (
+                  <div
+                    key={cat.id}
+                    onClick={() => navigate(`/products?category=${cat.slug}`)}
+                    className="flex flex-col items-center justify-center flex-shrink-0 w-20 sm:w-24 h-24 sm:h-28 cursor-pointer hover:scale-105 transition-transform"
+                  >
+                    <div className="w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center">
+                      <img
+                        src={cat.image_url || `/categories/${cat.slug}.png`}
+                        alt={cat.name}
+                        className="w-full h-full object-contain rounded-full"
+                        loading="eager"
+                        fetchPriority="high"
+                        onError={(e) => {
+                          // Fallback to local image if database image fails
+                          e.target.src = `/categories/${cat.slug}.png`;
+                        }}
+                      />
+                    </div>
+                    <div className="flex items-center gap-1 mt-1 sm:mt-2">
+                      <p className="text-xs sm:text-sm font-semibold text-gray-800 text-center break-words line-clamp-2">
+                        {cat.name}
+                      </p>
+                      {cat.hasDropdown && (
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="w-3 h-3 text-gray-500"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M19 9l-7 7-7-7"
+                          />
+                        </svg>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+          </div>
         </div>
       </div>
 
       {/* Combined Category Carousels Section */}
       <div className="w-full">
-        {" "}
-        {/* Changed max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 to w-full to remove outer padding and max width */}
-        {/* Section Heading (shared) */}
-        <div className="bg-white py-2 sm:py-3 px-0">
+        {/* Section Heading (hidden on mobile) */}
+        <div className="hidden md:block py-2 sm:py-3 px-0">
           {loading ? (
             <div className="px-4 sm:px-6 lg:px-8">
               <div className="w-80 h-7 sm:h-8 bg-gray-200 rounded animate-pulse mb-2"></div>
@@ -639,193 +780,167 @@ function Home() {
           )}
         </div>
         {/* Mobile/Tablet View - Stacked Carousels */}
-        <div className="lg:hidden">
-          {/* Carousel 1 */}
+        <div className="lg:hidden px-4 py-6 space-y-4">
+          {/* Carousel 1 - Smaller */}
           {loading ? (
-            <div className="relative w-full min-h-[180px] sm:min-h-[240px] md:min-h-[320px] bg-gray-100 animate-pulse rounded-lg"></div>
+            <div className="relative w-full min-h-[150px] sm:min-h-[200px] bg-gray-100 animate-pulse rounded-xl"></div>
           ) : (
-            <div
-              className="relative w-full overflow-hidden h-[180px] sm:h-[240px] md:h-[320px]"
-              onMouseEnter={() => setIsBannerPaused(true)}
-              onMouseLeave={() => setIsBannerPaused(false)}
-              onTouchStart={(e) => {
-                setIsBannerPaused(true);
-                touchStartXRef.current = e.touches?.[0]?.clientX ?? null;
-              }}
-              onTouchEnd={(e) => {
-                const endX = e.changedTouches?.[0]?.clientX ?? null;
-                const startX = touchStartXRef.current;
-                if (startX != null && endX != null) {
-                  const delta = endX - startX;
-                  if (Math.abs(delta) > SWIPE_THRESHOLD) {
-                    if (delta < 0) handleNextLocalBanner();
-                    else handlePrevLocalBanner();
+            <div>
+              <div
+                className="relative w-full overflow-hidden h-[150px] sm:h-[200px] rounded-lg"
+                onMouseEnter={() => setIsBannerPaused(true)}
+                onMouseLeave={() => setIsBannerPaused(false)}
+                onTouchStart={(e) => {
+                  setIsBannerPaused(true);
+                  touchStartXRef.current = e.touches?.[0]?.clientX ?? null;
+                }}
+                onTouchEnd={(e) => {
+                  const endX = e.changedTouches?.[0]?.clientX ?? null;
+                  const startX = touchStartXRef.current;
+                  if (startX != null && endX != null) {
+                    const delta = endX - startX;
+                    if (Math.abs(delta) > SWIPE_THRESHOLD) {
+                      if (delta < 0) handleNextLocalBanner();
+                      else handlePrevLocalBanner();
+                    }
                   }
-                }
-                touchStartXRef.current = null;
-                setTimeout(() => setIsBannerPaused(false), 150);
-              }}
-            >
-              <div className="relative w-full h-full">
-                {localCategoryBanners.map((item, index) => (
-                  <div
-                    key={item.key}
-                    className={`absolute inset-0 transition-opacity duration-700 ease-in-out cursor-pointer ${
-                      index === localBannerIndex
-                        ? "opacity-100 z-10"
-                        : "opacity-0 z-0"
-                    }`}
-                    onClick={() => navigate(item.link)}
-                  >
-                    <img
-                      src={item.src}
-                      alt={item.title}
-                      className="w-full h-full object-cover rounded-none"
-                      draggable={false}
-                      onDragStart={(e) => e.preventDefault()}
-                      loading={index === localBannerIndex ? "eager" : "lazy"}
-                      decoding="async"
-                      fetchPriority={
-                        index === localBannerIndex ? "high" : "auto"
-                      }
-                      width="1600"
-                      height="600"
-                      onError={(e) => {
-                        console.log(`Failed to load image: ${item.src}`);
-                        e.target.src = "/logo192.png";
-                      }}
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-6 sm:p-10">
-                      <h2 className="text-white text-2xl sm:text-3xl font-bold drop-shadow-lg max-w-[80%]">
-                        {item.title}
-                      </h2>
+                  touchStartXRef.current = null;
+                  setTimeout(() => setIsBannerPaused(false), 150);
+                }}
+              >
+                <div className="relative w-full h-full">
+                  {localCategoryBanners.map((item, index) => (
+                    <div
+                      key={item.key}
+                      className={`absolute inset-0 transition-opacity duration-700 ease-in-out cursor-pointer ${
+                        index === localBannerIndex
+                          ? "opacity-100 z-10"
+                          : "opacity-0 z-0"
+                      }`}
+                      onClick={() => navigate(item.link)}
+                    >
+                      <img
+                        src={item.src}
+                        alt={item.title}
+                        className="w-full h-full object-cover rounded-lg"
+                        draggable={false}
+                        onDragStart={(e) => e.preventDefault()}
+                        loading={index === localBannerIndex ? "eager" : "lazy"}
+                        decoding="async"
+                        fetchPriority={
+                          index === localBannerIndex ? "high" : "auto"
+                        }
+                        width="1600"
+                        height="600"
+                        onError={(e) => {
+                          console.log(`Failed to load image: ${item.src}`);
+                          e.target.src = "/logo192.png";
+                        }}
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-4 sm:p-6 rounded-lg">
+                        <h2 className="text-white text-lg sm:text-2xl font-bold drop-shadow-lg max-w-[80%]">
+                          {item.title}
+                        </h2>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
 
-              {/* Navigation Arrows */}
-              <button
-                onClick={handlePrevLocalBanner}
-                className="absolute left-3 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white p-2 rounded-full z-20"
-              >
-                ‹
-              </button>
-              <button
-                onClick={handleNextLocalBanner}
-                className="absolute right-3 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white p-2 rounded-full z-20"
-              >
-                ›
-              </button>
-
-              {/* Dots */}
-              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-20">
-                {localCategoryBanners.map((_, dotIndex) => (
+              {/* Dots - Below image */}
+              <div className="flex justify-center items-center gap-1.5 mt-3">
+                {[0, 1, 2].map((dotIndex) => (
                   <div
                     key={dotIndex}
-                    className={`h-2 w-2 rounded-full cursor-pointer ${
-                      dotIndex === localBannerIndex
-                        ? "bg-white"
-                        : "bg-white/40 hover:bg-white/70"
+                    className={`rounded-full cursor-pointer transition-all ${
+                      Math.floor(localBannerIndex / 2) === dotIndex
+                        ? "h-2.5 w-2.5 bg-emerald-600"
+                        : "h-1.5 w-1.5 bg-gray-300 hover:bg-gray-400"
                     }`}
-                    onClick={() => setLocalBannerIndex(dotIndex)}
+                    onClick={() => setLocalBannerIndex(dotIndex * 2)}
                   />
                 ))}
               </div>
             </div>
           )}
 
-          <hr className="border-gray-200 my-6" />
-
-          {/* Carousel 2 */}
+          {/* Carousel 2 - Larger */}
           {loading ? (
-            <div className="relative w-full min-h-[180px] sm:min-h-[240px] md:min-h-[320px] bg-gray-100 animate-pulse rounded-lg"></div>
+            <div className="relative w-full min-h-[200px] sm:min-h-[280px] bg-gray-100 animate-pulse rounded-xl"></div>
           ) : (
-            <div
-              className="relative w-full overflow-hidden h-[180px] sm:h-[240px] md:h-[320px]"
-              onMouseEnter={() => setIsBannerPaused2(true)}
-              onMouseLeave={() => setIsBannerPaused2(false)}
-              onTouchStart={(e) => {
-                setIsBannerPaused2(true);
-                touchStartXRef2.current = e.touches?.[0]?.clientX ?? null;
-              }}
-              onTouchEnd={(e) => {
-                const endX = e.changedTouches?.[0]?.clientX ?? null;
-                const startX = touchStartXRef2.current;
-                if (startX != null && endX != null) {
-                  const delta = endX - startX;
-                  if (Math.abs(delta) > SWIPE_THRESHOLD) {
-                    if (delta < 0) handleNextLocalBanner2();
-                    else handlePrevLocalBanner2();
+            <div>
+              <div
+                className="relative w-full overflow-hidden h-[200px] sm:h-[280px] rounded-lg"
+                onMouseEnter={() => setIsBannerPaused2(true)}
+                onMouseLeave={() => setIsBannerPaused2(false)}
+                onTouchStart={(e) => {
+                  setIsBannerPaused2(true);
+                  touchStartXRef2.current = e.touches?.[0]?.clientX ?? null;
+                }}
+                onTouchEnd={(e) => {
+                  const endX = e.changedTouches?.[0]?.clientX ?? null;
+                  const startX = touchStartXRef2.current;
+                  if (startX != null && endX != null) {
+                    const delta = endX - startX;
+                    if (Math.abs(delta) > SWIPE_THRESHOLD) {
+                      if (delta < 0) handleNextLocalBanner2();
+                      else handlePrevLocalBanner2();
+                    }
                   }
-                }
-                touchStartXRef2.current = null;
-                setTimeout(() => setIsBannerPaused2(false), 150);
-              }}
-            >
-              <div className="relative w-full h-full">
-                {localCategoryBanners2.map((item, index) => (
-                  <div
-                    key={item.key}
-                    className={`absolute inset-0 transition-opacity duration-700 ease-in-out cursor-pointer ${
-                      index === localBannerIndex2
-                        ? "opacity-100 z-10"
-                        : "opacity-0 z-0"
-                    }`}
-                    onClick={() => navigate(item.link)}
-                  >
-                    <img
-                      src={item.src}
-                      alt={item.title}
-                      className="w-full h-full object-cover"
-                      draggable={false}
-                      onDragStart={(e) => e.preventDefault()}
-                      loading={index === localBannerIndex2 ? "eager" : "lazy"}
-                      decoding="async"
-                      fetchPriority={
-                        index === localBannerIndex2 ? "high" : "auto"
-                      }
-                      width="1600"
-                      height="600"
-                      onError={(e) => {
-                        console.log(`Failed to load image: ${item.src}`);
-                        e.target.src = "/logo192.png";
-                      }}
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-6 sm:p-10">
-                      <h2 className="text-white text-2xl sm:text-3xl font-bold drop-shadow-lg max-w-[80%]">
-                        {item.title}
-                      </h2>
+                  touchStartXRef2.current = null;
+                  setTimeout(() => setIsBannerPaused2(false), 150);
+                }}
+              >
+                <div className="relative w-full h-full">
+                  {localCategoryBanners2.map((item, index) => (
+                    <div
+                      key={item.key}
+                      className={`absolute inset-0 transition-opacity duration-700 ease-in-out cursor-pointer ${
+                        index === localBannerIndex2
+                          ? "opacity-100 z-10"
+                          : "opacity-0 z-0"
+                      }`}
+                      onClick={() => navigate(item.link)}
+                    >
+                      <img
+                        src={item.src}
+                        alt={item.title}
+                        className="w-full h-full object-cover rounded-lg"
+                        draggable={false}
+                        onDragStart={(e) => e.preventDefault()}
+                        loading={index === localBannerIndex2 ? "eager" : "lazy"}
+                        decoding="async"
+                        fetchPriority={
+                          index === localBannerIndex2 ? "high" : "auto"
+                        }
+                        width="1600"
+                        height="600"
+                        onError={(e) => {
+                          console.log(`Failed to load image: ${item.src}`);
+                          e.target.src = "/logo192.png";
+                        }}
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-4 sm:p-8 rounded-lg">
+                        <h2 className="text-white text-xl sm:text-3xl font-bold drop-shadow-lg max-w-[80%]">
+                          {item.title}
+                        </h2>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
 
-              {/* Navigation Arrows */}
-              <button
-                onClick={handlePrevLocalBanner2}
-                className="absolute left-3 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white p-2 rounded-full z-20"
-              >
-                ‹
-              </button>
-              <button
-                onClick={handleNextLocalBanner2}
-                className="absolute right-3 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white p-2 rounded-full z-20"
-              >
-                ›
-              </button>
-
-              {/* Dots */}
-              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-20">
-                {localCategoryBanners2.map((_, dotIndex) => (
+              {/* Dots - Below image */}
+              <div className="flex justify-center items-center gap-1.5 mt-3">
+                {[0, 1, 2].map((dotIndex) => (
                   <div
                     key={dotIndex}
-                    className={`h-2 w-2 rounded-full cursor-pointer ${
-                      dotIndex === localBannerIndex2
-                        ? "bg-white"
-                        : "bg-white/40 hover:bg-white/70"
+                    className={`rounded-full cursor-pointer transition-all ${
+                      Math.floor(localBannerIndex2 / 2) === dotIndex
+                        ? "h-2.5 w-2.5 bg-emerald-600"
+                        : "h-1.5 w-1.5 bg-gray-300 hover:bg-gray-400"
                     }`}
-                    onClick={() => setLocalBannerIndex2(dotIndex)}
+                    onClick={() => setLocalBannerIndex2(dotIndex * 2)}
                   />
                 ))}
               </div>
@@ -968,7 +1083,7 @@ function Home() {
                               alt={product.title}
                               className="w-full h-32 sm:h-36 object-cover group-hover:scale-105 transition-transform duration-200"
                               loading="lazy"
-                              fetchpriority="low"
+                              fetchPriority="low"
                               onError={(e) => {
                                 e.target.src = "/logo192.png";
                               }}
