@@ -10,6 +10,7 @@ import { AuthProvider } from "./context/AuthContext";
 import { CartProvider } from "./context/CartContext";
 import { WishlistProvider } from "./context/WishlistContext";
 import { AddressProvider } from "./context/AddressContext";
+import { ProductProvider } from "./context/ProductContext";
 import CookieConsent from "./components/CookieConsent";
 import CookiePolicy from "./components/CookiePolicy";
 import Footer from "./components/Footer";
@@ -63,11 +64,12 @@ function App() {
       <CartProvider>
         <WishlistProvider>
           <AddressProvider>
-            <Router>
-              <Routes>
-                {/* Regular User Routes */}
-                <Route path="/" element={<Home />} />
-                <Route path="/home" element={<Home />} />
+            <ProductProvider>
+              <Router>
+                <Routes>
+                  {/* Regular User Routes */}
+                  <Route path="/" element={<Home />} />
+                  <Route path="/home" element={<Home />} />
                 <Route path="/products" element={<Products />} />
                 <Route path="/deals" element={<Deals />} />
                 <Route path="/search" element={<Search />} />
@@ -174,10 +176,11 @@ function App() {
               {/* Cookie Consent Banner - appears on all pages */}
               <CookieConsent />
             </Router>
-          </AddressProvider>
-        </WishlistProvider>
-      </CartProvider>
-    </AuthProvider>
+          </ProductProvider>
+        </AddressProvider>
+      </WishlistProvider>
+    </CartProvider>
+  </AuthProvider>
   );
 }
 

@@ -4,6 +4,7 @@ import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useWishlist } from "../context/WishlistContext";
 import { useCart } from "../context/CartContext";
+import { useProducts } from "../context/ProductContext";
 import ModernNavbar from "../components/ModernNavbar";
 import MobileBottomNav from "../components/MobileBottomNav";
 
@@ -16,6 +17,7 @@ function Products() {
     removeFromWishlist,
   } = useWishlist();
   const { addToCart } = useCart();
+  const { products: cachedProducts, categories, loading: productsLoading } = useProducts();
   const [searchParams, setSearchParams] = useSearchParams();
   const [locationName, setLocationName] = useState("Fetching location...");
 
@@ -63,75 +65,36 @@ function Products() {
   const [currentPage, setCurrentPage] = useState(1);
   const productsPerPage = 20;
 
-  // Categories with dynamic counts (fetched from backend)
-  const [categories, setCategories] = useState([]);
-
-  // Fetch categories
-  const fetchCategories = async () => {
-    try {
-      const API_BASE_URL =
-        import.meta.env.VITE_API_BASE || "http://localhost:3001";
-      const response = await fetch(`${API_BASE_URL}/api/categories`);
-      if (response.ok) {
-        const data = await response.json();
-        setCategories(data);
+  // Use cached products and handle search
+  useEffect(() => {
+    if (!productsLoading && cachedProducts.length > 0) {
+      const searchTerm = searchQuery.trim();
+      
+      if (searchTerm) {
+        // Perform search on cached products
+        const filtered = cachedProducts.filter((product) => {
+          const titleMatch = product.title
+            ?.toLowerCase()
+            .includes(searchTerm.toLowerCase());
+          const descriptionMatch = product.description
+            ?.toLowerCase()
+            .includes(searchTerm.toLowerCase());
+          const categoryMatch = product.categories?.name
+            ?.toLowerCase()
+            .includes(searchTerm.toLowerCase());
+          return titleMatch || descriptionMatch || categoryMatch;
+        });
+        setProducts(filtered);
+        setFilteredProducts(filtered);
+        setSearchResults(filtered);
       } else {
-        console.error("Failed to fetch categories");
+        setProducts(cachedProducts);
+        setFilteredProducts(cachedProducts);
+        setSearchResults([]);
       }
-    } catch (error) {
-      console.error("Error fetching categories:", error);
-    }
-  };
-
-  // Fetch products with search
-  const fetchProducts = async (searchTerm = "") => {
-    try {
-      setLoading(true);
-      const API_BASE_URL =
-        import.meta.env.VITE_API_BASE || "http://localhost:3001";
-
-      let url = `${API_BASE_URL}/api/products`;
-
-      // Use search endpoint if there's a search term
-      if (searchTerm && searchTerm.trim()) {
-        setIsSearching(true);
-        url = `${API_BASE_URL}/api/products/search?q=${encodeURIComponent(searchTerm.trim())}`;
-
-        const response = await fetch(url);
-        if (response.ok) {
-          const data = await response.json();
-          setSearchResults(data.products || []);
-          setSearchSuggestions(data.didYouMean || "");
-          setProducts(data.products || []);
-          setFilteredProducts(data.products || []);
-        } else {
-          console.error("Failed to search products");
-          setSearchResults([]);
-          setProducts([]);
-          setFilteredProducts([]);
-        }
-        setIsSearching(false);
-      } else {
-        // Regular product fetch
-        const response = await fetch(url);
-        if (response.ok) {
-          const data = await response.json();
-          setProducts(data);
-          setFilteredProducts(data);
-          setSearchResults([]);
-          setSearchSuggestions("");
-        } else {
-          console.error("Failed to fetch products");
-        }
-      }
-    } catch (error) {
-      console.error("Error fetching products:", error);
-      setSearchResults([]);
-      setIsSearching(false);
-    } finally {
       setLoading(false);
     }
-  };
+  }, [cachedProducts, productsLoading, searchQuery]);
 
   // Filter and search products
   useEffect(() => {
@@ -256,12 +219,6 @@ function Products() {
 
     if (urlQuery !== searchQuery) {
       setSearchQuery(urlQuery);
-      // Trigger new search when URL search param changes
-      if (urlQuery.trim()) {
-        fetchProducts(urlQuery);
-      } else {
-        fetchProducts();
-      }
     }
     if (urlCategory !== selectedCategory) {
       setSelectedCategory(urlCategory);
@@ -308,20 +265,8 @@ function Products() {
     }
   };
 
-  // Get location and load initial data
+  // Get location on mount
   useEffect(() => {
-    fetchCategories();
-
-    // Check if there's a search query in URL
-    const urlSearchQuery =
-      searchParams.get("search") || searchParams.get("q") || "";
-    if (urlSearchQuery.trim()) {
-      setSearchQuery(urlSearchQuery);
-      fetchProducts(urlSearchQuery);
-    } else {
-      fetchProducts();
-    }
-
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         async (position) => {
@@ -805,7 +750,7 @@ function Products() {
                     className="font-semibold cursor-pointer underline"
                     onClick={() => {
                       setSearchQuery(searchSuggestions);
-                      fetchProducts(searchSuggestions);
+                      // Search will be triggered by the searchQuery state change
                     }}
                   >
                     {searchSuggestions}
@@ -839,13 +784,34 @@ function Products() {
 
             {/* Products Grid - Compact Mobile Design */}
             {loading ? (
-              <div className="flex flex-col items-center justify-center py-20">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
-                <p className="mt-3 text-gray-600 text-sm">
-                  {isSearching
-                    ? "Searching products..."
-                    : "Loading products..."}
-                </p>
+              <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 mb-8">
+                {Array.from({ length: 10 }).map((_, index) => (
+                  <div
+                    key={index}
+                    className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200"
+                  >
+                    {/* Image Skeleton */}
+                    <div className="w-full h-28 sm:h-32 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 animate-pulse"></div>
+                    
+                    {/* Content Skeleton */}
+                    <div className="p-2 sm:p-3 space-y-2">
+                      {/* Title Skeleton */}
+                      <div className="space-y-1">
+                        <div className="h-3 bg-gray-200 rounded animate-pulse"></div>
+                        <div className="h-3 bg-gray-200 rounded w-3/4 animate-pulse"></div>
+                      </div>
+                      
+                      {/* Price Skeleton */}
+                      <div className="space-y-1">
+                        <div className="h-4 bg-gray-300 rounded w-1/2 animate-pulse"></div>
+                        <div className="h-3 bg-gray-200 rounded w-1/3 animate-pulse"></div>
+                      </div>
+                      
+                      {/* Button Skeleton */}
+                      <div className="h-8 bg-gray-200 rounded animate-pulse"></div>
+                    </div>
+                  </div>
+                ))}
               </div>
             ) : currentProducts.length > 0 ? (
               <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 mb-8">
@@ -863,6 +829,11 @@ function Products() {
                         }
                         alt={product.title ? product.title : "Product"}
                         className="w-full h-28 sm:h-32 object-cover group-hover:scale-105 transition-transform duration-200"
+                        loading="lazy"
+                        fetchpriority="low"
+                        onError={(e) => {
+                          e.target.src = "/logo192.png";
+                        }}
                       />
                       {product.discount_percent > 0 && (
                         <div className="absolute top-1 left-1 bg-gradient-to-r from-emerald-500 to-teal-600 text-white px-1.5 py-0.5 rounded text-xs font-bold">

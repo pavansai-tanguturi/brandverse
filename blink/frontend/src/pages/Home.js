@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useWishlist } from "../context/WishlistContext";
 import { useCart } from "../context/CartContext";
+import { useProducts } from "../context/ProductContext";
 import ModernNavbar from "../components/ModernNavbar";
 import MobileBottomNav from "../components/MobileBottomNav";
 import "../styles/App.css";
@@ -16,14 +17,12 @@ function Home() {
     removeFromWishlist,
   } = useWishlist();
   const { addToCart } = useCart();
+  const { products, categories, loading } = useProducts();
 
   const [locationName, setLocationName] = useState("Fetching location...");
   const [deliveryAvailable, setDeliveryAvailable] = useState(true);
   const [checkingDelivery, setCheckingDelivery] = useState(true);
   const [showDeliveryStatus, setShowDeliveryStatus] = useState(true);
-  const [products, setProducts] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [localBannerIndex, setLocalBannerIndex] = useState(0);
   const [localBannerIndex2, setLocalBannerIndex2] = useState(0);
   const [isBannerPaused, setIsBannerPaused] = useState(false);
@@ -249,37 +248,6 @@ function Home() {
       clearInterval(localBannerTimerRef2.current);
   }, [isBannerPaused2, groupCount2]);
 
-  // Fetch categories and products
-  const fetchCategories = async () => {
-    try {
-      const API_BASE_URL =
-        import.meta.env.VITE_API_BASE || "http://localhost:3001";
-      const response = await fetch(`${API_BASE_URL}/api/categories`);
-      if (response.ok) {
-        const data = await response.json();
-        setCategories(data.filter((cat) => cat.slug !== "all"));
-      }
-    } catch (error) {
-      console.error("Error fetching categories:", error);
-    }
-  };
-
-  const fetchProducts = async () => {
-    try {
-      const API_BASE_URL =
-        import.meta.env.VITE_API_BASE || "http://localhost:3001";
-      const response = await fetch(`${API_BASE_URL}/api/products`);
-      if (response.ok) {
-        const data = await response.json();
-        setProducts(data);
-      }
-    } catch (error) {
-      console.error("Error fetching products:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   // Check delivery availability
   const checkDeliveryAvailability = async (
     country,
@@ -319,10 +287,8 @@ function Home() {
     setCheckingDelivery(false);
   };
 
-  // Initial data fetch and geolocation
+  // Initial geolocation check
   useEffect(() => {
-    fetchCategories();
-    fetchProducts();
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         async (position) => {
@@ -455,7 +421,8 @@ function Home() {
                       src={cat.image_url || `/categories/${cat.slug}.png`}
                       alt={cat.name}
                       className="w-full h-full object-contain rounded-full"
-                      loading="lazy"
+                      loading="eager"
+                      fetchpriority="high"
                       onError={(e) => {
                         // Fallback to local image if database image fails
                         e.target.src = `/categories/${cat.slug}.png`;
@@ -1000,6 +967,11 @@ function Home() {
                               src={product.image_url}
                               alt={product.title}
                               className="w-full h-32 sm:h-36 object-cover group-hover:scale-105 transition-transform duration-200"
+                              loading="lazy"
+                              fetchpriority="low"
+                              onError={(e) => {
+                                e.target.src = "/logo192.png";
+                              }}
                             />
                             {hasDiscount && (
                               <div className="absolute top-1 left-1 bg-gradient-to-r from-emerald-500 to-teal-600 text-white px-1.5 py-0.5 rounded text-xs font-bold">
