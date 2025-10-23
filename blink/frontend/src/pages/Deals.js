@@ -165,9 +165,34 @@ function Deals() {
 
         {/* Products Grid */}
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-20">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
-            <p className="mt-3 text-gray-600 text-sm">Loading deals...</p>
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 mb-8">
+            {Array.from({ length: 8 }).map((_, index) => (
+              <div
+                key={index}
+                className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200"
+              >
+                {/* Image Skeleton */}
+                <div className="w-full h-28 sm:h-32 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 animate-pulse"></div>
+                
+                {/* Content Skeleton */}
+                <div className="p-2 sm:p-3 space-y-2">
+                  {/* Title Skeleton */}
+                  <div className="space-y-1">
+                    <div className="h-3 bg-gray-200 rounded animate-pulse"></div>
+                    <div className="h-3 bg-gray-200 rounded w-3/4 animate-pulse"></div>
+                  </div>
+                  
+                  {/* Price Skeleton */}
+                  <div className="space-y-1">
+                    <div className="h-4 bg-gray-300 rounded w-1/2 animate-pulse"></div>
+                    <div className="h-3 bg-gray-200 rounded w-1/3 animate-pulse"></div>
+                  </div>
+                  
+                  {/* Button Skeleton */}
+                  <div className="h-8 bg-gray-200 rounded animate-pulse"></div>
+                </div>
+              </div>
+            ))}
           </div>
         ) : currentProducts.length > 0 ? (
           <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 mb-8">
