@@ -34,7 +34,13 @@ function Home() {
   // Local category carousel banners (Carousel 1)
   const localCategoryBanners2 = [
     {
-      key: "dairy",
+      key: "Masala-Powder",
+      src: "/carousel1/masala.png",
+      title: "Masala Powder",
+      link: "/products?category=masala-powder",
+    },
+    {
+      key: "Nutes&Seeds",
       src: "/carousel1/dairy.png",
       title: "Dairy Deals",
       link: "/products?category=dairy-varieties",
@@ -55,18 +61,6 @@ function Home() {
       key: "cooking",
       src: "/carousel1/cooking.png",
       title: "Cooking Essentials",
-      link: "/products?category",
-    },
-    {
-      key: "pet",
-      src: "/carousel1/pet.png",
-      title: "Pet Care",
-      link: "/products?category",
-    },
-    {
-      key: "cleaning",
-      src: "/carousel1/cleaning.png",
-      title: "Home Cleaning",
       link: "/products?category",
     },
   ];
@@ -98,16 +92,10 @@ function Home() {
       link: "/products?category",
     },
     {
-      key: "babycare",
-      src: "/carousel2/babycare.png",
-      title: "Baby Care",
-      link: "/products?category",
-    },
-    {
-      key: "stationery",
-      src: "/carousel2/stationery.png",
-      title: "Stationery",
-      link: "/products?category",
+      key: "Coffee",
+      src: "/carousel2/coffee.png",
+      title: "Coffee",
+      link: "/products?category=baverages",
     },
   ];
 
@@ -654,8 +642,8 @@ function Home() {
                       fetchPriority={
                         index === localBannerIndex ? "high" : "auto"
                       }
-                      width="800"
-                      height="400"
+                      width="1600"
+                      height="900"
                       onError={(e) => {
                         console.log(`Failed to load image: ${item.src}`);
                         e.target.src = "/logo192.png";
@@ -686,15 +674,15 @@ function Home() {
 
               {/* Dots */}
               <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-20">
-                {localCategoryBanners.map((_, dotIndex) => (
+                {[0, 1, 2].map((dotIndex) => (
                   <div
                     key={dotIndex}
-                    className={`h-2 w-2 rounded-full cursor-pointer ${
-                      dotIndex === localBannerIndex
-                        ? "bg-white"
-                        : "bg-white/40 hover:bg-white/70"
+                    className={`rounded-full cursor-pointer transition-all ${
+                      Math.floor(localBannerIndex / 2) === dotIndex
+                        ? "h-2.5 w-2.5 bg-white"
+                        : "h-2 w-2 bg-white/40 hover:bg-white/70"
                     }`}
-                    onClick={() => setLocalBannerIndex(dotIndex)}
+                    onClick={() => setLocalBannerIndex(dotIndex * 2)}
                   />
                 ))}
               </div>
@@ -732,8 +720,8 @@ function Home() {
                       fetchPriority={
                         index === localBannerIndex2 ? "high" : "auto"
                       }
-                      width="800"
-                      height="400"
+                      width="1600"
+                      height="900"
                       onError={(e) => {
                         console.log(`Failed to load image: ${item.src}`);
                         e.target.src = "/logo192.png";
@@ -764,15 +752,15 @@ function Home() {
 
               {/* Dots */}
               <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-20">
-                {localCategoryBanners2.map((_, dotIndex) => (
+                {[0, 1, 2].map((dotIndex) => (
                   <div
                     key={dotIndex}
-                    className={`h-2 w-2 rounded-full cursor-pointer ${
-                      dotIndex === localBannerIndex2
-                        ? "bg-white"
-                        : "bg-white/40 hover:bg-white/70"
+                    className={`rounded-full cursor-pointer transition-all ${
+                      Math.floor(localBannerIndex2 / 2) === dotIndex
+                        ? "h-2.5 w-2.5 bg-white"
+                        : "h-2 w-2 bg-white/40 hover:bg-white/70"
                     }`}
-                    onClick={() => setLocalBannerIndex2(dotIndex)}
+                    onClick={() => setLocalBannerIndex2(dotIndex * 2)}
                   />
                 ))}
               </div>
@@ -831,7 +819,7 @@ function Home() {
                           index === localBannerIndex ? "high" : "auto"
                         }
                         width="1600"
-                        height="600"
+                        height="900"
                         onError={(e) => {
                           console.log(`Failed to load image: ${item.src}`);
                           e.target.src = "/logo192.png";
@@ -914,7 +902,7 @@ function Home() {
                           index === localBannerIndex2 ? "high" : "auto"
                         }
                         width="1600"
-                        height="600"
+                        height="900"
                         onError={(e) => {
                           console.log(`Failed to load image: ${item.src}`);
                           e.target.src = "/logo192.png";
