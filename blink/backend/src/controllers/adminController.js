@@ -35,20 +35,21 @@ export async function summary(req, res) {
       .eq("is_active", true);
     if (pErr) return res.status(400).json({ error: pErr.message });
 
-    // Calculate summary metrics
-    const totalRevenue =
-      (orders || []).reduce((sum, order) => sum + (order.total_cents || 0), 0) /
-      100;
+    // Calculate summary metrics - only count completed/paid/delivered orders for revenue
+    const paidOrders = (orders || []).filter(order => 
+      ["completed", "confirmed", "paid", "delivered"].includes(order.status)
+    );
+    const totalRevenue = paidOrders.reduce((sum, order) => sum + (order.total_cents || 0), 0) / 100;
     const totalOrders = orders?.length || 0;
     const totalCustomers = customers?.length || 0;
     const totalProducts = products?.length || 0;
-    const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+    const averageOrderValue = paidOrders.length > 0 ? totalRevenue / paidOrders.length : 0;
 
-    // Generate daily revenue data
+    // Generate daily revenue data - only from paid orders
     const dailyRevenue = [];
     const revenueByDate = new Map();
 
-    (orders || []).forEach((order) => {
+    paidOrders.forEach((order) => {
       const date = dayjs(order.created_at).format("YYYY-MM-DD");
       const current = revenueByDate.get(date) || 0;
       revenueByDate.set(date, current + (order.total_cents || 0) / 100);
@@ -67,11 +68,11 @@ export async function summary(req, res) {
       currentDate = currentDate.add(1, "day");
     }
 
-    // Calculate category revenue
+    // Calculate category revenue - only from paid orders
     const categoryRevenue = [];
     const categoryMap = new Map();
 
-    (orders || []).forEach((order) => {
+    paidOrders.forEach((order) => {
       (order.order_items || []).forEach((item) => {
         const product = products?.find((p) => p.id === item.product_id);
         const categoryName = product?.category_id || "Uncategorized";
@@ -84,9 +85,9 @@ export async function summary(req, res) {
       categoryRevenue.push({ category, revenue });
     });
 
-    // Calculate top products
+    // Calculate top products - only from paid orders
     const productMap = new Map();
-    (orders || []).forEach((order) => {
+    paidOrders.forEach((order) => {
       (order.order_items || []).forEach((item) => {
         const key = item.product_id;
         const current = productMap.get(key) || {
