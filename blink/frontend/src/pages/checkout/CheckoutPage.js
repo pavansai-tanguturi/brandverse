@@ -417,36 +417,57 @@ const CheckoutPage = () => {
       {/* Progress Steps bar placed under the sticky navbar so it doesn't overlap content */}
       <div className="bg-white border-b border-gray-200 sticky top-16 z-30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-center items-center space-x-3 overflow-x-auto py-3">
-            {[
-              { num: 1, label: "Bag" },
-              { num: 2, label: "Address" },
-              { num: 3, label: "Payment" },
-            ].map((item, idx) => (
-              <React.Fragment key={item.num}>
-                <div className="flex items-center">
-                  <div
-                    className={`flex items-center space-x-2 px-3 py-1 rounded-full transition-all ${
-                      step >= item.num
-                        ? "bg-emerald-100 text-emerald-700 border border-emerald-200"
-                        : "bg-gray-50 text-gray-400 border border-gray-200"
-                    }`}
-                  >
-                    <span
-                      className={`text-sm font-bold ${step === item.num ? "scale-110" : ""}`}
+          <div className="flex items-center space-x-3 py-3">
+            <button
+              onClick={() => navigate("/cart")}
+              className="p-2 hover:bg-gray-100 rounded-full transition-all flex-shrink-0"
+              aria-label="Back to cart"
+            >
+              <svg
+                className="w-6 h-6 text-gray-700"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M15 19l-7-7 7-7"
+                />
+              </svg>
+            </button>
+            <div className="flex justify-center items-center space-x-3 overflow-x-auto flex-1">
+              {[
+                { num: 1, label: "Bag" },
+                { num: 2, label: "Address" },
+                { num: 3, label: "Payment" },
+              ].map((item, idx) => (
+                <React.Fragment key={item.num}>
+                  <div className="flex items-center">
+                    <div
+                      className={`flex items-center space-x-2 px-3 py-1 rounded-full transition-all ${
+                        step >= item.num
+                          ? "bg-emerald-100 text-emerald-700 border border-emerald-200"
+                          : "bg-gray-50 text-gray-400 border border-gray-200"
+                      }`}
                     >
-                      {item.num}
-                    </span>
-                    <span className="text-xs font-medium">{item.label}</span>
+                      <span
+                        className={`text-sm font-bold ${step === item.num ? "scale-110" : ""}`}
+                      >
+                        {item.num}
+                      </span>
+                      <span className="text-xs font-medium">{item.label}</span>
+                    </div>
                   </div>
-                </div>
-                {idx < 2 && (
-                  <div
-                    className={`w-8 md:w-12 h-0.5 ${step > item.num ? "bg-emerald-500" : "bg-gray-200"}`}
-                  />
-                )}
-              </React.Fragment>
-            ))}
+                  {idx < 2 && (
+                    <div
+                      className={`w-8 md:w-12 h-0.5 ${step > item.num ? "bg-emerald-500" : "bg-gray-200"}`}
+                    />
+                  )}
+                </React.Fragment>
+              ))}
+            </div>
           </div>
         </div>
       </div>

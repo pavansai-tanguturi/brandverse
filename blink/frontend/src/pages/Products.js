@@ -236,6 +236,11 @@ function Products() {
     }
   }, [searchParams]);
 
+  // Scroll to top when filters change or page loads
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [selectedCategory, searchQuery, searchParams]);
+
   // Click-outside detection for dropdowns
   useEffect(() => {
     const handleClickOutside = (event) => {
