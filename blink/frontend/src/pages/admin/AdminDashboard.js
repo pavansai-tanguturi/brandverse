@@ -2,30 +2,27 @@ import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Link } from "react-router-dom";
 import AdminNav from "../../components/admin/AdminNav";
 import { useAuth } from "../../context/AuthContext";
+import { apiCall } from "../../utils/api";
+import { format, subDays } from "date-fns";
 
 // Constants
-const API_TIMEOUT = 10000;
 const MAX_RETRY_ATTEMPTS = 2;
 const RETRY_DELAYS = [3000, 6000];
 
-// Initial state
+// Initial state - using the same structure as backend response
 const INITIAL_SUMMARY = {
-  totalRevenue: 0,
-  totalOrders: 0,
-  averageOrderValue: 0,
-  totalCustomers: 0,
-  totalProducts: 0,
-  activeProducts: 0,
-  monthlyRevenue: 0,
-  weeklyRevenue: 0,
-  todayOrders: 0,
-  pendingOrders: 0,
-  lowStockProducts: 0,
-  recentCustomers: 0,
+  summary: {
+    totalRevenue: 0,
+    totalOrders: 0,
+    averageOrderValue: 0,
+    totalCustomers: 0,
+    totalProducts: 0,
+    revenueGrowth: 0,
+  },
+  dailyRevenue: [],
+  categoryRevenue: [],
   topProducts: [],
   orderStatus: [],
-  revenueGrowth: 0,
-  orderGrowth: 0,
 };
 
 // Status colors mapping
@@ -95,38 +92,22 @@ const getErrorMessage = (error) => {
   return `API Error: ${error.message}`;
 };
 
-// Data transformation function
-const transformApiData = (data) => {
-  if (!data) return INITIAL_SUMMARY;
+// Utility functions to calculate derived metrics
+const calculateTodayOrders = (dailyRevenue) => {
+  if (!dailyRevenue || dailyRevenue.length === 0) return 0;
+  const today = new Date().toISOString().split('T')[0];
+  const todayData = dailyRevenue.find(day => day.date === today);
+  return todayData?.orders || 0;
+};
 
-  const { summary, dailyRevenue, topProducts, orderStatus } = data;
+const calculatePendingOrders = (orderStatus) => {
+  if (!orderStatus || orderStatus.length === 0) return 0;
+  const pendingStatus = orderStatus.find(status => status.status === 'pending');
+  return pendingStatus?.count || 0;
+};
 
-  return {
-    totalRevenue: summary?.totalRevenue || 0,
-    totalOrders: summary?.totalOrders || 0,
-    averageOrderValue: summary?.averageOrderValue || 0,
-    totalCustomers: summary?.totalCustomers || 0,
-    totalProducts: summary?.totalProducts || 0,
-    activeProducts: summary?.totalProducts || 0,
-    monthlyRevenue: summary?.totalRevenue || 0,
-    weeklyRevenue: (summary?.totalRevenue || 0) * 0.25,
-    todayOrders: dailyRevenue?.[dailyRevenue.length - 1]?.orders || 0,
-    pendingOrders: orderStatus?.find((s) => s.status === "pending")?.count || 0,
-    lowStockProducts: 0,
-    recentCustomers: Math.floor((summary?.totalCustomers || 0) * 0.1),
-    revenueGrowth: summary?.revenueGrowth || 0,
-    orderGrowth: 0,
-    topProducts: Array.isArray(topProducts) ? topProducts : [],
-    orderStatus: Array.isArray(orderStatus)
-      ? orderStatus.map((status) => ({
-          ...status,
-          percentage:
-            summary?.totalOrders > 0
-              ? ((status.count / summary.totalOrders) * 100).toFixed(1)
-              : 0,
-        }))
-      : [],
-  };
+const calculateRecentCustomers = (totalCustomers) => {
+  return Math.floor((totalCustomers || 0) * 0.1);
 };
 
 // Component parts
@@ -224,10 +205,11 @@ const AdminDashboard = () => {
   const [retryCount, setRetryCount] = useState(0);
   const { user, loading: authLoading } = useAuth();
 
-  const API_BASE = useMemo(
-    () => import.meta.env.VITE_API_BASE || "http://localhost:3001",
-    [],
-  );
+  // Add date range like AnalyticsDashboard
+  const [dateRange] = useState({
+    start: format(subDays(new Date(), 30), "yyyy-MM-dd"),
+    end: format(new Date(), "yyyy-MM-dd"),
+  });
 
   const fetchSummary = useCallback(
     async (attempt = 0) => {
@@ -241,43 +223,20 @@ const AdminDashboard = () => {
         setLoading(true);
         setError(null);
 
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT);
-
-        // Get JWT from localStorage
-        const token = localStorage.getItem("auth_token");
-
-        const response = await fetch(
-          `${API_BASE}/api/admin/analytics/summary`,
-          {
-            credentials: "include",
-            headers: {
-              "Content-Type": "application/json",
-              Accept: "application/json",
-              ...(token ? { Authorization: `Bearer ${token}` } : {}),
-            },
-            signal: controller.signal,
-          },
+        // Use apiCall utility like AnalyticsDashboard does with date parameters
+        const data = await apiCall(
+          `/api/admin/analytics/summary?startDate=${dateRange.start}&endDate=${dateRange.end}`
         );
 
-        clearTimeout(timeoutId);
-
-        if (!response.ok) {
-          throw new Error(
-            `API responded with status ${response.status}: ${response.statusText}`,
-          );
-        }
-
-        const data = await response.json();
-
-        setSummary(transformApiData(data));
+        // Store the raw data structure like AnalyticsDashboard
+        setSummary(data);
         setRetryCount(0);
       } catch (err) {
         console.error("Error fetching analytics data:", err);
         setError(getErrorMessage(err));
 
         // Auto-retry logic
-        if (attempt < MAX_RETRY_ATTEMPTS && err.name !== "AbortError") {
+        if (attempt < MAX_RETRY_ATTEMPTS) {
           setTimeout(() => {
             setRetryCount((prev) => prev + 1);
             fetchSummary(attempt + 1);
@@ -287,7 +246,7 @@ const AdminDashboard = () => {
         setLoading(false);
       }
     },
-    [API_BASE, user?.isAdmin],
+    [user?.isAdmin, dateRange.start, dateRange.end],
   );
 
   // Single effect to handle data fetching
@@ -310,63 +269,61 @@ const AdminDashboard = () => {
   // Memoized metric cards data
   const metricCards = useMemo(
     () => [
-      {
-        title: "Total Revenue",
-        value: formatCurrency(summary.totalRevenue),
-        subtitle: `+${formatPercentage(summary.revenueGrowth)} from last month`,
-        color: "blue",
-        gradient: "from-blue-500 to-blue-600",
-        icon: "M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z",
-      },
+        {
+          title: "Total Revenue",
+          value: formatCurrency(summary.summary?.totalRevenue || 0),
+          subtitle: `+${formatPercentage(summary.summary?.revenueGrowth || 0)} from last month`,
+          color: "blue",
+          gradient: "from-blue-500 to-blue-600",
+          icon: "M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z",
+        },
       {
         title: "Total Orders",
-        value: summary.totalOrders || 0,
-        subtitle: `+${formatPercentage(summary.orderGrowth)} from last month`,
+        value: summary.summary?.totalOrders || 0,
+        subtitle: `${calculateTodayOrders(summary.dailyRevenue)} orders today`,
         color: "green",
         gradient: "from-green-500 to-green-600",
         icon: "M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3z",
       },
       {
         title: "Avg Order Value",
-        value: formatCurrency(summary.averageOrderValue),
-        subtitle: `${summary.todayOrders} orders today`,
+        value: formatCurrency(summary.summary?.averageOrderValue || 0),
+        subtitle: `${calculateTodayOrders(summary.dailyRevenue)} orders today`,
         color: "purple",
         gradient: "from-purple-500 to-purple-600",
         icon: "M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z",
-      },
-      {
-        title: "Total Customers",
-        value: summary.totalCustomers || 0,
-        subtitle: `${summary.recentCustomers} new this week`,
-        color: "indigo",
-        gradient: "from-indigo-500 to-indigo-600",
-        icon: "M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z",
-      },
-    ],
+        },
+        {
+          title: "Total Customers",
+          value: summary.summary?.totalCustomers || 0,
+          subtitle: `${calculateRecentCustomers(summary.summary?.totalCustomers)} new this week`,
+          color: "indigo",
+          gradient: "from-indigo-500 to-indigo-600",
+          icon: "M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z",
+        },
+      ],
     [summary],
-  );
-
-  const additionalMetrics = useMemo(
+  );  const additionalMetrics = useMemo(
     () => [
       {
         label: "Monthly Revenue",
-        value: formatCurrency(summary.monthlyRevenue),
+        value: formatCurrency(summary.summary?.totalRevenue || 0),
         color: "gray",
       },
       {
         label: "Pending Orders",
-        value: summary.pendingOrders,
+        value: calculatePendingOrders(summary.orderStatus),
         color: "orange",
       },
       {
         label: "Active Products",
-        value: summary.activeProducts,
+        value: summary.summary?.totalProducts || 0,
         color: "green",
       },
       {
-        label: "Low Stock Alert",
-        value: summary.lowStockProducts,
-        color: "red",
+        label: "Growth Rate",
+        value: `${formatPercentage(summary.summary?.revenueGrowth || 0)}`,
+        color: summary.summary?.revenueGrowth >= 0 ? "green" : "red",
       },
     ],
     [summary],
@@ -511,7 +468,7 @@ const AdminDashboard = () => {
                     <div className="space-y-3">
                       {summary.topProducts.slice(0, 5).map((product, index) => (
                         <div
-                          key={product.id || index}
+                          key={product.title || index}
                           className="flex items-center justify-between p-3 bg-gray-50 rounded border-l-4 border-blue-400"
                         >
                           <div className="flex items-center flex-1">
@@ -523,7 +480,7 @@ const AdminDashboard = () => {
                                 {product.title}
                               </span>
                               <span className="text-sm text-gray-500">
-                                Stock: {product.stockLevel || "N/A"}
+                                Quantity Sold: {product.quantity || 0}
                               </span>
                             </div>
                           </div>
@@ -561,26 +518,33 @@ const AdminDashboard = () => {
                   </h3>
                   {summary.orderStatus?.length > 0 ? (
                     <div className="space-y-3">
-                      {summary.orderStatus.map((status, index) => (
-                        <div
-                          key={index}
-                          className={`flex items-center justify-between p-3 rounded border-l-4 ${getStatusColor(status.status)}`}
-                        >
-                          <div className="flex items-center">
-                            <span className="font-medium capitalize">
-                              {status.status}
-                            </span>
-                            <span className="text-sm text-gray-600 ml-2">
-                              ({status.percentage}%)
+                      {summary.orderStatus.map((status, index) => {
+                        const totalOrders = summary.summary?.totalOrders || 1;
+                        const percentage = totalOrders > 0 
+                          ? ((status.count / totalOrders) * 100).toFixed(1)
+                          : 0;
+                        
+                        return (
+                          <div
+                            key={index}
+                            className={`flex items-center justify-between p-3 rounded border-l-4 ${getStatusColor(status.status)}`}
+                          >
+                            <div className="flex items-center">
+                              <span className="font-medium capitalize">
+                                {status.status}
+                              </span>
+                              <span className="text-sm text-gray-600 ml-2">
+                                ({percentage}%)
+                              </span>
+                            </div>
+                            <span
+                              className={`px-3 py-1 rounded-full text-sm font-semibold ${getStatusColor(status.status)}`}
+                            >
+                              {status.count} orders
                             </span>
                           </div>
-                          <span
-                            className={`px-3 py-1 rounded-full text-sm font-semibold ${getStatusColor(status.status)}`}
-                          >
-                            {status.count} orders
-                          </span>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   ) : (
                     <EmptyState
