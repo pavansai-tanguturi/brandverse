@@ -1,15 +1,75 @@
 import { supabaseAdmin } from "../config/supabaseClient.js";
 
+// Telugu to English city name mappings
+const teluguCityTranslations = {
+  'భీమవరం': 'Bhimavaram',
+  'విజయవాడ': 'Vijayawada', 
+  'గుంటూరు': 'Guntur',
+  'హైదరాబాద్': 'Hyderabad',
+  'వరంగల్': 'Warangal',
+  'తిరుపతి': 'Tirupati',
+  'విశాఖపట్నం': 'Visakhapatnam',
+  'కాకినాడ': 'Kakinada',
+  'నెల్లూరు': 'Nellore',
+  'కర్నూల్': 'Kurnool',
+  'అనంతపురం': 'Anantapur',
+  'చిత్తూరు': 'Chittoor',
+  'రాజమండ్రి': 'Rajahmundry',
+  'ఏలూరు': 'Eluru',
+  'మచిలీపట్నం': 'Machilipatnam',
+  'తాడేపల్లిగుడెం': 'Tadepalligudem',
+  'భద్రాచలం': 'Bhadrachalam',
+  'అమలాపురం': 'Amalapuram',
+  'తణుకు': 'Tanuku'
+};
+
 // Simple function to normalize location strings for consistent comparison
 const normalizeLocationString = (str) => {
   if (!str) return null;
   return str.trim();
 };
 
-// Utility function to normalize location strings
+// Utility function to normalize location strings with Telugu translation support
 const normalizeLocation = (str) => {
   if (!str) return null;
-  return str.trim().toLowerCase();
+  
+  const trimmed = str.trim();
+  
+  // Check if it's a Telugu city name and translate it
+  if (teluguCityTranslations[trimmed]) {
+    return teluguCityTranslations[trimmed].toLowerCase();
+  }
+  
+  return trimmed.toLowerCase();
+};
+
+// Function to get all possible variations of a city name for matching
+const getCityVariations = (city) => {
+  if (!city) return [];
+  
+  const variations = new Set();
+  const trimmed = city.trim();
+  
+  // Add original
+  variations.add(trimmed);
+  variations.add(trimmed.toLowerCase());
+  
+  // Add Telugu translation if available
+  if (teluguCityTranslations[trimmed]) {
+    const englishName = teluguCityTranslations[trimmed];
+    variations.add(englishName);
+    variations.add(englishName.toLowerCase());
+  }
+  
+  // Check reverse translation (English to Telugu)
+  const teluguName = Object.keys(teluguCityTranslations).find(
+    key => teluguCityTranslations[key].toLowerCase() === trimmed.toLowerCase()
+  );
+  if (teluguName) {
+    variations.add(teluguName);
+  }
+  
+  return Array.from(variations);
 };
 
 // Utility function to validate location data
@@ -119,15 +179,30 @@ export async function checkDeliveryAvailability(req, res) {
 
       // 1. First check for exact location match (city + region + country)
       if (city && region) {
-        const { data: exactMatch, error: exactError } = await supabaseAdmin
-          .from("delivery_locations")
-          .select("*")
-          .eq("is_active", true)
-          .ilike("country", country)
-          .ilike("region", region)
-          .ilike("city", city);
+        const cityVariations = getCityVariations(city);
+        
+        console.log(`🔍 Trying city variations: ${cityVariations.join(', ')}`);
+        
+        let exactMatch = null;
+        let exactError = null;
+        
+        // Try each city variation
+        for (const cityVariation of cityVariations) {
+          const { data, error } = await supabaseAdmin
+            .from("delivery_locations")
+            .select("*")
+            .eq("is_active", true)
+            .ilike("country", country)
+            .ilike("region", region)
+            .ilike("city", cityVariation);
 
-        if (!exactError && exactMatch && exactMatch.length > 0) {
+          if (!error && data && data.length > 0) {
+            exactMatch = data;
+            break;
+          }
+        }
+
+        if (exactMatch && exactMatch.length > 0) {
           const location = exactMatch[0];
           const locationName = [
             location.city,
@@ -136,7 +211,7 @@ export async function checkDeliveryAvailability(req, res) {
           ]
             .filter(Boolean)
             .join(", ");
-          console.log(`✅ Exact match found: ${locationName}`);
+          console.log(`✅ Exact match found: ${locationName} (matched via: ${city})`);
 
           return res.json({
             available: true,
