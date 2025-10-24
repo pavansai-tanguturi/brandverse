@@ -35,67 +35,67 @@ function Home() {
   const localCategoryBanners2 = [
     {
       key: "Masala-Powder",
-      src: "/carousel1/masala.png",
+      src: "/carousel1/masala.jpeg",
       title: "Masala Powder",
       link: "/products?category=masala-powder",
     },
     {
-      key: "Nutes&Seeds",
-      src: "/carousel1/dairy.png",
-      title: "Dairy Deals",
-      link: "/products?category=dairy-varieties",
+      key: "Flour",
+      src: "/carousel1/flour.jpeg",
+      title: "Flour",
+      link: "/products?category=flour-varieties",
     },
     {
-      key: "basmati",
-      src: "/carousel1/basmati.png",
-      title: "Basmati Rice",
-      link: "/products?category",
+      key: "Rice",
+      src: "/carousel1/rice.jpeg",
+      title: "Rice",
+      link: "/products?category=rice-varieties",
     },
     {
-      key: "veggies",
-      src: "/carousel1/veggies.png",
-      title: "Fresh Veggies",
-      link: "/products?category",
+      key: "spices",
+      src: "/carousel1/spices.jpeg",
+      title: "Spices",
+      link: "/products?category=spices-condiments",
     },
     {
-      key: "cooking",
-      src: "/carousel1/cooking.png",
-      title: "Cooking Essentials",
-      link: "/products?category",
+      key: "Tiffin",
+      src: "/carousel1/tiffin.jpeg",
+      title: "Tiffin Essentials",
+      link: "/products?category=tiffin-varieties",
     },
   ];
 
   // Second carousel images (Carousel 2)
   const localCategoryBanners = [
     {
-      key: "fruits",
-      src: "/carousel2/fruits.png",
-      title: "Fresh Fruits",
-      link: "/products?category",
-    },
-    {
-      key: "snacks",
-      src: "/carousel2/snacks.png",
-      title: "Snacks & Munchies",
-      link: "/products?category",
-    },
-    {
-      key: "beverages",
-      src: "/carousel2/beverages.png",
-      title: "Beverages",
-      link: "/products?category=baverages",
-    },
-    {
-      key: "bakery",
-      src: "/carousel2/bakery.png",
-      title: "Bakery",
-      link: "/products?category",
-    },
-    {
       key: "Coffee",
-      src: "/carousel2/coffee.png",
-      title: "Coffee",
+      src: "/carousel2/coffee.jpeg",
+      title: "Fresh Coffee",
       link: "/products?category=baverages",
+    },
+    {
+      key: "Dairy",
+      src: "/carousel2/dairy.jpeg",
+      title: "Dairy Products",
+      link: "/products?category=dairy-varites",
+    },
+    {
+      key: "Dal",
+      src: "/carousel2/dal.jpeg",
+      title: "Dal",
+      link: "/products?category=dal-varieties",
+    },
+    {
+      key: "nuts",
+      src: "/carousel2/nuts.jpeg",
+      title: "Nuts & Seeds",
+      link: "/products?category=nuts-seeds",
+    },
+    {
+      key: "Oil",
+      src: "/carousel2/oil.jpeg",
+      title: "Cooking Oil",
+      link: "/products?category=oil-varieties",
     },
   ];
 
