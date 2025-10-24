@@ -69,12 +69,18 @@ const Login = () => {
         if (data.token) {
           localStorage.setItem("auth_token", data.token);
         }
+        
+        // Always refresh user session to get updated auth context
+        setMessage("Login successful! Refreshing user session...");
+        await refreshUser();
+        
         if (data.admin) {
           localStorage.setItem("is_admin", "true");
-          navigate("/admin/dashboard");
+          setMessage("Login successful! Redirecting to admin dashboard...");
+          setTimeout(() => {
+            navigate("/admin/dashboard");
+          }, 500);
         } else {
-          setMessage("Login successful! Refreshing user session...");
-          await refreshUser();
           setMessage("Login successful! Redirecting to home...");
           setTimeout(() => {
             navigate("/");
