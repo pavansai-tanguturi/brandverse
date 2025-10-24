@@ -374,70 +374,195 @@ export async function deleteProduct(req, res) {
   const { id } = req.params;
   const { force } = req.query; // Optional force parameter to remove from carts
 
+  console.log(`🗑️ Delete product request: ID=${id}, force=${force}`);
+
   try {
-    // First check if the product is in any carts
+    // First check if product exists
+    const { data: product, error: productError } = await supabaseAdmin
+      .from("products")
+      .select("id, title")
+      .eq("id", id)
+      .single();
+
+    if (productError) {
+      console.log(`❌ Product not found: ${id}`, productError);
+      return res.status(404).json({ 
+        error: "Product not found",
+        details: productError.message 
+      });
+    }
+
+    console.log(`✅ Found product: ${product.title}`);
+
+    // Check if the product is in any carts
     const { data: cartItems, error: cartError } = await supabaseAdmin
       .from("cart_items")
       .select("id, cart_id")
       .eq("product_id", id);
 
     if (cartError) {
-      return res.status(500).json({ error: "Error checking cart items" });
+      console.log(`❌ Error checking cart items:`, cartError);
+      return res.status(500).json({ 
+        error: "Error checking cart items",
+        details: cartError.message 
+      });
     }
+
+    console.log(`📦 Product in ${cartItems?.length || 0} cart(s)`);
 
     if (cartItems && cartItems.length > 0) {
       if (!force) {
         // If product is in carts and force is false, return error with count
+        console.log(`⚠️ Product in carts, force=false - blocking deletion`);
         return res.status(400).json({
           error: "Product is in active carts",
           message: `This product is in ${cartItems.length} active cart(s). Remove it from carts first or use force=true to automatically remove it.`,
           cartCount: cartItems.length,
+          canForceDelete: true
         });
       }
 
       // If force is true, remove from all carts first
+      console.log(`🔨 Force delete: removing from ${cartItems.length} cart(s)`);
       const { error: removeError } = await supabaseAdmin
         .from("cart_items")
         .delete()
         .eq("product_id", id);
 
       if (removeError) {
+        console.log(`❌ Failed to remove from carts:`, removeError);
         return res.status(500).json({
           error: "Failed to remove product from carts",
           details: removeError.message,
         });
       }
+      console.log(`✅ Removed from all carts`);
     }
 
     // Delete product images from storage
+    console.log(`🖼️ Deleting product images...`);
     const { data: imgs } = await supabaseAdmin
       .from("product_images")
       .select("path")
       .eq("product_id", id);
 
     if (imgs?.length) {
-      await supabaseAdmin.storage
-        .from(process.env.PRODUCT_IMAGES_BUCKET)
+      console.log(`🗑️ Deleting ${imgs.length} image(s) from storage`);
+      const storageResult = await supabaseAdmin.storage
+        .from(process.env.PRODUCT_IMAGES_BUCKET || "product-images")
         .remove(imgs.map((i) => i.path));
+      
+      if (storageResult.error) {
+        console.log(`⚠️ Storage deletion warning:`, storageResult.error);
+        // Don't fail the whole operation for storage errors
+      } else {
+        console.log(`✅ Images deleted from storage`);
+      }
     }
 
-    // Finally delete the product
+    // Check if product is referenced in orders (foreign key constraint)
+    console.log(`🔍 Checking if product is in any orders...`);
+    const { data: orderItems, error: orderCheckError } = await supabaseAdmin
+      .from("order_items")
+      .select("id, order_id")
+      .eq("product_id", id)
+      .limit(1);
+
+    if (orderCheckError) {
+      console.log(`❌ Error checking order items:`, orderCheckError);
+      return res.status(500).json({ 
+        error: "Error checking order history",
+        details: orderCheckError.message 
+      });
+    }
+
+    if (orderItems && orderItems.length > 0) {
+      console.log(`📦 Product has been ordered before - cannot delete permanently`);
+      
+      // Instead of deleting, deactivate the product
+      console.log(`� Deactivating product instead of deleting...`);
+      const { error: deactivateError } = await supabaseAdmin
+        .from("products")
+        .update({ 
+          is_active: false,
+          title: `[DELETED] ${product.title}`,
+          updated_at: new Date().toISOString()
+        })
+        .eq("id", id);
+
+      if (deactivateError) {
+        console.log(`❌ Failed to deactivate product:`, deactivateError);
+        return res.status(400).json({ 
+          error: "Failed to deactivate product",
+          details: deactivateError.message 
+        });
+      }
+
+      console.log(`✅ Product deactivated successfully`);
+      return res.json({
+        success: true,
+        message: "Product has been deactivated (hidden from customers) because it has order history. This preserves data integrity.",
+        action: "deactivated",
+        removedFromCarts: cartItems?.length || 0,
+      });
+    }
+
+    // If no order history, proceed with actual deletion
+    console.log(`🗑️ No order history found - proceeding with deletion...`);
     const { error } = await supabaseAdmin
       .from("products")
       .delete()
       .eq("id", id);
 
     if (error) {
-      return res.status(400).json({ error: error.message });
+      console.log(`❌ Failed to delete product:`, error);
+      
+      // Check if it's a foreign key constraint we missed
+      if (error.code === '23503') {
+        console.log(`🔒 Foreign key constraint detected - deactivating instead...`);
+        const { error: deactivateError } = await supabaseAdmin
+          .from("products")
+          .update({ 
+            is_active: false,
+            title: `[DELETED] ${product.title}`,
+            updated_at: new Date().toISOString()
+          })
+          .eq("id", id);
+
+        if (deactivateError) {
+          return res.status(400).json({ 
+            error: "Failed to deactivate product",
+            details: deactivateError.message 
+          });
+        }
+
+        return res.json({
+          success: true,
+          message: "Product has been deactivated because it's referenced in the system. This preserves data integrity.",
+          action: "deactivated",
+          removedFromCarts: cartItems?.length || 0,
+        });
+      }
+      
+      return res.status(400).json({ 
+        error: "Failed to delete product",
+        details: error.message 
+      });
     }
 
+    console.log(`✅ Product deleted successfully`);
     res.json({
+      success: true,
       message: "Product deleted successfully",
+      action: "deleted",
       removedFromCarts: cartItems?.length || 0,
     });
   } catch (error) {
-    console.error("Error in deleteProduct:", error);
-    res.status(500).json({ error: "Internal server error" });
+    console.error("💥 Error in deleteProduct:", error);
+    res.status(500).json({ 
+      error: "Internal server error",
+      details: error.message 
+    });
   }
 }
 

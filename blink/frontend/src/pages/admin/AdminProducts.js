@@ -22,6 +22,9 @@ const AdminProducts = () => {
   const [deletingProduct, setDeletingProduct] = useState(null);
   const [existingImageUrl, setExistingImageUrl] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [isPasteActive, setIsPasteActive] = useState(false);
+  const [lastPasteTime, setLastPasteTime] = useState(0);
 
   // Helper function to get auth token
   const getAuthToken = () => {
@@ -109,6 +112,143 @@ const AdminProducts = () => {
     return import.meta.env.VITE_API_BASE || "http://localhost:3001";
   };
 
+  // Drag and drop handlers
+  const handleDragEnter = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Only set drag over to false if we're leaving the drop zone entirely
+    if (!e.currentTarget.contains(e.relatedTarget)) {
+      setIsDragOver(false);
+    }
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+
+    const files = Array.from(e.dataTransfer.files).filter(file => 
+      file.type.startsWith('image/')
+    );
+
+    if (files.length > 0) {
+      // Combine with existing files if any
+      const newFiles = [...imageFiles, ...files];
+      setImageFiles(newFiles);
+      
+      // Show success message
+      setMessage(`Added ${files.length} image(s) for upload`);
+      setTimeout(() => setMessage(""), 3000);
+    } else {
+      setError("Please drop only image files (PNG, JPG, JPEG, etc.)");
+      setTimeout(() => setError(""), 3000);
+    }
+  };
+
+  // File input change handler
+  const handleFileInputChange = (e) => {
+    const files = Array.from(e.target.files);
+    setImageFiles(files);
+    
+    if (files.length > 0) {
+      setMessage(`Selected ${files.length} image(s) for upload`);
+      setTimeout(() => setMessage(""), 3000);
+    }
+  };
+
+  // Remove file from selection
+  const removeImageFile = (index) => {
+    const newFiles = imageFiles.filter((_, i) => i !== index);
+    setImageFiles(newFiles);
+  };
+
+  // Handle paste events
+  const handlePaste = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Debounce to prevent duplicate paste events
+    const now = Date.now();
+    if (now - lastPasteTime < 100) {
+      return; // Ignore if paste happened within 100ms
+    }
+    setLastPasteTime(now);
+    
+    const items = Array.from(e.clipboardData.items);
+    const imageItems = items.filter(item => item.type.startsWith('image/'));
+    
+    if (imageItems.length === 0) {
+      setError("No images found in clipboard. Try copying an image first.");
+      setTimeout(() => setError(""), 3000);
+      return;
+    }
+
+    const newFiles = [];
+    let processedCount = 0;
+
+    imageItems.forEach((item, index) => {
+      const file = item.getAsFile();
+      if (file) {
+        // Create a new file with a proper name using the current timestamp
+        const timestamp = now;
+        const extension = file.type.split('/')[1] || 'png';
+        const newFile = new File([file], `pasted-image-${timestamp}-${index}.${extension}`, {
+          type: file.type
+        });
+        newFiles.push(newFile);
+      }
+      
+      processedCount++;
+      if (processedCount === imageItems.length) {
+        if (newFiles.length > 0) {
+          // Combine with existing files
+          const updatedFiles = [...imageFiles, ...newFiles];
+          setImageFiles(updatedFiles);
+          setMessage(`Pasted ${newFiles.length} image(s) from clipboard`);
+          setTimeout(() => setMessage(""), 3000);
+        }
+      }
+    });
+  };
+
+  // Add global paste event listener when form is open
+  React.useEffect(() => {
+    if (showAddForm) {
+      const handleGlobalPaste = (e) => {
+        // Only handle paste if we're in the form area and not in a text input
+        // Also check if the event hasn't already been handled by the drop zone
+        if (!e.target.matches('input[type="text"], input[type="number"], textarea') && 
+            !e.defaultPrevented) {
+          handlePaste(e);
+        }
+      };
+
+      document.addEventListener('paste', handleGlobalPaste);
+      return () => {
+        document.removeEventListener('paste', handleGlobalPaste);
+      };
+    }
+  }, [showAddForm, imageFiles]);
+
+  // Handle click to focus for paste
+  const handleDropZoneClick = () => {
+    setIsPasteActive(true);
+    // Focus the drop zone to enable paste
+    setTimeout(() => setIsPasteActive(false), 2000);
+  };
+
   // Fetch products and categories on component mount
   useEffect(() => {
     fetchProducts();
@@ -176,6 +316,9 @@ const AdminProducts = () => {
     setMessage("");
     setError("");
     setExistingImageUrl(null);
+    setIsDragOver(false);
+    setIsPasteActive(false);
+    setLastPasteTime(0);
   };
 
   const handleEdit = async (product) => {
@@ -227,6 +370,14 @@ const AdminProducts = () => {
   };
 
   const handleDelete = async (productId, force = false) => {
+    // Check authentication before attempting delete
+    const token = getAuthToken();
+    if (!token) {
+      setError("You must be logged in to delete products. Please log in again.");
+      window.location.href = "/admin/login";
+      return;
+    }
+
     if (!force) {
       if (!window.confirm("Are you sure you want to delete this product?"))
         return;
@@ -242,38 +393,72 @@ const AdminProducts = () => {
         ? `${API_BASE}/api/products/${productId}?force=true`
         : `${API_BASE}/api/products/${productId}`;
 
+
       const response = await fetch(url, {
         method: "DELETE",
         headers: getAuthHeaders(),
         credentials: "include",
       });
 
+      // Handle authentication/authorization errors first
+      if (response.status === 401) {
+        setError("Authentication failed. Please log in again.");
+        localStorage.removeItem("auth_token");
+        localStorage.removeItem("is_admin");
+        window.location.href = "/admin/login";
+        return;
+      }
+
+      if (response.status === 403) {
+        setError("Access denied. Admin privileges required.");
+        return;
+      }
+
       // Check if product is in active carts
       if (!response.ok && response.status === 400) {
-        const data = await response.json();
-        if (data.cartCount && data.cartCount > 0) {
-          // Show confirmation for force delete
-          const forceDelete = window.confirm(
-            `${data.message}\n\nDo you want to force delete this product? This will remove it from ${data.cartCount} active cart(s).`,
-          );
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+          const data = await response.json();
+          if (data.cartCount && data.cartCount > 0) {
+            // Show confirmation for force delete
+            const forceDelete = window.confirm(
+              `${data.message}\n\nDo you want to force delete this product? This will remove it from ${data.cartCount} active cart(s).`,
+            );
 
-          if (forceDelete) {
-            // Retry with force=true
-            setDeletingProduct(null);
-            return handleDelete(productId, true);
+            if (forceDelete) {
+              // Retry with force=true
+              setDeletingProduct(null);
+              return handleDelete(productId, true);
+            } else {
+              setDeletingProduct(null);
+              return;
+            }
           } else {
-            setDeletingProduct(null);
-            return;
+            throw new Error(data.error || "Bad request error occurred");
           }
+        } else {
+          // Non-JSON response for 400 - likely HTML error page
+          const errorText = await response.text();
+          console.error("Non-JSON 400 response:", errorText);
+          throw new Error("Server returned an invalid response. Check server logs.");
         }
       }
 
-      await handleApiResponse(response);
-      setMessage(
-        force
-          ? "Product deleted and removed from all carts successfully"
-          : "Product deleted successfully",
-      );
+      const result = await handleApiResponse(response);
+      
+      // Handle different response types
+      if (result.action === "deactivated") {
+        setMessage(`Product deactivated: ${result.message}`);
+      } else if (result.action === "deleted") {
+        setMessage(`Product deleted: ${result.message}`);
+      } else {
+        setMessage(
+          force
+            ? "Product deleted and removed from all carts successfully"
+            : "Product deleted successfully",
+        );
+      }
+      
       await fetchProducts();
     } catch (err) {
       console.error("Error deleting product:", err);
@@ -570,15 +755,195 @@ const AdminProducts = () => {
                     <label className="block text-sm font-medium text-gray-700">
                       Product Images
                     </label>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      onChange={(e) =>
-                        setImageFiles(Array.from(e.target.files))
-                      }
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                    />
+                    
+                    {/* Drag and Drop Zone */}
+                    <div
+                      className={`relative border-2 border-dashed rounded-lg p-6 transition-colors cursor-pointer ${
+                        isDragOver
+                          ? 'border-blue-500 bg-blue-50'
+                          : isPasteActive
+                          ? 'border-green-500 bg-green-50'
+                          : 'border-gray-300 hover:border-gray-400'
+                      }`}
+                      onDragEnter={handleDragEnter}
+                      onDragLeave={handleDragLeave}
+                      onDragOver={handleDragOver}
+                      onDrop={handleDrop}
+                      onClick={handleDropZoneClick}
+                      tabIndex={0}
+                      role="button"
+                      aria-label="Drop zone for image upload or paste"
+                    >
+                      <div className="text-center">
+                        <svg
+                          className={`mx-auto h-12 w-12 transition-colors ${
+                            isDragOver 
+                              ? 'text-blue-500' 
+                              : isPasteActive 
+                              ? 'text-green-500' 
+                              : 'text-gray-400'
+                          }`}
+                          stroke="currentColor"
+                          fill="none"
+                          viewBox="0 0 48 48"
+                        >
+                          <path
+                            d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
+                            strokeWidth={2}
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                        <div className="mt-4">
+                          <label htmlFor="file-upload" className="cursor-pointer">
+                            <span className={`text-sm font-medium transition-colors ${
+                              isDragOver 
+                                ? 'text-blue-600' 
+                                : isPasteActive 
+                                ? 'text-green-600' 
+                                : 'text-blue-600 hover:text-blue-500'
+                            }`}>
+                              Upload images
+                            </span>
+                            <input
+                              id="file-upload"
+                              name="file-upload"
+                              type="file"
+                              className="sr-only"
+                              multiple
+                              accept="image/*"
+                              onChange={handleFileInputChange}
+                            />
+                          </label>
+                          <span className="text-gray-500"> • drag and drop • or paste</span>
+                        </div>
+                        <div className="mt-2 space-y-1">
+                          <p className="text-xs text-gray-500">
+                            PNG, JPG, JPEG up to 5MB each (max 6 images)
+                          </p>
+                          <div className="flex items-center justify-center space-x-4 text-xs text-gray-400">
+                            <span className="flex items-center">
+                              <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                              </svg>
+                              Click to browse
+                            </span>
+                            <span className="flex items-center">
+                              <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                              </svg>
+                              Drag files here
+                            </span>
+                            <span className="flex items-center">
+                              <kbd className="px-1.5 py-0.5 text-xs font-semibold text-gray-800 bg-gray-100 border border-gray-200 rounded-md mr-1">Ctrl+V</kbd>
+                              Paste
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Drag Overlay */}
+                      {isDragOver && (
+                        <div className="absolute inset-0 bg-blue-50 bg-opacity-75 rounded-lg flex items-center justify-center">
+                          <div className="text-blue-600 text-center">
+                            <svg
+                              className="mx-auto h-12 w-12 text-blue-500"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                              />
+                            </svg>
+                            <p className="text-sm font-medium mt-2">Drop images here</p>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Paste Overlay */}
+                      {isPasteActive && (
+                        <div className="absolute inset-0 bg-green-50 bg-opacity-75 rounded-lg flex items-center justify-center">
+                          <div className="text-green-600 text-center">
+                            <svg
+                              className="mx-auto h-12 w-12 text-green-500"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                              />
+                            </svg>
+                            <p className="text-sm font-medium mt-2">Press Ctrl+V to paste images</p>
+                            <p className="text-xs mt-1 opacity-75">Copy images from anywhere and paste here</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Selected Files Preview */}
+                    {imageFiles.length > 0 && (
+                      <div className="mt-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="text-sm font-medium text-gray-700">
+                            Selected Images ({imageFiles.length})
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setImageFiles([])}
+                            className="text-xs text-red-600 hover:text-red-700 font-medium"
+                          >
+                            Clear all
+                          </button>
+                        </div>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                          {imageFiles.map((file, index) => (
+                            <div key={index} className="relative group">
+                              <div className="aspect-square relative overflow-hidden rounded-lg border-2 border-gray-200 bg-gray-50">
+                                <img
+                                  src={URL.createObjectURL(file)}
+                                  alt={`Preview ${index + 1}`}
+                                  className="w-full h-full object-cover"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => removeImageFile(index)}
+                                  className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white w-6 h-6 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200"
+                                  title="Remove image"
+                                >
+                                  <svg
+                                    className="w-3 h-3"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth="2"
+                                      d="M6 18L18 6M6 6l12 12"
+                                    />
+                                  </svg>
+                                </button>
+                              </div>
+                              <div className="mt-1 text-xs text-gray-500 truncate">
+                                {file.name}
+                              </div>
+                              <div className="text-xs text-gray-400">
+                                {(file.size / 1024 / 1024).toFixed(1)} MB
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
 
