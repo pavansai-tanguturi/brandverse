@@ -192,6 +192,7 @@ export async function deleteCategory(req, res) {
     return res.status(403).json({ error: "Admin only" });
 
   const { id } = req.params;
+  const force = req.query.force === "true";
 
   // Validate UUID format
   const uuidRegex =
@@ -201,17 +202,54 @@ export async function deleteCategory(req, res) {
   }
 
   // Check if category has products
-  const { count: productCount } = await supabaseAdmin
+  const { count: productCount, data: products } = await supabaseAdmin
     .from("products")
-    .select("*", { count: "exact", head: true })
+    .select("id", { count: "exact" })
     .eq("category_id", id);
 
   if (productCount > 0) {
-    return res.status(400).json({
-      error:
-        "Cannot delete category with existing products. Please move or delete all products first.",
-      productCount,
-    });
+    if (!force) {
+      return res.status(400).json({
+        error:
+          "Cannot delete category with existing products. Please move or delete all products first.",
+        message: `This category has ${productCount} product(s). Use force=true to delete the category and all its products.`,
+        productCount,
+      });
+    }
+
+    // Force delete: Remove products and their related data first
+    if (products && products.length > 0) {
+      const productIds = products.map((p) => p.id);
+
+      // Delete cart items for these products
+      await supabaseAdmin
+        .from("cart_items")
+        .delete()
+        .in("product_id", productIds);
+
+      // Delete product images from database
+      const { data: productImages } = await supabaseAdmin
+        .from("product_images")
+        .select("path")
+        .in("product_id", productIds);
+
+      // Delete images from storage
+      if (productImages && productImages.length > 0) {
+        const paths = productImages.map((img) => img.path);
+        await supabaseAdmin.storage
+          .from(process.env.PRODUCT_IMAGES_BUCKET || "product-images")
+          .remove(paths);
+      }
+
+      // Delete product images records
+      await supabaseAdmin
+        .from("product_images")
+        .delete()
+        .in("product_id", productIds);
+
+      // Delete products
+      await supabaseAdmin.from("products").delete().in("id", productIds);
+    }
   }
 
   const { error } = await supabaseAdmin
@@ -227,5 +265,10 @@ export async function deleteCategory(req, res) {
     return res.status(400).json({ error: error.message });
   }
 
-  res.status(200).json({ message: "Category deleted successfully" });
+  res.status(200).json({
+    message: force
+      ? `Category and ${productCount} product(s) deleted successfully`
+      : "Category deleted successfully",
+    deletedProducts: force ? productCount : 0,
+  });
 }
