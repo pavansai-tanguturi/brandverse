@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import AdminNav from "../../components/admin/AdminNav";
+import { apiCall } from "../../utils/api";
 
 const AdminDeliveryLocations = () => {
   const [locations, setLocations] = useState([]);
@@ -24,25 +25,7 @@ const AdminDeliveryLocations = () => {
     setLoading(true);
     setError("");
     try {
-      const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3001";
-      const token = localStorage.getItem("auth_token");
-
-      const res = await fetch(`${API_BASE}/api/admin/delivery-locations`, {
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-      });
-
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(
-          errorData.error || "Failed to fetch delivery locations",
-        );
-      }
-
-      const data = await res.json();
+      const data = await apiCall("/api/admin/delivery-locations");
       setLocations(data.deliveryLocations || []);
     } catch (err) {
       setError("Failed to fetch delivery locations: " + err.message);
@@ -61,27 +44,14 @@ const AdminDeliveryLocations = () => {
     }
 
     try {
-      const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3001";
-      const token = localStorage.getItem("auth_token");
-
-      if (!token) {
-        setError("Authentication token not found. Please login again.");
-        return;
-      }
-
       const url = editingLocation
-        ? `${API_BASE}/api/admin/delivery-locations/${editingLocation.id}`
-        : `${API_BASE}/api/admin/delivery-locations`;
+        ? `/api/admin/delivery-locations/${editingLocation.id}`
+        : `/api/admin/delivery-locations`;
 
       const method = editingLocation ? "PUT" : "POST";
 
-      const res = await fetch(url, {
+      const data = await apiCall(url, {
         method,
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        credentials: "include",
         body: JSON.stringify({
           country: formData.country.trim(),
           region: formData.region.trim() || null,
@@ -89,12 +59,6 @@ const AdminDeliveryLocations = () => {
         }),
       });
 
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || "Failed to save delivery location");
-      }
-
-      const data = await res.json();
       setMessage(data.message);
       setFormData({ country: "", region: "", city: "" });
       setShowAddForm(false);
@@ -107,32 +71,13 @@ const AdminDeliveryLocations = () => {
 
   const handleToggleStatus = async (location) => {
     try {
-      const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3001";
-      const token = localStorage.getItem("auth_token");
-
-      if (!token) {
-        setError("Authentication token not found. Please login again.");
-        return;
-      }
-
-      const res = await fetch(
-        `${API_BASE}/api/admin/delivery-locations/${location.id}/toggle`,
+      const data = await apiCall(
+        `/api/admin/delivery-locations/${location.id}/toggle`,
         {
           method: "PATCH",
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
         },
       );
 
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || "Failed to toggle location status");
-      }
-
-      const data = await res.json();
       setMessage(data.message);
       await fetchDeliveryLocations();
     } catch (err) {
@@ -150,34 +95,13 @@ const AdminDeliveryLocations = () => {
     }
 
     try {
-      const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3001";
-      const token = localStorage.getItem("auth_token");
-
-      if (!token) {
-        setError("Authentication token not found. Please login again.");
-        return;
-      }
-
-      const res = await fetch(
-        `${API_BASE}/api/admin/delivery-locations/${location.id}`,
+      const data = await apiCall(
+        `/api/admin/delivery-locations/${location.id}`,
         {
           method: "DELETE",
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
         },
       );
 
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(
-          errorData.error || "Failed to delete delivery location",
-        );
-      }
-
-      const data = await res.json();
       setMessage(data.message);
       await fetchDeliveryLocations();
     } catch (err) {
@@ -216,25 +140,17 @@ const AdminDeliveryLocations = () => {
     }
 
     try {
-      const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3001";
-      const token = localStorage.getItem("auth_token");
-
-      if (!token) {
-        setError("Authentication token not found. Please login again.");
-        return;
-      }
-
       let url;
       let body;
 
       switch (action) {
         case "delete":
-          url = `${API_BASE}/api/admin/delivery-locations/bulk-delete`;
+          url = `/api/admin/delivery-locations/bulk`;
           body = { ids: selectedLocations };
           break;
         case "enable":
         case "disable":
-          url = `${API_BASE}/api/admin/delivery-locations/bulk-toggle`;
+          url = `/api/admin/delivery-locations/bulk-toggle`;
           body = {
             ids: selectedLocations,
             is_active: action === "enable",
@@ -244,22 +160,12 @@ const AdminDeliveryLocations = () => {
           throw new Error("Invalid bulk action");
       }
 
-      const res = await fetch(url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        credentials: "include",
+      const method = action === "delete" ? "DELETE" : "PATCH";
+      const data = await apiCall(url, {
+        method: method,
         body: JSON.stringify(body),
       });
 
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || "Failed to perform bulk action");
-      }
-
-      const data = await res.json();
       setMessage(data.message);
       setSelectedLocations([]);
       setBulkAction("");
@@ -308,7 +214,7 @@ const AdminDeliveryLocations = () => {
           const API_BASE =
             import.meta.env.VITE_API_BASE || "http://localhost:3001";
           const res = await fetch(
-            `${API_BASE}/api/admin/delivery-locations/bulk-add`,
+            `${API_BASE}/api/admin/delivery-locations/bulk`,
             {
               method: "POST",
               headers: {
