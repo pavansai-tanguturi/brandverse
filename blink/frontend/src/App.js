@@ -10,6 +10,7 @@ import { AuthProvider } from "./context/AuthContext";
 import { CartProvider } from "./context/CartContext";
 import { WishlistProvider } from "./context/WishlistContext";
 import { AddressProvider } from "./context/AddressContext";
+import { ProductProvider } from "./context/ProductContext";
 import CookieConsent from "./components/CookieConsent";
 import CookiePolicy from "./components/CookiePolicy";
 import Footer from "./components/Footer";
@@ -63,117 +64,119 @@ function App() {
       <CartProvider>
         <WishlistProvider>
           <AddressProvider>
-            <Router>
-              <Routes>
-                {/* Regular User Routes */}
-                <Route path="/" element={<Home />} />
-                <Route path="/home" element={<Home />} />
-                <Route path="/products" element={<Products />} />
-                <Route path="/deals" element={<Deals />} />
-                <Route path="/search" element={<Search />} />
-                <Route path="/product/:id" element={<ProductPage />} />
-                <Route path="/cart" element={<CartPage />} />
-                <Route path="/wishlist" element={<Wishlist />} />
-                <Route path="/checkout" element={<CheckoutPage />} />
-                <Route path="/order-success" element={<OrderSuccessPage />} />
-                <Route path="/orders" element={<OrderHistoryPage />} />
-                <Route path="/dashboard" element={<CustomerDashboard />} />
+            <ProductProvider>
+              <Router>
+                <Routes>
+                  {/* Regular User Routes */}
+                  <Route path="/" element={<Home />} />
+                  <Route path="/home" element={<Home />} />
+                  <Route path="/products" element={<Products />} />
+                  <Route path="/deals" element={<Deals />} />
+                  <Route path="/search" element={<Search />} />
+                  <Route path="/product/:id" element={<ProductPage />} />
+                  <Route path="/cart" element={<CartPage />} />
+                  <Route path="/wishlist" element={<Wishlist />} />
+                  <Route path="/checkout" element={<CheckoutPage />} />
+                  <Route path="/order-success" element={<OrderSuccessPage />} />
+                  <Route path="/orders" element={<OrderHistoryPage />} />
+                  <Route path="/dashboard" element={<CustomerDashboard />} />
 
-                {/* Cookie Policy */}
-                <Route path="/cookie-policy" element={<CookiePolicy />} />
+                  {/* Cookie Policy */}
+                  <Route path="/cookie-policy" element={<CookiePolicy />} />
 
-                {/* Authentication Routes */}
-                <Route path="/auth" element={<Auth />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/signup" element={<SignUp />} />
-                <Route path="/401" element={<UnauthorizedPage />} />
-                <Route path="/health" element={<HealthCheck />} />
-                <Route path="/logout" element={<Logout />} />
+                  {/* Authentication Routes */}
+                  <Route path="/auth" element={<Auth />} />
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/signup" element={<SignUp />} />
+                  <Route path="/401" element={<UnauthorizedPage />} />
+                  <Route path="/health" element={<HealthCheck />} />
+                  <Route path="/logout" element={<Logout />} />
 
-                {/* Admin Routes */}
-                <Route path="/admin/login" element={<AdminLogin />} />
-                <Route
-                  path="/admin/dashboard"
-                  element={
-                    <ProtectedRoute>
-                      <AdminDashboard />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/admin/products"
-                  element={
-                    <ProtectedRoute>
-                      <AdminProducts />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/admin/orders"
-                  element={
-                    <ProtectedRoute>
-                      <AdminOrders />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/admin/users"
-                  element={
-                    <ProtectedRoute>
-                      <AdminUsers />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/admin/delivery-locations"
-                  element={
-                    <ProtectedRoute>
-                      <AdminDeliveryLocations />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/admin/analytics"
-                  element={
-                    <ProtectedRoute>
-                      <AnalyticsDashboard />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/admin/categories"
-                  element={
-                    <ProtectedRoute>
-                      <AdminCategories />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/admin/banners"
-                  element={
-                    <ProtectedRoute>
-                      <AdminBanners />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route path="/admin/logout" element={<Logout />} />
+                  {/* Admin Routes */}
+                  <Route path="/admin/login" element={<AdminLogin />} />
+                  <Route
+                    path="/admin/dashboard"
+                    element={
+                      <ProtectedRoute>
+                        <AdminDashboard />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin/products"
+                    element={
+                      <ProtectedRoute>
+                        <AdminProducts />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin/orders"
+                    element={
+                      <ProtectedRoute>
+                        <AdminOrders />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin/users"
+                    element={
+                      <ProtectedRoute>
+                        <AdminUsers />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin/delivery-locations"
+                    element={
+                      <ProtectedRoute>
+                        <AdminDeliveryLocations />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin/analytics"
+                    element={
+                      <ProtectedRoute>
+                        <AnalyticsDashboard />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin/categories"
+                    element={
+                      <ProtectedRoute>
+                        <AdminCategories />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin/banners"
+                    element={
+                      <ProtectedRoute>
+                        <AdminBanners />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route path="/admin/logout" element={<Logout />} />
 
-                {/* Catch any other /admin/* routes that aren't defined */}
-                <Route
-                  path="/admin/*"
-                  element={<Navigate to="/401" replace />}
-                />
+                  {/* Catch any other /admin/* routes that aren't defined */}
+                  <Route
+                    path="/admin/*"
+                    element={<Navigate to="/401" replace />}
+                  />
 
-                {/* 404 - Catch all undefined routes */}
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
+                  {/* 404 - Catch all undefined routes */}
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
 
-              {/* Conditional Footer - appears on all pages except admin and checkout */}
-              <ConditionalFooter />
+                {/* Conditional Footer - appears on all pages except admin and checkout */}
+                <ConditionalFooter />
 
-              {/* Cookie Consent Banner - appears on all pages */}
-              <CookieConsent />
-            </Router>
+                {/* Cookie Consent Banner - appears on all pages */}
+                <CookieConsent />
+              </Router>
+            </ProductProvider>
           </AddressProvider>
         </WishlistProvider>
       </CartProvider>
