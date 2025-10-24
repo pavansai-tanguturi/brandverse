@@ -1195,13 +1195,14 @@ export async function createOrder(req, res) {
         console.log(
           `🔍 Checking if delivery is available to: ${city}, ${region}, ${country}`,
         );
+        console.log(`🔍 Normalized input: city="${normalizeForMatching(city)}", region="${normalizeForMatching(region)}", country="${normalizeForMatching(country)}"`);
 
         let isDeliveryAvailable = false;
 
-        // Your existing delivery check logic here...
+        // Simple delivery check logic - just trim and lowercase
         const normalizeForMatching = (str) => {
           if (!str) return null;
-          return str.toLowerCase().replace(/\s+/g, "").replace(/[^\w]/g, "");
+          return str.toLowerCase().trim();
         };
 
         // Check exact location match
@@ -1221,10 +1222,11 @@ export async function createOrder(req, res) {
             const exactMatch = allCityMatches.find((location) => {
               const normalizedDbCity = normalizeForMatching(location.city);
               const normalizedDbRegion = normalizeForMatching(location.region);
-              const normalizedDbCountry = normalizeForMatching(
-                location.country,
-              );
+              const normalizedDbCountry = normalizeForMatching(location.country);
 
+              console.log(`🔍 Comparing DB location: "${normalizedDbCity}", "${normalizedDbRegion}", "${normalizedDbCountry}"`);
+
+              // Exact matching with normalized strings
               return (
                 normalizedDbCity === normalizedInputCity &&
                 normalizedDbRegion === normalizedInputRegion &&
@@ -1254,9 +1256,8 @@ export async function createOrder(req, res) {
 
             const regionMatch = allRegionMatches.find((location) => {
               const normalizedDbRegion = normalizeForMatching(location.region);
-              const normalizedDbCountry = normalizeForMatching(
-                location.country,
-              );
+              const normalizedDbCountry = normalizeForMatching(location.country);
+              
               return (
                 normalizedDbRegion === normalizedInputRegion &&
                 normalizedDbCountry === normalizedInputCountry
@@ -1281,9 +1282,8 @@ export async function createOrder(req, res) {
           if (countryMatches && countryMatches.length > 0) {
             const normalizedInputCountry = normalizeForMatching(country);
             const countryMatch = countryMatches.find((location) => {
-              const normalizedDbCountry = normalizeForMatching(
-                location.country,
-              );
+              const normalizedDbCountry = normalizeForMatching(location.country);
+              
               return normalizedDbCountry === normalizedInputCountry;
             });
 

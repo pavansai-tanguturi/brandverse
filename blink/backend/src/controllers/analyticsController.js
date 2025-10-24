@@ -38,7 +38,7 @@ export async function getDashboardAnalytics(req, res) {
       )
       .gte("orders.created_at", start.toISOString())
       .lte("orders.created_at", end.toISOString())
-      .eq("orders.status", "completed");
+      .in("orders.status", ["completed", "confirmed", "paid", "delivered"]);
 
     if (categoryError) throw categoryError;
 
@@ -55,7 +55,7 @@ export async function getDashboardAnalytics(req, res) {
       )
       .gte("orders.created_at", start.toISOString())
       .lte("orders.created_at", end.toISOString())
-      .eq("orders.status", "completed");
+      .in("orders.status", ["completed", "confirmed", "paid", "delivered"]);
 
     if (topProductsError) throw topProductsError;
 
@@ -126,7 +126,8 @@ export async function getDashboardAnalytics(req, res) {
     let totalRevenue = 0;
     orderStatus.forEach((order) => {
       statusMap[order.status] = (statusMap[order.status] || 0) + 1;
-      if (order.status === "completed") {
+      // Count revenue from all confirmed/paid/delivered orders
+      if (order.status === "completed" || order.status === "confirmed" || order.status === "paid" || order.status === "delivered") {
         totalRevenue += (order.total_cents || 0) / 100;
       }
     });
@@ -143,7 +144,7 @@ export async function getDashboardAnalytics(req, res) {
       .select("total_cents")
       .gte("created_at", prevStart.toISOString())
       .lte("created_at", prevEnd.toISOString())
-      .eq("status", "completed");
+      .in("status", ["completed", "confirmed", "paid", "delivered"]);
 
     const prevTotalRevenue =
       prevRevenue?.reduce(
